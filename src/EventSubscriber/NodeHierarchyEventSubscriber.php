@@ -52,6 +52,15 @@ class NodeHierarchyEventSubscriber implements EventSubscriberInterface {
   }
 
   /**
+   * Prevents page redirection so that the developer can see the intermediate debug data.
+   * @param FilterResponseEvent $event
+   */
+  public function onResponse(FilterResponseEvent $event) {
+    $response = $event->getResponse();
+
+  }
+
+  /**
    * Implements EventSubscriberInterface::getSubscribedEvents().
    *
    * @return array
