@@ -1,0 +1,6 @@
+services:
+  nodehierarchy.event_subscriber:
+    class: Drupal\nodehierarchy\EventSubscriber\NodeHierarchyEventSubscriber
+    arguments: ['@module_handler']
+    tags:
+      - { name: event_subscriber }
