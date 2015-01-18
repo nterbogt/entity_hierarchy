@@ -9,9 +9,9 @@
 /**
  * Implements hook_help().
  */
-function nodehierarchy_help($path, $arg) {
-  switch ($path) {
-    case 'admin/modules#description':
-      return t('A module to make nodes hierarchical.');
-  }
-}
+//function nodehierarchy_help($route_name, RouteMatchInterface $route_match) {
+//  switch ($route_name) {
+   // case 'help.page.nodehierarchy':
+   //   return t('A module to make nodes hierarchical.');
+//  }
+//}
