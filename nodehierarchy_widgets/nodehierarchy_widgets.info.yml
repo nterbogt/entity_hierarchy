@@ -1,7 +1,0 @@
-name: Node Hierarchy Widgets
-description: Provides alternative parent selector widgets for Node Hierarchy including autocomplete (experimental).
-dependencies:
-  - nodehierarchy
-package: "Node Hierarchy"
-core: 8.x
-type: module
