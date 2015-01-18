@@ -1,4 +1,6 @@
 services:
-  plugin.manager.nodehierarchy:
-  class: Drupal\nodehierarchy\NodeHierarchyPluginManager
-  parent: default_plugin_manager
+  nodehierarchy.event_subscriber:
+  class: Drupal\nodehierarchy\EventSubscriber\NodeHierarchyEventSubscriber
+  arguments: ['@module_handler']
+      tags:
+        - { name: event_subscriber }

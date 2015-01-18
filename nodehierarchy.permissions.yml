@@ -1,0 +1,19 @@
+# Permissions for Node Hierarchy
+create child nodes:
+  title: 'Create child nodes'
+  description: 'Add a node as a child of another node'
+edit all node parents:
+  title: 'Edit all node parents'
+  description: 'Edit the parent of any node'
+edit own node parents:
+  title: 'Edit own node parents'
+  description: 'Edit the parent of own nodes'
+administer hierarchy:
+  title: 'Administer hierarchy'
+  description: 'Change the site wide settings for Node Hierarchy'
+customize nodehierarchy menus:
+  title: 'Customize nodehierarchy menus'
+  description: 'Change the menu settings for nodes'
+create child of any parent:
+  title: 'Create child of any parent'
+  description: 'Add a child to any other node'
