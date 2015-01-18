@@ -6,3 +6,12 @@
  * A module to make nodes hierarchical.
  */
 
+/**
+ * Implements hook_help().
+ */
+function nodehierarchy_help($path, $arg) {
+  switch ($path) {
+    case 'admin/modules#description':
+      return t('A module to make nodes hierarchical.');
+  }
+}

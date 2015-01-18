@@ -26,48 +26,6 @@ function nodehierarchy_simpletest() {
 }
 
 /**
- * Implements hook_help().
- */
-function nodehierarchy_help($path, $arg) {
-  switch ($path) {
-    case 'admin/modules#description':
-      return t('A module to make nodes hierarchical.');
-  }
-}
-
-/**
- * Implements hook_permission().
- */
-function nodehierarchy_permission() {
-  return array(
-    'create child nodes' => array(
-      'title' => t('create child nodes'),
-      'description' => t('Add a node as a child of another node'),
-    ),
-    'edit all node parents' => array(
-      'title' => t('edit all node parents'),
-      'description' => t('Edit the parent of any node'),
-    ),
-    'edit own node parents' => array(
-      'title' => t('edit own node parents'),
-      'description' => t('Edit the parent of own nodes'),
-    ),
-    'administer hierarchy' => array(
-      'title' => t('administer hierarchy'),
-      'description' => t('Change the site wide settings for Node Hierarchy'),
-    ),
-    'customize nodehierarchy menus' => array(
-      'title' => t('customize nodehierarchy menus'),
-      'description' => t('Change the menu settings for nodes'),
-    ),
-    'create child of any parent' => array(
-      'title' => t('create child of any parent'),
-      'description' => t('Add a child to any other node'),
-    ),
-  );
-}
-
-/**
  * Implements hook_menu().
  */
 function nodehierarchy_menu() {
