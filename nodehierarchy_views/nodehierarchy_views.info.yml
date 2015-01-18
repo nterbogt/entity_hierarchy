@@ -1,0 +1,8 @@
+name: Node Hierarchy Children Embed
+description: Allows a nodes children to be embedded on the node detail page with Views
+dependencies:
+  - nodehierarchy
+  - views
+package: "Node Hierarchy"
+core: 8.x
+type: module

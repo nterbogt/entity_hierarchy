@@ -1,0 +1,44 @@
+<?php
+/**
+ * @file
+ * schema and uninstall functions for the nodehierarchy module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function nodehierarchy_schema() {
+  $schema['nodehierarchy_menu_links'] = array(
+    'fields' => array(
+      'mlid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => "The book page's {menu_links}.mlid.",
+      ),
+      'nid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The {node}.nid whose parent is being defined.',
+      ),
+    ),
+    'primary key' => array('mlid'),
+    'indexes' => array(
+      'nid' => array('nid'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook uninstall().
+ */
+function nodehierarchy_uninstall() {
+  foreach (node_type_get_types() as $key => $type) {
+    variable_del('nh_allowchild_' . $key);
+    variable_del('nh_parent_' . $key);
+    variable_del('nh_defaultparent_' . $key);
+  }
+}
