@@ -1,0 +1,7 @@
+nodehierarchy.admin:
+  path: '/admin/structure/nodehierarchy'
+  defaults:
+    _form: '\Drupal\nodehierarchy\Form\AdminSettingsForm'
+    _title: 'Node Hierarchy'
+  requirements: 
+    _permission: 'administer site configuration'
