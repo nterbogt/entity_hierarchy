@@ -7,6 +7,7 @@
  */
 
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Implements hook_help().
@@ -16,4 +17,104 @@ function nodehierarchy_help($route_name, RouteMatchInterface $route_match) {
     case 'help.page.nodehierarchy':
       return t('A module to make nodes hierarchical.');
   }
+}
+
+/**
+ * Implementation of hooks_form_alter().
+ *
+ * So we don't see preview or delete buttons for hierarchy.
+ */
+function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // Check if the form id string ends with "_node_form"
+  endsWith($form_id,"_node_form") ? $is_node_form = TRUE : $is_node_form = FALSE;
+  dpm($form['#attributes']);
+  dpm($form_id);
+  dpm(array_keys($form));
+  $type = $form['type']['#default_value'];
+  dpm($type);
+  dpm($form['name']);
+  dpm($form['#type']);
+  switch ($form_id) {
+    case 'node_type_edit_form':
+      //$type = $form['old_type']['#value'];
+
+      $form['nodehierarchy'] = array(
+        '#type' => 'details',
+        '#group' => 'additional_settings',
+        '#title' => t('Node Hierarchy'),
+        '#weight' => 10,
+//        '#attached' => array(
+//          'library' => nodehierarchy.nodetypeform, //array(drupal_get_path('module', 'nodehierarchy') . '/js/nodehierarchy.js'),
+//        ),
+      );
+
+      $form['#attached']['library'][] = nodehierarchy/nodehierarchy.nodetypeform;
+
+//      $form['nodehierarchy']['#attached']['html_head'][] = array(array(
+//        '#tag' => 'script',
+//        '#value' => '/'. drupal_get_path('module', 'nodehierarchy') . '/js/nodehierarchy.js',
+//      ), 'nh_script');
+
+      //$form['nodehierarchy'] += _nodehierarchy_get_node_type_settings_form($type);
+      break;
+    case $type . '_node_form':
+      $node = isset($form['#node']) ? $form['#node'] : NULL;
+      nodehierarchy_set_breadcrumbs($node, TRUE);
+      $hierarchy_form = \Drupal::moduleHandler()->invokeAll('nodehierarchy_node_form', $node);
+      // if the current user has no nodehierarchy perms, don't show the form
+      $access = FALSE;
+//      foreach (nodehierarchy_permission() as $perm => $info) {
+//        if (user_access($perm)) {
+//          $access = TRUE;
+//          break;
+//        }
+//      }
+      if ($hierarchy_form) {
+        $weight = function_exists('content_extra_field_weight') ? content_extra_field_weight($type, 'nodehierarchy') : 10;
+        $form['nodehierarchy'] = array_merge(
+          array(
+            '#type' => 'fieldset',
+            '#title' => t('Node Hierarchy'),
+            '#group' => 'additional_settings',
+            '#collapsible' => TRUE,
+            '#collapsed' => empty($form_state['nodehierarchy_expanded']) ? TRUE : FALSE,
+            '#weight' => $weight,
+            '#access' => $access,
+          ),
+          $hierarchy_form);
+      }
+      break;
+    case 'node_delete_confirm':
+      // TODO: Fix the descendant count code to deal with multiparent situations.
+      if ($count = _nodehierarchy_get_children_count($form['nid']['#value'])) {
+        $items = array();
+        foreach (_nodehierarchy_get_children_menu_links($form['nid']['#value'], 10) as $child) {
+          $items[] = /*check_plain*/($child['link_title']);
+        }
+        if ($count > 10) {
+          $items[] = l(t('See all !count children', array('!count' => $count)), 'node/' . $form['nid']['#value'] . '/children');
+        }
+        $list = /*theme('item_list',*/ array('items' => $items)/*)*/;
+        $description = format_plural($count, 'This node has @count child. Check this box to delete it and all of its descendants as well.', 'This node has @count children. Check this box to delete them and all of their descendants as well.' );
+        $description .= t('<p>These children and their decendants will be deleted:!list<p>', array('!list' => $list));
+        $form['nodehierarchy_delete_children'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Delete descendants'),
+          '#description' => $description,
+        );
+        array_unshift($form['#submit'], 'nodehierarchy_node_delete_submit');
+        $form['actions']['#weight'] = 1;
+      }
+      break;
+  }
+}
+
+/* Helper Functions */
+function startsWith($haystack, $needle) {
+  // search backwards starting from haystack length characters from the end
+  return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== FALSE;
+}
+function endsWith($haystack, $needle) {
+  // search forward starting from end minus needle length characters
+  return $needle === "" || strpos($haystack, $needle, strlen($haystack) - strlen($needle)) !== FALSE;
 }

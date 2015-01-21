@@ -180,8 +180,8 @@ function _nodehierarchy_get_parent_selector($child_type, $parent, $exclude = NUL
   }
 
   $default_value = _nodehierarchy_get_parent_selector_value($parent);
-  //dpm('parent: '. $parent);
-  //dpm('default value: '.$default_value);
+  dpm('parent: '. $parent);
+  dpm('default value: '.$default_value);
 
   // If no other modules defined the pulldown, then define it here.
   $options = array(0 => '-- ' . t('NONE') . ' --');
