@@ -1,0 +1,5 @@
+nodehierarchy.nodehierarchy_node_load:
+  route_name: nodehierarchy.nodehierarchy_node_load
+  base_route: entity.node.canonical
+  title: Children
+  weight: 10

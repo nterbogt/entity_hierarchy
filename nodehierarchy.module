@@ -8,6 +8,10 @@
 
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Entity;
+use Drupal\Core\Menu\Form\MenuLinkFormInterface;
+use Drupal\Core\Menu\MenuLinkInterface;
+use Drupal\Core\Menu\MenuParentFormSelectorInterface;
 
 /**
  * Implements hook_help().
@@ -20,20 +24,22 @@ function nodehierarchy_help($route_name, RouteMatchInterface $route_match) {
 }
 
 /**
- * Implementation of hooks_form_alter().
+ * Implementation of hook_form_alter().
  *
  * So we don't see preview or delete buttons for hierarchy.
  */
 function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   // Check if the form id string ends with "_node_form"
-  endsWith($form_id,"_node_form") ? $is_node_form = TRUE : $is_node_form = FALSE;
-  dpm($form['#attributes']);
-  dpm($form_id);
-  dpm(array_keys($form));
-  $type = $form['type']['#default_value'];
-  dpm($type);
-  dpm($form['name']);
-  dpm($form['#type']);
+  endsWith($form_id,"_node_form") || endsWith($form_id,"_node_edit_form") ? $node_type = $form_id : $node_type = '';
+  endsWith($form_id,"_node_delete_form") ? $node_delete_type = $form_id : $node_delete_type = '';
+  $type = $form['type']['#default_value'];  // The type of node
+
+//  dpm('form id: '.$form_id);
+//  dpm('node type:'.$node_type);
+//  dpm('node_delete_type: '.$node_delete_type);
+//  dpm(array_keys($form));
+//  dpm($type);
+
   switch ($form_id) {
     case 'node_type_edit_form':
       //$type = $form['old_type']['#value'];
@@ -43,48 +49,43 @@ function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_
         '#group' => 'additional_settings',
         '#title' => t('Node Hierarchy'),
         '#weight' => 10,
-//        '#attached' => array(
-//          'library' => nodehierarchy.nodetypeform, //array(drupal_get_path('module', 'nodehierarchy') . '/js/nodehierarchy.js'),
-//        ),
       );
 
-      $form['#attached']['library'][] = nodehierarchy/nodehierarchy.nodetypeform;
+      // $form['#attached']['library'][] = nodehierarchy/nodehierarchy.nodetypeform;
+      // Right now, we add this js to all admin pages using hook_page_attachments; see below.
 
-//      $form['nodehierarchy']['#attached']['html_head'][] = array(array(
-//        '#tag' => 'script',
-//        '#value' => '/'. drupal_get_path('module', 'nodehierarchy') . '/js/nodehierarchy.js',
-//      ), 'nh_script');
+      $form['nodehierarchy'] += _nodehierarchy_get_node_type_settings_form($type);
 
-      //$form['nodehierarchy'] += _nodehierarchy_get_node_type_settings_form($type);
+      // TODO: right now the values are not being saved for the node type form
       break;
-    case $type . '_node_form':
-      $node = isset($form['#node']) ? $form['#node'] : NULL;
-      nodehierarchy_set_breadcrumbs($node, TRUE);
-      $hierarchy_form = \Drupal::moduleHandler()->invokeAll('nodehierarchy_node_form', $node);
-      // if the current user has no nodehierarchy perms, don't show the form
-      $access = FALSE;
-//      foreach (nodehierarchy_permission() as $perm => $info) {
-//        if (user_access($perm)) {
-//          $access = TRUE;
-//          break;
-//        }
-//      }
+    case $node_type:
+      // nodehierarchy_set_breadcrumbs($node, TRUE);
+      // Load the node object associated with this form
+      $node = $form_state->getFormObject();//->getEntity();
+      dpm($node);
+//      dpm(array_keys($form));
+      $hierarchy_form = \Drupal::moduleHandler()->invokeAll('nodehierarchy_node_form', array($node));
+
+      dpm($hierarchy_form);
+
+      // Only show the form is the user has permission
+      $access = \Drupal::currentUser()->hasPermission('administer content type hierarchy') ? TRUE : FALSE;
+
       if ($hierarchy_form) {
         $weight = function_exists('content_extra_field_weight') ? content_extra_field_weight($type, 'nodehierarchy') : 10;
         $form['nodehierarchy'] = array_merge(
           array(
-            '#type' => 'fieldset',
+            '#type' => 'details',
             '#title' => t('Node Hierarchy'),
-            '#group' => 'additional_settings',
-            '#collapsible' => TRUE,
-            '#collapsed' => empty($form_state['nodehierarchy_expanded']) ? TRUE : FALSE,
+            '#group' => 'advanced',
+            '#open' => FALSE,//empty($form_state['nodehierarchy_expanded']) ? TRUE : FALSE,
             '#weight' => $weight,
             '#access' => $access,
           ),
           $hierarchy_form);
       }
       break;
-    case 'node_delete_confirm':
+    case $node_delete_type:
       // TODO: Fix the descendant count code to deal with multiparent situations.
       if ($count = _nodehierarchy_get_children_count($form['nid']['#value'])) {
         $items = array();
@@ -107,6 +108,640 @@ function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_
       }
       break;
   }
+}
+
+/**
+ * Implements hook_page_attachments().
+ */
+function nodehierarchy_page_attachments(&$page) {
+  // This returns TRUE for admin paths.
+  if (\Drupal::service('router.admin_context')->isAdminRoute()) {
+    // Load nodehierarchy.js on admin pages
+    $page['#attached']['library'][] = 'nodehierarchy/nodehierarchy.nodetypeform';
+  }
+}
+
+/**
+ * Get the nodehierarchy setting form for a particular node type.
+ */
+function _nodehierarchy_get_node_type_settings_form($key, $append_key = FALSE) {
+  $config =  \Drupal::config('nodehierarchy.settings');
+
+  $form['nh_allowchild'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Allowed child node types'),
+    '#options' => node_type_get_names(),
+    '#default_value' => $config->get('nh_allowchild_'.$key),
+    '#description' => t('Node types which can be created as child nodes of this node type.'),
+  );
+
+  //$form['nh_defaultparent'] = _nodehierarchy_get_parent_selector($key, $config->get('nh_defaultparent_'.$key));
+  // TODO: add default parent support later
+  //$form['nh_defaultparent']['#title'] = t('Default Parent');
+
+  $form['nh_createmenu'] = array(
+    '#type' => 'radios',
+    '#title' => t('Show item in menu'),
+    '#default_value' => $config->get('nh_createmenu_'.$key), //variable_get('nh_createmenu_' . $key, 'optional_no'),
+    '#options' => array(
+      'never' => t('Never'),
+      'optional_no' => t('Optional - default to no'),
+      'optional_yes' => t('Optional - default to yes'),
+      'always' => t('Always'),
+    ),
+    '#description' => t("Users must have the 'administer menu' or 'customize nodehierarchy menus' permission to override default options."),
+  );
+  $form['nh_multiple'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow multiple parents'),
+    '#default_value' => $config->get('nh_multiple_'.$key),
+    '#description' => t('Can nodes of this type have multiple parents?.'),
+  );
+
+  //$form += module_invoke_all('nodehierarchy_node_type_settings_form', $key);
+
+  // If we need to append the node type key to the form elements, we do so.
+  if ($append_key) {
+    // Appending the key does not work recursively, so fieldsets etc. are not supported.
+    foreach (element_children($form) as $form_key) {
+      $form[$form_key . '_' . $key] = $form[$form_key];
+      unset($form[$form_key]);
+    }
+  }
+  return $form;
+}
+
+/**
+ * Get the allowed child types for the given parent.
+ */
+function nodehierarchy_get_allowed_child_types($parent_type) {
+  // TODO: is this function still required? Any reasonn to think we may need array_filter($config->get...)?
+  $config =  \Drupal::config('nodehierarchy.settings');
+  $child_types = $config->get('nh_allowchild_'.$parent_type);
+  return array_unique($child_types);
+}
+
+/**
+ * Get the parent selector pulldown.
+ */
+function _nodehierarchy_get_parent_selector($child_type, $parent, $exclude = NULL) {
+  // Allow other modules to create the pulldown first.
+  // Modules implementing this hook, should return the form element inside an array with a numeric index.
+  // This prevents module_invoke_all from merging the outputs to make an invalid form array.
+  $out = \Drupal::moduleHandler()->invokeAll('nodehierarchy_get_parent_selector', $child_type, $parent, $exclude);
+  //$out = module_invoke_all('nodehierarchy_get_parent_selector', $child_type, $parent, $exclude);
+
+  if ($out) {
+    // Return the last element defined (any others are thrown away);
+    return end($out);
+  }
+
+  $default_value = _nodehierarchy_get_parent_selector_value($parent);
+  dpm('parent: '. $parent);
+  dpm('default value: '.$default_value);
+  dpm('child type: '.$child_type);
+
+  // If no other modules defined the pulldown, then define it here.
+  $options = array(0 => '-- ' . t('NONE') . ' --');
+  $items = _nodehierarchy_parent_options($child_type, $exclude);
+  dpm($items);
+
+  foreach ($items as $key => $item) {
+    $options[$key] = _nodehierarchy_parent_option_title($item);
+  }
+
+  // Make sure the current value is enabled so items can be re-saved.
+  $items[$default_value]['disabled'] = 0;
+
+  $out = array(
+    '#type' => 'select',
+    '#title' => t('Parent Node'),
+    '#default_value' => $default_value,
+    '#attributes' => array('class' => array('nodehierarchy-parent-selector')),
+    '#options' => $options,
+    '#items' => $items,
+    '#theme' => 'nodehierarchy_parent_selector',
+    '#element_validate' => array('nodehierarchy_parent_selector_validate', 'nodehierarchy_parent_selector_to_nid'),
+  );
+  return $out;
+}
+
+/**
+ * Get the parent selector key from a menu_link array. Returns either nid:mlid or nid
+ */
+function _nodehierarchy_get_parent_selector_value($parent) {
+  $out = 0;
+  // If the parent value is a node ID, laod the menu_link for that node.
+  if (is_numeric($parent)) {
+    $out = trim($parent . ':' . _nodehierarchy_get_node_mlid($parent), ':');
+  }
+  elseif (is_numeric($parent['mlid'])) {
+    $out = $parent['nid'] . ':' . $parent['mlid'];
+  }
+  elseif (!empty($parent['nid'])) {
+    $out = $parent['nid'];
+  }
+  return $out;
+}
+
+/**
+ * Return a list of menu items that are valid possible parents for the given node.
+ */
+function _nodehierarchy_parent_options($child_type, $exclude = NULL) {
+  static $options = array();
+
+  // If these options have already been generated, then return that saved version.
+  if (isset($options[$child_type][$exclude])) {
+    return $options[$child_type][$exclude];
+  }
+
+  // Get all the possible parents.
+  $types = nodehierarchy_get_allowed_parent_types();
+  dpm($types);
+  foreach ($types as $i => $type) {
+    $types[$i] = "'$type'";
+  }
+
+  // Get the items with menu links.
+  $result = $items = $mlids = array();
+//  if ($types) {
+//    $result = db_query(
+//      "SELECT n.nid, n.type as type, n.title as title, n.uid as uid, ml.*, IF(depth IS NULL, 1, depth) as depth, IF(ml.mlid IS NULL, CONCAT('nid:', n.nid), ml.mlid) as mlid, ml.mlid as linkid
+//                           FROM {node} n
+//                      LEFT JOIN {nodehierarchy_menu_links} nh_parent
+//                             ON nh_parent.nid = n.nid
+//                      LEFT JOIN {menu_links} ml
+//                             ON ml.mlid = nh_parent.mlid
+//                          WHERE (ml.module = 'nodehierarchy' OR ml.module IS NULL)
+//                            AND n.type IN (" . implode(', ', $types) . ")
+//                          ORDER BY IF(p1 IS NULL, n.created, 0) ASC, p1 ASC, p2 ASC, p3 ASC, p4 ASC, p5 ASC, p6 ASC, p7 ASC, p8 ASC, p9 ASC",
+//      array(),
+//      array('fetch' => \PDO::FETCH_ASSOC)
+//    );
+//  }
+
+  // Flatten tree to a list of options.
+  $parent_types = nodehierarchy_get_allowed_parent_types($child_type);
+  $out = nodehierarchy_tree_data($result, $exclude, $parent_types);
+
+  // Static caching to prevent these options being built more than once.
+  $options[$child_type][$exclude] = $out;
+  return $out;
+}
+
+/**
+ * Get the allowed parent types for the given child type.
+ */
+function nodehierarchy_get_allowed_parent_types($child_type = NULL) {
+  static $allowed_types = array();
+  $config =  \Drupal::config('nodehierarchy.settings');
+
+  // Static cache the results because this may be called many times for the same type on the menu overview screen.
+  if (!isset($alowed_types[$child_type])) {
+    $parent_types = array();
+    foreach (node_type_get_types() as $type => $info) {
+
+      $allowed_children = array_filter($config->get('nh_allowchild_' . $type, array()));
+      if ((empty($child_type) && !empty($allowed_children)) || (in_array($child_type, (array) $allowed_children, TRUE))) {
+        $parent_types[] = $type;
+      }
+    }
+    $allowed_types[$child_type] = array_unique($parent_types);
+    return $allowed_types[$child_type];
+  }
+  return $allowed_types;
+}
+
+/**
+ * Build the data representing a menu tree.
+ *
+ * @param $result
+ *   The database result.
+ * @param $parents
+ *   An array of the plid values that represent the path from the current page
+ *   to the root of the menu tree.
+ * @param $depth
+ *   The depth of the current menu tree.
+ * @return
+ *   See menu_tree_page_data for a description of the data structure.
+ */
+function nodehierarchy_tree_data($result = NULL, $exclude = NULL, $allowed_types, $depth = 1) {
+  list(, $tree) = _nodehierarchy_tree_data($result, $exclude, $allowed_types, $depth);
+  return $tree;
+}
+
+/**
+ * Recursive helper function to build the data representing a menu tree.
+ *
+ * The function is a bit complex because the rendering of an item depends on
+ * the next menu item. So we are always rendering the element previously
+ * processed not the current one.
+ */
+function _nodehierarchy_tree_data($result, $exclude = NULL, $allowed_types, $depth, $previous_element = array()) {
+  $remnant = NULL;
+  $tree = array();
+  $enabled_tree = TRUE;
+  $exclude = NULL;
+
+  foreach ($result as $item) {
+    if ($exclude !== $item['nid']) {
+      $item['disabled'] = in_array($item['type'], $allowed_types) ? FALSE : TRUE;
+//      $item['disabled'] = $item['disabled'] || (!node_access('update', $item) && !user_access('create child of any parent'));
+      $enabled_tree = $enabled_tree || empty($item['disabled']) || (isset($previous_element['disabled']) && empty($previous_element['disabled']));
+
+      // The current item is the first in a new submenu.
+      if ($item['depth'] > $depth) {
+        // _menu_tree returns an item and the menu tree structure.
+        list($item, $below) = _nodehierarchy_tree_data($result, $exclude, $allowed_types, $item['depth'], $item);
+        if ($previous_element && ($below || !$previous_element['disabled'])) {
+          $tree[_nodehierarchy_get_parent_selector_value($previous_element)] = $previous_element;
+        }
+        $tree += $below;
+
+        // We need to fall back one level.
+        if (!isset($item) || $item['depth'] < $depth) {
+          return $enabled_tree ? array($item, $tree) : array($item, array());
+        }
+        // This will be the link to be output in the next iteration.
+        $previous_element = $item;
+      }
+      // We are at the same depth, so we use the previous element.
+      elseif ($item['depth'] == $depth) {
+        if ($previous_element && !$previous_element['disabled']) {
+          // Only the first time.
+          $tree[_nodehierarchy_get_parent_selector_value($previous_element)] = $previous_element;
+        }
+        // This will be the link to be output in the next iteration.
+        $previous_element = $item;
+      }
+      // The submenu ended with the previous item, so pass back the current item.
+      else {
+        $remnant = $item;
+        break;
+      }
+    }
+  }
+  if ($previous_element && !$previous_element['disabled']) {
+    // We have one more link dangling.
+    $tree[_nodehierarchy_get_parent_selector_value($previous_element)] = $previous_element;
+  }
+  return $enabled_tree ? array($remnant, $tree) : array($remnant, array());
+}
+
+/**
+ * Get the menu link id for the given node.
+ */
+function _nodehierarchy_get_node_mlids($nid) {
+  $out = array();
+  $result = db_query("SELECT mlid FROM {menu_links} WHERE module = :module AND link_path = :link_path ORDER BY mlid", array(':module' => 'nodehierarchy', ':link_path' => 'node/' . $nid), array('fetch' => \PDO::FETCH_ASSOC));
+  foreach ($result as $link) {
+    $out[] = $link['mlid'];
+  }
+  return $out;
+}
+
+/**
+ * Get the primary menu link id for the given node. Optionally create one if needed.
+ */
+function _nodehierarchy_get_node_mlid($nid, $create = FALSE) {
+  $out = NULL;
+
+  if ($nid) {
+    $out = db_query("SELECT mlid FROM {menu_links} WHERE module = :module AND link_path = :link_path ORDER BY mlid LIMIT 1", array(':module' => 'nodehierarchy', ':link_path' => 'node/' . $nid))->fetchField();
+
+    // Create a new menu item if needed.
+    if ($create && !$out) {
+      $menu_link = _nodehierarchy_create_node_menu_link($nid);
+      $out = $menu_link['mlid'];
+    }
+  }
+  return $out;
+}
+
+/**
+ * Count the children of the given node.
+ */
+function _nodehierarchy_get_children_count($parent) {
+  if ($plid = _nodehierarchy_get_node_mlid($parent)) {
+    return _nodehierarchy_get_children_count_plid($plid);
+  }
+  return 0;
+}
+/**
+ * Count the children of the given menu link.
+ */
+function _nodehierarchy_get_children_count_plid($plid) {
+  if ($plid) {
+    $out = db_query("SELECT count(mlid) as children_count
+                     FROM {menu_links} WHERE module = :module AND plid = :plid
+                     AND router_path = :router_path", array(':module' => 'nodehierarchy', ':plid' => $plid, ':router_path' => 'node/%'))->fetchField();
+    return $out;
+  }
+  return 0;
+}
+
+/**
+ * Get the children of the given node.
+ */
+function _nodehierarchy_get_children_menu_links($pnid, $limit = FALSE) {
+  $children = array();
+//  $query = "
+//       SELECT nh_menu_links.*
+//         FROM {node} node
+//    LEFT JOIN {nodehierarchy_menu_links} nodehierarchy_menu_links ON node.nid = nodehierarchy_menu_links.nid
+//    LEFT JOIN {menu_links} nh_menu_links ON nodehierarchy_menu_links.mlid = nh_menu_links.mlid
+//    LEFT JOIN {nodehierarchy_menu_links} nh_parent ON nh_menu_links.plid = nh_parent.mlid
+//        WHERE (nh_parent.nid = :pnid)
+//     ORDER BY nh_menu_links.weight ASC";
+
+//  if ($limit) {
+//    $query .= " LIMIT $limit";
+//  }
+//
+//  $result = db_query($query, array(':pnid' => $pnid), array('fetch' => PDO::FETCH_ASSOC));
+//  foreach ($result as $item) {
+//    $item['pnid'] = $pnid;
+//    $children[] = _nodehierarchy_prepare_menu_link($item);
+//  }
+  return $children;
+}
+
+/**
+ * Get the menu link for the given node.
+ */
+function _nodehierarchy_create_node_menu_link($nid) {
+  $node = node_load($nid);
+  $menu_link = _nodehierarchy_default_menu_link($node->nid);
+  $menu_link['link_title'] = $node->title;
+  _nodehierarchy_save_menu_link($menu_link);
+  return $menu_link;
+}
+
+/**
+* Save a menu link with changes if needed.
+ */
+function _nodehierarchy_save_menu_link(&$menu_link) {
+  // Item is being moved to a new parent.
+  $old_plid = _nodehierarchy_get_plid_from_mlid($menu_link['mlid']);
+  if ($old_plid !== (int) $menu_link['plid']) {
+    // Get the next weight for the new parent.
+    $menu_link['weight'] = _nodehierarchy_get_menu_link_next_child_weight($menu_link['plid']);
+  }
+
+  // Save the parent
+  $menu_link->save();
+  // Create the link reference.
+  _nodehierarchy_create_nodehierarchy_menu_link_reference($menu_link);
+}
+
+/**
+ * Get the default menu link values for a new nodehierarchy menu link.
+ */
+function _nodehierarchy_default_menu_link($nid = NULL, $plid = 0, $enabled = FALSE) {
+  return array(
+    'mlid' => NULL,
+    'module' => 'nodehierarchy',
+    'menu_name' => variable_get('nodehierarchy_default_menu_name', 'navigation'),
+    'router_path' => 'node/%',
+    'link_path' => !empty($nid) ? 'node/' . $nid : '',
+    'hidden' => !$enabled,
+    'enabled' => $enabled,
+    'plid' => $plid,
+    'weight' => 0,
+    'nid' => !empty($nid) ? $nid : NULL,
+    'customized' => 0,
+  );
+}
+
+/**
+ * Get the parent link ID from the given menu link id.
+ */
+function _nodehierarchy_get_plid_from_mlid($mlid) {
+  if ($mlid) {
+    return (int) db_query("SELECT plid FROM {menu_links} WHERE mlid = :mlid", array(':mlid' => $mlid))->fetchField();
+  }
+  return NULL;
+}
+/**
+ * Get the next child weight for a given plid.
+ */
+function _nodehierarchy_get_menu_link_next_child_weight($plid) {
+  $out = db_query("SELECT MAX(weight) FROM {menu_links} WHERE module = :module AND plid = :plid", array(':module' => 'nodehierarchy', ':plid' => $plid))->fetchField();
+  if ($out !== NULL) {
+    return $out + 1;
+  }
+  return 0;
+}
+
+/**
+ * Create a link from the node to its menu item.
+ *
+ * This pivot table can be used for more efficiently joining to the menu links table for views integration.
+ */
+function _nodehierarchy_create_nodehierarchy_menu_link_reference($menu_link) {
+  if (!db_query("SELECT mlid FROM {nodehierarchy_menu_links} WHERE mlid = :mlid", array(':mlid' => $menu_link['mlid']))->fetchField()) {
+    //drupal_write_record('nodehierarchy_menu_links', $menu_link);
+    \Drupal::database()->merge('nodehierarchy_menu_links', $menu_link);
+  }
+}
+
+/**
+ * Get the node edit form for nodehierarchy.
+ */
+function nodehierarchy_nodehierarchy_node_form($node) {
+  $config = \Drupal::config('nodehierarchy.settings');
+  // If this node type can be a child.
+  if (nodehierarchy_node_can_be_child($node) || nodehierarchy_node_can_be_parent($node)) {
+    // Save the old value of the node's parent.
+    $value = empty($node->nodehierarchy_old_menu_links) ? null : $node->nodehierarchy_old_menu_links;
+    $form['nodehierarchy_old_menu_links'] = array(
+      '#type' => 'value',
+      '#value' => $value,
+    );
+
+    $user = \Drupal::currentUser();
+    // if the current user can edit the current node's hierarchy settings (or create new children)
+    $can_set_parent =
+      $user->hasPermission('edit all node parents') ||
+      ($node->nid == NULL && $user->hasPermission('create child nodes')) ||
+      ($node->uid == $user->id() && $user->hasPermission('edit own node parents'));
+
+    if ($can_set_parent) {
+      //drupal_add_js(drupal_get_path("module", "nodehierarchy") . '/nodehierarchy.js');
+
+      $form['nodehierarchy_menu_links'] = array('#tree' => TRUE);
+      $multiple = $config->get('nh_multiple_'.$node->type);//variable_get('nh_multiple_' . $node->type, 0);
+
+      $count = 2;
+
+      foreach ((array)$node->nodehierarchy_menu_links as $key => $menu_link) {
+        $form['nodehierarchy_menu_links'][$key] = _nodehierarchy_node_parent_form_items($node, $key, $menu_link);
+        if ($multiple && $key == 0) {
+          $form['nodehierarchy_menu_links'][$key]['#title'] = t('Primary Parent');
+          $form['nodehierarchy_menu_links'][$key]['#description'] = t('The primary parent is the one which will appear in this node\'s breadcrumb trail and whose menu item will be expanded for this node.');
+        }
+        elseif ($multiple) {
+          $form['nodehierarchy_menu_links'][$key]['#title'] = t('Parent !num', array('!num' => $count++));
+        }
+      }
+      if ($multiple) {
+        $form['nodehierarchy_menu_links'][$key + 1] = _nodehierarchy_node_parent_form_items($node, $key + 1, _nodehierarchy_default_menu_link(isset($node->nid) ? $node->nid : NULL));
+        $form['nodehierarchy_menu_links'][$key + 1]['#title'] = t('Add a parent');
+        $form['nodehierarchy_menu_links'][$key + 1]['#collapsible'] =  $form['nodehierarchy_menu_links'][$key + 1]['#collapsed'] = TRUE;
+        $form['nodehierarchy_menu_links'][$key + 1]['add_another'] = array(
+          '#type' => 'submit',
+          '#value' => t('Add'),
+          '#weight' => 10,
+          '#submit' => array('nodehierarchy_node_form_add_parent'),
+        );
+        unset($form['nodehierarchy_menu_links'][$key + 1]['remove']);
+      }
+    }
+  }
+  return $form;
+}
+
+/**
+ * Can a node be a child.
+ */
+function nodehierarchy_node_can_be_child($node) {
+  $type = is_object($node) ? $node->type : $node;
+  return count(nodehierarchy_get_allowed_parent_types($type));
+}
+
+/**
+ * Can a node be a parent.
+ */
+function nodehierarchy_node_can_be_parent($node) {
+  $type = is_object($node) ? $node->type : $node;
+  return count(nodehierarchy_get_allowed_child_types($type));
+}
+
+/**
+ * Get the parent and menu setting for items for a given parent menu_link.
+ */
+function _nodehierarchy_node_parent_form_items($node, $key, $menu_link) {
+
+  $config = \Drupal::config('nodehierarcyy.config');
+  // Wrap the item in a div for js purposes
+  $item = array(
+    '#type' => 'fieldset',
+    '#title' => t('Parent'),
+    '#tree' => TRUE,
+    '#prefix' => '<div class="nodehierarchy-menu-link">',
+    '#suffix' => '</div>',
+  );
+
+  // If a node can be a child of another add a selector to pick the parent. Otherwise set the parent to 0.
+  if (nodehierarchy_node_can_be_child($node)) {
+    $item['pnid'] = _nodehierarchy_get_parent_selector($node->type, empty($menu_link['pnid']) ? null : $menu_link['pnid'], empty($node->nid) ? null : $node->nid);
+    $item['pnid']['#weight'] = -1;
+  }
+  else {
+    $item['pnid'] = array(
+      '#type' => 'value',
+      '#value' => 0,
+    );
+  }
+
+  $item['mlid'] = array(
+    '#type' => 'value',
+    '#value' => $menu_link['mlid'],
+  );
+  $create_menu = $config->get('nh_createmenu_'.$node->type);//variable_get('nh_createmenu_' . $node->type, 'optional_no');
+  // Prevent menus from being created for non-primary parents. That prevernts weirdness
+  // caused by Drupal 6 core's inconsisnency of defining the active menu trail when there
+  // menu items pointing to the same node.
+  // TODO: find a way around the weirdness and reenable this.
+  if ($key > 0) {
+    $create_menu = 'never';
+  }
+  if (
+    (\Drupal::currentUser()->hasPermission('administer menus') || \Drupal::currentUser()->hasPermission('customize nodehierarchy menus')) &&
+    ($create_menu !== 'never')
+  ) {
+    if ($create_menu == 'optional_yes' || $create_menu == 'optional_no') {
+      $item['enabled'] = array(
+        '#type' => 'checkbox',
+        '#title' => 'Show in menu',
+        '#attributes' => array('class' => array('nodehierarchy-menu-enable')),
+        '#default_value' => $menu_link['enabled'],
+        '#description' => t('All of this node\'s ancestors must have this option selected as well for this item to show in the menu.'),
+      );
+    }
+
+    $item['menu_settings'] = array(
+      '#prefix' => '<div class="nodehierarchy-menu-settings">',
+      '#suffix' => '</div>',
+      '#tree' => FALSE,
+    );
+    $item['menu_settings']['menu_name'] = array(
+      '#type' => 'select',
+      '#title' => 'Menu',
+      '#prefix' => '<div class="nodehierarchy-menu-name">',
+      '#suffix' => '</div>',
+      '#options' => array(),//menu_get_menus(),
+      '#default_value' => $menu_link['menu_name'],
+      '#description' => t('If you do not pick a parent for this node its menu item will appear at the top level of this menu.'),
+      '#parents' => array('nodehierarchy_menu_links', $key, 'menu_name'),
+    );
+    $item['menu_settings']['customized'] = array(
+      '#type' => 'checkbox',
+      '#attributes' => array('class' => array('nodehierarchy-menu-customize')),
+      '#title' => 'Customize menu title',
+      '#default_value' => $menu_link['customized'],
+      '#return_value' => 1,
+      '#parents' => array('nodehierarchy_menu_links', $key, 'customized'),
+      '#description' => t('Specify a name for this node\'s menu item that is something other than the node\'s title. Leave unchecked to use the node\'s title.'),
+    );
+    $item['menu_settings']['link_title'] = array(
+      '#type' => 'textfield',
+      '#prefix' => '<div class="nodehierarchy-menu-title">',
+      '#suffix' => '</div>',
+      '#title' => t('Menu link title'),
+      '#default_value' => empty($menu_link['link_title']) ? '' : $menu_link['link_title'],
+      '#description' => t('The link text corresponding to this item that should appear in the menu.'),
+      '#parents' => array('nodehierarchy_menu_links', $key, 'link_title'),
+    );
+    $item['menu_settings']['expanded'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Expand Menu Item'),
+      '#default_value' => empty($menu_link['expanded']) ? '' : $menu_link['expanded'],
+      '#description' => t('If selected and this menu item has children, the menu will always appear expanded.'),
+      '#parents' => array('nodehierarchy_menu_links', $key, 'expanded'),
+    );
+    $item['menu_settings']['description'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Menu Item Description'),
+      '#default_value' => isset($menu_link['options']['attributes']['title']) ? $menu_link['options']['attributes']['title'] : '',
+      '#rows' => 1,
+      '#description' => t('The description displayed when hovering over a menu item. Hold your mouse over <a href="#" title="This is where the description will appear.">this link</a> for a demonstration.'),
+      '#parents' => array('nodehierarchy_menu_links', $key, 'description'),
+    );
+  }
+  // Add the delete menu item checkbox if this is a pre-existing parent item.
+  if ($key > 0) {
+    $item['remove'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Remove this parent'),
+      '#default_value' => isset($menu_link['remove']) ? $menu_link['remove'] : '',
+      '#description' => t('Remove this parent from this node. This will not delete the parent node.'),
+      '#attributes' => array('class' => array('nodehierarchy-parent-delete')),
+    );
+  }
+
+  // Add the uneditable values so they're saved.
+  foreach ($menu_link as $i => $value) {
+    if (!isset($item[$i]) && !isset($item['menu_settings'][$i])) {
+      $item[$i] = array(
+        '#type' => 'value',
+        '#default_value' => $value,
+        '#parents' => array('nodehierarchy_menu_links', $key, $i),
+      );
+    }
+  }
+
+  return $item;
 }
 
 /* Helper Functions */

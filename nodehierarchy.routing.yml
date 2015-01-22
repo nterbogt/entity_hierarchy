@@ -4,4 +4,15 @@ nodehierarchy.admin:
     _form: '\Drupal\nodehierarchy\Form\AdminSettingsForm'
     _title: 'Node Hierarchy'
   requirements: 
-    _permission: 'administer site configuration'
+    _permission: 'administer hierarchy'
+nodehierarchy.nodehierarchy_node_load:
+  path: '/node/{node}/children'
+  defaults:
+    _title_callback: '\Drupal\nodehierarchy\Controller\NodeHierarchyController::getTitle'
+    _form: '\Drupal\nodehierarchy\Form\NodeHierarchyChildForm'
+    _controller: '\Drupal\nodehierarchy\Controller\NodeHierarchyController::nodeLoad'
+    _title: 'Children'
+  requirements:
+    _permission: 'create child nodes'
+  options:
+    _node_operation_route: TRUE

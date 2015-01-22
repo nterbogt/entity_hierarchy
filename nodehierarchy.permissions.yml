@@ -17,3 +17,6 @@ customize nodehierarchy menus:
 create child of any parent:
   title: 'Create child of any parent'
   description: 'Add a child to any other node'
+administer content type hierarchy:
+  title: 'Administer content type hierarchy'
+  description: 'Administer hierarchy for individual content types'
