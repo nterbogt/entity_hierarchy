@@ -9,9 +9,8 @@ namespace Drupal\nodehierarchy\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-//use Drupal\node\NodeInterface;
 use Drupal\Core\Url;
-use \Drupal\node\Entity\Node;
+use Drupal\node\Entity\Node;
 
 /**
  * Defines a form for Node Hierarchy Admin settings.
@@ -29,15 +28,16 @@ class NodeHierarchyChildForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    $config = $this->config('nodehierarchy.child.settings');
+    // $config = $this->config('nodehierarchy.child.settings');
 
     // Load the node object associated with this form
+    // Should we not use $form_state->getFormObject()->getEntity(); instead?
     $url = \Drupal\Core\Url::fromRoute('<current>');
     $curr_path = $url->toString();
     $path = explode('/', $curr_path);
     $nid = $path[2];
 
-    $node = Node::load($path[2]);
+    $node = Node::load($path[$nid]);
     $node_type = $node->getType();
 
     $children_links = _nodehierarchy_get_children_menu_links($nid, FALSE);

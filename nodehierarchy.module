@@ -9,9 +9,17 @@
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Entity;
-use Drupal\Core\Menu\Form\MenuLinkFormInterface;
-use Drupal\Core\Menu\MenuLinkInterface;
-use Drupal\Core\Menu\MenuParentFormSelectorInterface;
+use Drupal\Core\Render\Element;
+use Drupal\node\Entity\Node;
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Url;
+use Drupal\node\NodeInterface;
+use Drupal\node\NodeTypeInterface;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Template\Attribute;
+use Drupal\Core\Extension\Extension;
 
 /**
  * Implements hook_help().
@@ -61,8 +69,8 @@ function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_
     case $node_type:
       // nodehierarchy_set_breadcrumbs($node, TRUE);
       // Load the node object associated with this form
-      $node = $form_state->getFormObject();//->getEntity();
-      dpm($node);
+      $node = $form_state->getFormObject()->getEntity();
+//      dpm($node);
 //      dpm(array_keys($form));
       $hierarchy_form = \Drupal::moduleHandler()->invokeAll('nodehierarchy_node_form', array($node));
 
@@ -93,10 +101,12 @@ function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_
           $items[] = /*check_plain*/($child['link_title']);
         }
         if ($count > 10) {
-          $items[] = l(t('See all !count children', array('!count' => $count)), 'node/' . $form['nid']['#value'] . '/children');
+          $items[] = $this->l(t('See all !count children', array('!count' => $count)), 'node/' . $form['nid']['#value'] . '/children');
         }
         $list = /*theme('item_list',*/ array('items' => $items)/*)*/;
-        $description = format_plural($count, 'This node has @count child. Check this box to delete it and all of its descendants as well.', 'This node has @count children. Check this box to delete them and all of their descendants as well.' );
+        $description = \Drupal::translation()->formatPlural($count,
+          'This node has @count child. Check this box to delete it and all of its descendants as well.',
+          'This node has @count children. Check this box to delete them and all of their descendants as well.' );
         $description .= t('<p>These children and their decendants will be deleted:!list<p>', array('!list' => $list));
         $form['nodehierarchy_delete_children'] = array(
           '#type' => 'checkbox',
@@ -163,7 +173,8 @@ function _nodehierarchy_get_node_type_settings_form($key, $append_key = FALSE) {
   // If we need to append the node type key to the form elements, we do so.
   if ($append_key) {
     // Appending the key does not work recursively, so fieldsets etc. are not supported.
-    foreach (element_children($form) as $form_key) {
+    $children = \Drupal\Core\Render\Element::children($form);
+    foreach ($children as $form_key) {
       $form[$form_key . '_' . $key] = $form[$form_key];
       unset($form[$form_key]);
     }
@@ -299,7 +310,8 @@ function nodehierarchy_get_allowed_parent_types($child_type = NULL) {
   // Static cache the results because this may be called many times for the same type on the menu overview screen.
   if (!isset($alowed_types[$child_type])) {
     $parent_types = array();
-    foreach (node_type_get_types() as $type => $info) {
+    $types = \Drupal\node\Entity\NodeType::loadMultiple();
+    foreach ($types as $type => $info) {
 
       $allowed_children = array_filter($config->get('nh_allowchild_' . $type, array()));
       if ((empty($child_type) && !empty($allowed_children)) || (in_array($child_type, (array) $allowed_children, TRUE))) {
@@ -470,9 +482,9 @@ function _nodehierarchy_get_children_menu_links($pnid, $limit = FALSE) {
  * Get the menu link for the given node.
  */
 function _nodehierarchy_create_node_menu_link($nid) {
-  $node = node_load($nid);
-  $menu_link = _nodehierarchy_default_menu_link($node->nid);
-  $menu_link['link_title'] = $node->title;
+  $node = Node::load($nid);
+  $menu_link = _nodehierarchy_default_menu_link($node->getTitle());
+  $menu_link['link_title'] = $node->getTitle();
   _nodehierarchy_save_menu_link($menu_link);
   return $menu_link;
 }
@@ -498,10 +510,11 @@ function _nodehierarchy_save_menu_link(&$menu_link) {
  * Get the default menu link values for a new nodehierarchy menu link.
  */
 function _nodehierarchy_default_menu_link($nid = NULL, $plid = 0, $enabled = FALSE) {
+  $config = \Drupal::config('nodehierarchy_default_menu_name');
   return array(
     'mlid' => NULL,
     'module' => 'nodehierarchy',
-    'menu_name' => variable_get('nodehierarchy_default_menu_name', 'navigation'),
+    'menu_name' => $config->get('nodehierarchy_default_menu_name'),//variable_get('nodehierarchy_default_menu_name', 'navigation'),
     'router_path' => 'node/%',
     'link_path' => !empty($nid) ? 'node/' . $nid : '',
     'hidden' => !$enabled,
