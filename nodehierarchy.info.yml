@@ -3,3 +3,6 @@ description: A module to make nodes hierarchical.
 package: "Node Hierarchy"
 core: 8.x
 type: module
+dependencies:
+  - node
+configure: nodehierarchy.settings

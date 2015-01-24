@@ -8,37 +8,45 @@
  * Implements hook_schema().
  */
 function nodehierarchy_schema() {
-  $schema['nodehierarchy_menu_links'] = array(
+  $schema['nodehierarchy'] = array(
+    'description' => 'The hierarchical structure of the nodes.',
     'fields' => array(
+      'hid' => array(
+        'description' => 'A unique identifier for this relationship.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'pnid' => array(
+        'description' => 'The {node}.nid of the parent.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'cnid' => array(
+        'description' => 'The {node}.nid whose parent is being defined.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'pweight' => array(
+        'description' => 'The weight of the parent.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'cweight' => array(
+        'description' => 'The weight of the child.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
       'mlid' => array(
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-        'description' => "The book page's {menu_links}.mlid.",
-      ),
-      'nid' => array(
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'description' => 'The {node}.nid whose parent is being defined.',
+        'description' => "The node's {menu_links}.mlid if any.",
       ),
     ),
-    'primary key' => array('mlid'),
-    'indexes' => array(
-      'nid' => array('nid'),
-    ),
+    'primary key' => array('hid'),
   );
-  return $schema;
-}
 
-/**
- * Implements hook uninstall().
- */
-function nodehierarchy_uninstall() {
-  foreach (node_type_get_types() as $key => $type) {
-    variable_del('nh_allowchild_' . $key);
-    variable_del('nh_parent_' . $key);
-    variable_del('nh_defaultparent_' . $key);
-  }
+  return $schema;
 }
