@@ -64,6 +64,13 @@ class HierarchyManager implements HierarchyManagerInterface {
   protected $hierarchyTreeFlattened;
 
   /**
+   * The entity type
+   *
+   * @var string
+   */
+  protected $childType;
+
+  /**
    * Constructs a HierarchyManager object.
    */
   public function __construct(EntityManagerInterface $entity_manager, TranslationInterface $translation, ConfigFactoryInterface $config_factory, HierarchyOutlineStorageInterface $hierarchy_outline_storage) {
@@ -154,9 +161,9 @@ class HierarchyManager implements HierarchyManagerInterface {
     if ($form_state->hasValue('hierarchy')) {
       $node->hierarchy = $form_state->getValue('hierarchy');
     }
-    $form['hierarchy'] = array(
+    $form['old-hierarchy'] = array(
       '#type' => 'details',
-      '#title' => $this->t('Hierarchy outline'),
+      '#title' => $this->t('Set Hierarchy Page'),
       '#weight' => 10,
       '#open' => !$collapsed,
       '#group' => 'advanced',
@@ -169,17 +176,17 @@ class HierarchyManager implements HierarchyManagerInterface {
       '#tree' => TRUE,
     );
     foreach (array('nid', 'has_children', 'original_hid', 'parent_depth_limit') as $key) {
-      $form['hierarchy'][$key] = array(
+      $form['old-hierarchy'][$key] = array(
         '#type' => 'value',
         '#value' => $node->hierarchy[$key],
       );
     }
 
-    $form['hierarchy']['pid'] = $this->addParentSelectFormElements($node->hierarchy);
+    $form['old-hierarchy']['pid'] = $this->addParentSelectFormElements($node->hierarchy);
 
     // @see \Drupal\hierarchy\Form\HierarchyAdminEditForm::hierarchyAdminTableTree(). The
     // weight may be larger than 15.
-    $form['hierarchy']['weight'] = array(
+    $form['old-hierarchy']['weight'] = array(
       '#type' => 'weight',
       '#title' => $this->t('Weight'),
       '#default_value' => $node->hierarchy['weight'],
@@ -209,7 +216,7 @@ class HierarchyManager implements HierarchyManagerInterface {
     }
 
     // Add a drop-down to select the destination hierarchy.
-    $form['hierarchy']['hid'] = array(
+    $form['old-hierarchy']['hid'] = array(
       '#type' => 'select',
       '#title' => $this->t('Hierarchy'),
       '#default_value' => $node->hierarchy['hid'],
@@ -226,6 +233,183 @@ class HierarchyManager implements HierarchyManagerInterface {
       ),
     );
     return $form;
+  }
+
+  public function addHierarchyFormElement(array $form, FormStateInterface $form_state, NodeInterface $node, AccountInterface $account, $collapsed = TRUE) {
+    $access = $account->hasPermission('administer hierarchy');
+    $form['hierarchy'] =
+      array(
+        '#type' => 'details',
+        '#title' => t('Page Hierarchy'),
+        '#group' => 'advanced',
+        '#open' => !$collapsed, //empty($form_state['nodehierarchy_expanded']) ? TRUE : FALSE,
+        '#weight' => 10,
+        '#access' => $access,
+        '#tree' => FALSE,
+      );
+    $form['nodehierarchy']['nodehierarchy_parents'] = array('#tree' => TRUE);
+
+    foreach ((array)$node->nodehierarchy_parents as $key => $parent) {
+      $form['hierarchy']['nodehierarchy_parents'][$key] = $this->hierarchyNodeParentFormItems($node, $parent, $key);
+      // Todo: determine if still needed/functionality
+      \Drupal::moduleHandler()->alter('nodehierarchy_node_parent_form_items', $form['hierarchy']['nodehierarchy_parents'][$key], $node, $parent);
+    }
+    \Drupal::moduleHandler()->alter('nodehierarchy_node_parent_form_items_wrapper', $form['hierarchy'], $form_state, $node);
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hierarchyCanBeChild(NodeInterface $node) {
+    $type = is_object($node) ? $node->getType() : $node;
+    return count($this->hierarchyGetAllowedParentTypes($type));
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hierarchyCanBeParent(NodeInterface $node) {
+    $type = is_object($node) ? $node->getType() : $node;
+    return count($this->hierarchyGetAllowedChildTypes($type));
+  }
+
+  /**
+   * Get the parent and menu setting for items for a given parent menu_link.
+   *
+   * {@inheritdoc}
+   */
+  private function hierarchyNodeParentFormItems(NodeInterface $node, $parent) {
+    // Wrap the item in a div for js purposes
+    $item = array(
+      '#type' => 'fieldset',
+      '#title' => t('Parent'),
+      '#tree' => TRUE,
+      '#prefix' => '<div class="nodehierarchy-parent">',
+      '#suffix' => '</div>',
+    );
+
+    $pnid = $parent->pnid;
+    $nid = $node->id();
+    // If a node can be a child of another add a selector to pick the parent. Otherwise set the parent to 0.
+    if ($this->hierarchyCanBeChild($node)) {
+      $item['pnid'] = $this->hierarchyGetParentSelector($node->getType(), empty($pnid) ? null : $pnid, empty($nid) ? null : $nid);
+      $item['pnid']['#weight'] = -1;
+    }
+    else {
+      $item['pnid'] = array(
+        '#type' => 'value',
+        '#value' => 0,
+      );
+    }
+
+    $item['nhid'] = array(
+      '#type' => 'value',
+      '#value' => isset($parent->nhid) ? $parent->nhid : NULL,
+    );
+    $item['cweight'] = array(
+      '#type' => 'value',
+      '#value' => isset($parent->cweight) ? $parent->cweight : NULL,
+    );
+    $item['pweight'] = array(
+      '#type' => 'value',
+      '#value' => isset($parent->pweight) ? $parent->pweight : NULL,
+    );
+
+    if (!empty($parent->nhid)) {
+      $item['remove'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Remove this parent'),
+        '#weight' => 100,
+      );
+    }
+
+    return $item;
+  }
+
+  /**
+   * Get the allowed parent types for the given child type.
+   */
+  public function hierarchyGetAllowedParentTypes($child_type = NULL) {
+    // Static cache the results because this may be called many times for the same type on the menu overview screen.
+    static $allowed_types = array();
+    $config =  \Drupal::config('nodehierarchy.settings');
+
+    if (!isset($allowed_types[$child_type])) {
+      $parent_types = array();
+      $types = \Drupal\node\Entity\NodeType::loadMultiple();
+      foreach ($types as $type => $info) {
+
+        $allowed_children = array_filter($config->get('nh_allowchild_' . $type, array()));
+        if ((empty($child_type) && !empty($allowed_children)) || (in_array($child_type, (array) $allowed_children, TRUE))) {
+          $parent_types[] = $type;
+        }
+      }
+      $allowed_types[$child_type] = array_unique($parent_types);
+    }
+    return $allowed_types[$child_type];
+  }
+
+  /**
+   * Get the allowed child types for the given parent.
+   */
+  private function hierarchyGetAllowedChildTypes($parent_type) {
+    // TODO: is this function still required? Any reason to think we may need array_filter($config->get...)?
+    $config =  \Drupal::config('nodehierarchy.settings');
+    $child_types = $config->get('nh_allowchild_'.$parent_type);
+    return array_unique($child_types);
+  }
+
+  /**
+   * Get the parent selector pulldown.
+   */
+  public function hierarchyGetParentSelector($child_type, $parent, $exclude = NULL) {
+    // Allow other modules to create the pulldown first.
+    // Modules implementing this hook, should return the form element inside an array with a numeric index.
+    // This prevents module_invoke_all from merging the outputs to make an invalid form array.
+    $out = \Drupal::moduleHandler()->invokeAll('nodehierarchy_get_parent_selector', array($child_type, $parent, $exclude));
+
+    if ($out) {
+      // Return the last element defined (any others are thrown away);
+      return end($out);
+    }
+
+//  dpm('child type: '.$child_type);
+//  dpm('parent: '.$parent);
+//  dpm('exclude: '.$exclude);
+
+    $default_value = $parent;
+
+    // If no other modules defined the pulldown, then define it here.
+    $options = array(0 => '-- ' . t('NONE') . ' --');
+    $items = _nodehierarchy_parent_options($child_type, $exclude);
+
+//  dpm($items);
+//  foreach ($items as $key => $item) {
+    $item = node_load($parent);
+    if(is_object($item))  {
+      $title = $item->getTitle();
+      $options[1] = $title;//_nodehierarchy_parent_option_title($item);
+    }
+//  }
+
+//  dpm($options);
+    // Make sure the current value is enabled so items can be resaved.
+    if ($default_value && isset($items[$default_value])) {
+      $items[$default_value]->disabled = 0;
+    }
+
+    $out = array(
+      '#type' => 'select',
+      '#title' => t('Parent Node'),
+      '#default_value' => $default_value,
+      '#attributes' => array('class' => array('nodehierarchy-parent-selector')),
+      '#options' => $options,
+      //'#items' => $items,
+      //'#theme' => 'nodehierarchy_parent_selector',
+      //'#element_validate' => array('nodehierarchy_parent_selector_validate'),
+    );
+    return $out;
   }
 
   /**

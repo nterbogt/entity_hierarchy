@@ -13,12 +13,12 @@ use Drupal\Core\Render\Element;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
 use Drupal\Component\Utility\Unicode;
+use Drupal\nodehierarchy\HierarchyManager;
 use Drupal\node\NodeTypeInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Extension\Extension;
-use Drupal\nodehierarchy\HierarchyManager;
 use Drupal\nodehierarchy\HierarchyManagerInterface;
 use Drupal\Component\Utility\String;
 use Drupal\Core\Entity\EntityInterface;
@@ -37,85 +37,32 @@ function nodehierarchy_help($route_name, RouteMatchInterface $route_match) {
 /**
  * Implements hook_form_BASE_FORM_ID_alter() for node_form().
  *
- * Adds the nodehierarchy form element to the node form.
- *
- * @see nodehierarchy_pick_book_nojs_submit()
+ * Adds the hierarchy form element to the node form.
  */
 function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   // TODO: nodehierarchy_set_breadcrumbs($node, TRUE);
   // Load the node object associated with this form
   $node = $form_state->getFormObject()->getEntity();
-  $uid = $node->getOwnerId();
-  $config = \Drupal::config('nodehierarchy.settings');
-
   $account = \Drupal::currentUser();
-  $access = $account->hasPermission('administer hierarchy');  // Change this
-  if (!$access) {
-    if ($account->hasPermission('add content to books') && ((!empty($node->nodehierarchy['hid']) && !$node->isNew()) || book_type_is_allowed($node->getType()))) {
-      // Already in the book hierarchy, or this node type is allowed.
-      $access = TRUE;
-    }
-  }
 
-  if ($access) {
-    $collapsed = !($node->isNew() && !empty($node->nodehierarchy['pid']));
-    $form = \Drupal::service('nodehierarchy.manager')->addFormElements($form, $form_state, $node, $account, $collapsed);
-    // Since the "Book" dropdown can't trigger a form submission when
-    // JavaScript is disabled, add a submit button to do that. book.admin.css hides
-    // this button when JavaScript is enabled.
-    $form['hierarchy']['select-parent'] = array(
-      '#type' => 'submit',
-      '#value' => t('Primary parent'),
-      '#submit' => array('book_pick_book_nojs_submit'),
-      '#weight' => 20,
-      '#attached' => [
-        'library' => [
-          'book/admin',
-        ],
-      ],
-    );
-    $form['#entity_builders'][] = 'book_node_builder';
-  }
+  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
 
-////  dsm($form);
-
-//  $hierarchy_form = FALSE;
   // If this node type can be a child.
-//  if (nodehierarchy_node_can_be_child($node) || nodehierarchy_node_can_be_parent($node)) {
-//    dpm("Can be");
+  if ( ($hierarchy_manager->hierarchyCanBeChild($node)) ||  // Cleaner way to code this?
+       ($hierarchy_manager->hierarchyCanBeParent($node)) ) {
     // if the current user can edit the current node's hierarchy settings (or create new children)
-    $can_set_parent =
-      $account->hasPermission('edit all node parents') ||
+    $uid = $node->getOwnerId();
+    $can_set_parent = $account->hasPermission('edit all node parents') ||
       ($node->isNew() && $account->hasPermission('create child nodes')) ||
       ($uid == $account->getAccount()->id() && $account->hasPermission('edit own node parents'));
 
     // Only show the form is the user has permission
-    $access = \Drupal::currentUser()->hasPermission('administer content type hierarchy') ? TRUE : FALSE;
     if ($can_set_parent) {
-//      dpm("Can set parent");
-//      $hierarchy_form = TRUE;
-      $form['nodehierarchy'] =
-        array(
-          '#type' => 'details',
-          '#title' => t('Node Hierarchy'),
-          '#group' => 'advanced',
-          '#open' => FALSE,//empty($form_state['nodehierarchy_expanded']) ? TRUE : FALSE,
-          '#weight' => 10,
-          '#access' => $access,
-          '#tree' => FALSE,
-        );
-      $form['nodehierarchy']['nodehierarchy_parents'] = array('#tree' => TRUE);
-
-//      dsm($node->nodehierarchy_parents);
-      foreach ((array)$node->nodehierarchy_parents as $key => $parent) {
-        $form['nodehierarchy']['nodehierarchy_parents'][$key] = _nodehierarchy_node_parent_form_items($node, $parent, $key);
-        \Drupal::moduleHandler()->alter('nodehierarchy_node_parent_form_items', $form['nodehierarchy']['nodehierarchy_parents'][$key], $node, $parent);
-      }
-//      dsm($form['nodehierarchy']);
-      \Drupal::moduleHandler()->alter('nodehierarchy_node_parent_form_items_wrapper', $form['nodehierarchy'], $form_state, $node);
+      $collapsed = TRUE;  // Todo: fix
+      $form = $hierarchy_manager->addFormElements($form, $form_state, $node, $account, $collapsed);
+      $form = $hierarchy_manager->addHierarchyFormElement($form, $form_state, $node, $account, $collapsed);
     }
-//  }
-
+  }
 }
 
 /**
@@ -123,19 +70,20 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
  */
 function nodehierarchy_node_prepare_form(NodeInterface $node) {
   // Load the parents if that hasn't been done before.
-////  dsm($node);
   $nid = $node->id();
-//  dpm('nid: '.$nid);
   if (!isset($node->nodehierarchy_parents) && !empty($nid)) {
     $node->nodehierarchy_parents = nodehierarchy_get_node_parents($node->id());
   }
   // Cannot use module_invoke_all because it doesn't support references.
-  foreach (module_implements('nodehierarchy_default_parents') as $module) {
+  foreach (\Drupal::moduleHandler()->getImplementations('nodehierarchy_default_parents') as $module) {
     $function = $module . '_nodehierarchy_default_parents';
     $function($node);
   }
 
-//  if (nodehierarchy_node_can_be_child($node) || nodehierarchy_node_can_be_parent($node)) {
+  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+
+  if ( ($hierarchy_manager->hierarchyCanBeChild($node)) ||
+    ($hierarchy_manager->hierarchyCanBeParent($node)) ) {
     if (!isset($node->nodehierarchy_parents) || empty($node->nodehierarchy_parents)) {
       // Create a default nodeheirarchy object.
       $nid = empty($nid) ? null : $node->id();
@@ -143,28 +91,22 @@ function nodehierarchy_node_prepare_form(NodeInterface $node) {
 
       // Set the type default if there is one.
       if (empty($nid)) {
-//        dpm("nid empty");
         $config = \Drupal::config('nodehierarchy.settings');
         $default = $config->get('nh_defaultparent_'.$node->getEntityType());//variable_get('nh_defaultparent_' . $node->type, 0);
         // Get the parent node id from passed in from the get params.
         $pnid = !empty($_GET['parent']) ? (int) $_GET['parent'] : $default;
-//        dpm("Pnid: ".$pnid);
         // Get the parent from the get string. User must have update perms for parent unless it is the default.
         $account = \Drupal::currentUser();
         if ($pnid && $parent_node = node_load($pnid)) {
-//          //dsm($parent_node);
-          if (/*nodehierarchy_node_can_be_parent($parent_node) &&*/ ($account->hasPermission('create child of any parent')
+          if (($hierarchy_manager->hierarchyCanBeParent($node)) && ($account->hasPermission('create child of any parent')
               || $node->access("update") || $parent_node->id() == $default)) {
-//            dpm("Can be parent");
             $parent->pnid = $pnid;
           }
         }
       }
-
       $node->nodehierarchy_parents[] = $parent;
-//      dsm($node->nodehierarchy_parents);
     }
-//  }
+  }
 }
 
 /**
@@ -337,65 +279,6 @@ function _nodehierarchy_get_node_type_settings_form($key, $append_key = FALSE) {
 }
 
 /**
- * Get the allowed child types for the given parent.
- */
-function nodehierarchy_get_allowed_child_types($parent_type) {
-  // TODO: is this function still required? Any reason to think we may need array_filter($config->get...)?
-  $config =  \Drupal::config('nodehierarchy.settings');
-  $child_types = $config->get('nh_allowchild_'.$parent_type);
-  return array_unique($child_types);
-}
-
-/**
- * Get the parent selector pulldown.
- */
-function _nodehierarchy_get_parent_selector($child_type, $parent, $exclude = NULL) {
-  // Allow other modules to create the pulldown first.
-  // Modules implementing this hook, should return the form element inside an array with a numeric index.
-  // This prevents module_invoke_all from merging the outputs to make an invalid form array.
-  $out = \Drupal::moduleHandler()->invokeAll('nodehierarchy_get_parent_selector', array($child_type, $parent, $exclude));
-
-  if ($out) {
-    // Return the last element defined (any others are thrown away);
-    return end($out);
-  }
-
-//  dpm('child type: '.$child_type);
-//  dpm('parent: '.$parent);
-//  dpm('exclude: '.$exclude);
-
-  $default_value = $parent;
-
-  // If no other modules defined the pulldown, then define it here.
-  $options = array(0 => '-- ' . t('NONE') . ' --');
-  $items = _nodehierarchy_parent_options($child_type, $exclude);
-
-//  dpm($items);
-//  foreach ($items as $key => $item) {
-    $item = node_load($parent);
-  $title = $item->getTitle();
-    $options[1] = $title;//_nodehierarchy_parent_option_title($item);
-//  }
-
-//  dpm($options);
-  // Make sure the current value is enabled so items can be resaved.
-  if ($default_value && isset($items[$default_value])) {
-    $items[$default_value]->disabled = 0;
-  }
-
-  $out = array(
-    '#type' => 'select',
-    '#title' => t('Parent Node'),
-    '#default_value' => $default_value,
-    '#attributes' => array('class' => array('nodehierarchy-parent-selector')),
-    '#options' => $options,
-    //'#items' => $items,
-    //'#theme' => 'nodehierarchy_parent_selector',
-    //'#element_validate' => array('nodehierarchy_parent_selector_validate'),
-  );
-  return $out;
-}
-/**
  * Get the title of the given item to display in a pulldown.
  */
 function _nodehierarchy_parent_option_title($item) {
@@ -423,7 +306,7 @@ function _nodehierarchy_get_parent_selector_value($parent) {
 /**
  * Return a list of menu items that are valid possible parents for the given node.
  */
-function _nodehierarchy_parent_options($child_type, $exclude = NULL) {
+function _nodehierarchy_parent_options(HierarchyManager $child_type, $exclude = NULL) {
   static $options = array();
 
   // If these options have already been generated, then return that saved version.
@@ -433,7 +316,7 @@ function _nodehierarchy_parent_options($child_type, $exclude = NULL) {
 
   $result = array();
   // Flatten tree to a list of options.
-  $parent_types = nodehierarchy_get_allowed_parent_types($child_type);
+  $parent_types = \Drupal::service('nodehierarchy.manager')->hierarchyGetAllowedParentTypes($child_type);
 //  dsm($parent_types);
 //  $out = nodehierarchy_tree_data($result, $exclude, $parent_types);
 //  dsm($out);
@@ -444,32 +327,7 @@ function _nodehierarchy_parent_options($child_type, $exclude = NULL) {
   return $parent_types;
 }
 
-/**
- * Get the allowed parent types for the given child type.
- */
-function nodehierarchy_get_allowed_parent_types($child_type = NULL) {
-  static $allowed_types = array();
-  $config =  \Drupal::config('nodehierarchy.settings');
 
-//  dpm("child type: ".$child_type);
-  // Static cache the results because this may be called many times for the same type on the menu overview screen.
-  if (!isset($allowed_types[$child_type])) {
-    $parent_types = array();
-    $types = \Drupal\node\Entity\NodeType::loadMultiple();
-    foreach ($types as $type => $info) {
-
-      $allowed_children = array_filter($config->get('nh_allowchild_' . $type, array()));
-      if ((empty($child_type) && !empty($allowed_children)) || (in_array($child_type, (array) $allowed_children, TRUE))) {
-        $parent_types[] = $type;
-      }
-    }
-//    dsm($parent_types);
-    $allowed_types[$child_type] = array_unique($parent_types);
-//    dsm($allowed_types);
-    return $allowed_types[$child_type];
-  }
-  else return;
-}
 
 /**
  * Build the data representing a menu tree.
@@ -703,79 +561,6 @@ function _nodehierarchy_create_nodehierarchy_menu_link_reference($menu_link) {
     //drupal_write_record('nodehierarchy_menu_links', $menu_link);
     \Drupal::database()->merge('nodehierarchy_menu_links', $menu_link);
   }
-}
-
-
-/**
- * Can a node be a child.
- */
-function nodehierarchy_node_can_be_child($node) {
-  $type = is_object($node) ? $node->type : $node;
-  return count(nodehierarchy_get_allowed_parent_types($type));
-}
-
-/**
- * Can a node be a parent.
- */
-function nodehierarchy_node_can_be_parent($node) {
-  $type = is_object($node) ? $node->type : $node;
-  return count(nodehierarchy_get_allowed_child_types($type));
-}
-
-/**
- * Get the parent and menu setting for items for a given parent menu_link.
- */
-function _nodehierarchy_node_parent_form_items(NodeInterface $node, $parent, $key) {
-
-//  $config = \Drupal::config('nodehierarchy.config');
-  // Wrap the item in a div for js purposes
-  $item = array(
-    '#type' => 'fieldset',
-    '#title' => t('Parent'),
-    '#tree' => TRUE,
-    '#prefix' => '<div class="nodehierarchy-parent">',
-    '#suffix' => '</div>',
-  );
-
-//  dsm($parent);
-  $pnid = $parent->pnid;
-  $nid = $node->id();
-  // If a node can be a child of another add a selector to pick the parent. Otherwise set the parent to 0.
-  //if (nodehierarchy_node_can_be_child($node)) {
-    $item['pnid'] = _nodehierarchy_get_parent_selector($node->getType(), empty($pnid) ? null : $pnid, empty($nid) ? null : $nid);
-    $item['pnid']['#weight'] = -1;
-  //}
-//  else {
-//    $item['pnid'] = array(
-//      '#type' => 'value',
-//      '#value' => 0,
-//    );
-//  }
-
-  $item['nhid'] = array(
-    '#type' => 'value',
-    '#value' => isset($parent->nhid) ? $parent->nhid : NULL,
-  );
-  $item['cweight'] = array(
-    '#type' => 'value',
-    '#value' => isset($parent->cweight) ? $parent->cweight : NULL,
-  );
-  $item['pweight'] = array(
-    '#type' => 'value',
-    '#value' => isset($parent->pweight) ? $parent->pweight : NULL,
-  );
-
-//  dsm($item);
-
-  if (!empty($parent->nhid)) {
-    $item['remove'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Remove this parent'),
-      '#weight' => 100,
-    );
-  }
-
-  return $item;
 }
 
 /* Helper Functions */
