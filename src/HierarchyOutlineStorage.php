@@ -29,6 +29,40 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
   }
 
   /**
+   * Get all the parents for the given node.
+   */
+  public function hierarchyGetParents($node, $limit = NULL) {
+    $cnid = $node;
+
+    // If a node object was passed, then the parents may already have been loaded.
+    if (is_object($node)) {
+      if (isset($node->nodehierarchy_parents)) {
+        return $node->nodehierarchy_parents;
+      }
+      $cnid = $node->nid;
+    }
+
+    $out = array();
+
+    $query = db_select('nodehierarchy', 'nh')
+      ->fields('nh')
+      ->where('cnid = :cnid', array(':cnid' => $cnid))
+      ->orderBy('pweight', 'ASC');
+
+    if ($limit) {
+      $query->range(0, $limit);
+    }
+
+    $result = $query->execute()->fetchAll();
+
+    foreach ($result as $item) {
+      $out[] = $item;
+    }
+    return $out;
+  }
+
+
+  /**
    * {@inheritdoc}
    */
   public function getHierarchies() {
@@ -123,20 +157,67 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
 //    return $query->execute();
   }
 
+
+  /**
+   * Get the next child weight for a given pnid.
+   */
+  public function hierarchyLoadParentNextChildWeight($pnid) {
+    $out = db_query('SELECT MAX(cweight) FROM {nodehierarchy} WHERE pnid = :pnid', array(':pnid' => $pnid))->fetchField();
+    if ($out !== NULL) {
+      $out += 1;
+    }
+    else {
+      $out = 0;
+    }
+    return $out;
+  }
+
+  /**
+   * Save a nodehierarchy record.
+   */
+  public function hierarchyRecordLoad($hid) {
+    $result = db_select('nodehierarchy', 'nh')
+      ->fields('nh')
+      ->where('hid = :hid', array(':hid' => $hid))->execute();
+    return $result->fetch();
+  }
+
+  /**
+   * Save a nodehierarchy record.
+   */
+  public function hierarchyRecordDelete($hid) {
+    db_delete('nodehierarchy')->condition('hid', $hid)->execute();
+  }
+
   /**
    * {@inheritdoc}
    */
-  public function insert($link, $parents) {
+  public function insert($item) {
+    dpm("Insert");
 //    return $this->connection
-//      ->insert('hierarchy')
+//      ->insert('nodehierarchy')
 //      ->fields(array(
-//        'nid' => $link['nid'],
-//        'hid' => $link['hid'],
-//        'pid' => $link['pid'],
-//        'weight' => $link['weight'],
-//        ) + $parents
+//        'hid' => $item->nhid,
+//        'pnid' => $item->pnid,
+////        'cnid' => $item->cnid,
+//        'weight' => $item->weight,
+//        )
 //      )
 //      ->execute();
+
+    return $this->connection->insert('nodehierarchy')
+      ->fields(array(
+        'hid' => $item->nhid,
+        'pnid' => $item->pnid,
+//        'cnid' => $item->cnid,
+        'cweight' => $item->cweight,
+        )
+      )
+      ->execute();
+//    dsm($item->nhid);
+//    dsm($item->pnid);
+//    dsm($item->cnid);
+//    dsm($item->weight);
   }
 
   /**

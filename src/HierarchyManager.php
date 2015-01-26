@@ -891,6 +891,28 @@ class HierarchyManager implements HierarchyManagerInterface {
     return $links;
   }
 
+  public function insertHierarchy($item){
+    return $this->hierarchyOutlineStorage->insert($item);
+  }
+
+  /**
+   * Get the next child weight for a given pnid.
+   */
+  public function hierarchyGetParentNextChildWeight($pnid) {
+    return $this->hierarchyOutlineStorage->hierarchyLoadParentNextChildWeight($pnid);
+  }
+
+  public function hierarchyGetRecord($hid){
+    return $this->hierarchyOutlineStorage->hierarchyRecordLoad($hid);
+  }
+
+  /**
+   * Save a nodehierarchy record.
+   */
+  public function hierarchyDeleteRecord($hid) {
+    return $this->hierarchyOutlineStorage->hierarchyRecordDelete($hid);
+  }
+
   /**
    * {@inheritdoc}
    */

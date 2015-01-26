@@ -119,3 +119,12 @@ class NodeHierarchyChildForm extends ConfigFormBase {
   }
 
 }
+
+/**
+ * Get the allwed parent types for the given child type.
+ */
+function nodehierarchy_get_allowed_child_types($parent_type) {
+  $config = \Drupal::config('nodehierarchy.settings');
+  $child_types = array_filter($config->get('nh_allowchild_' . $parent_type));
+  return array_unique($child_types);
+}

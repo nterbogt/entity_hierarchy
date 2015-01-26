@@ -48,8 +48,7 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
   $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
 
   // If this node type can be a child.
-  if ( ($hierarchy_manager->hierarchyCanBeChild($node)) ||  // Cleaner way to code this?
-       ($hierarchy_manager->hierarchyCanBeParent($node)) ) {
+  if ( ($hierarchy_manager->hierarchyCanBeChild($node)) || ($hierarchy_manager->hierarchyCanBeParent($node)) ) {
     // if the current user can edit the current node's hierarchy settings (or create new children)
     $uid = $node->getOwnerId();
     $can_set_parent = $account->hasPermission('edit all node parents') ||
@@ -65,14 +64,91 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
   }
 }
 
+
+/**
+ * Implements hook_ENTITY_TYPE_insert() for node entities.
+ *
+ *  {@inheritdoc}
+ */
+function nodehierarchy_node_insert(EntityInterface $node) {
+  $user = \Drupal::currentUser();
+  $uid = $user->id();
+  $node_uid = 1;//$node->getOwnerId();
+  if ($user->hasPermission('edit all node parents') || ($node_uid == $uid && $user->hasPermission('edit own node parents'))) {
+    _nodehierarchy_save_node($node);
+  }
+}
+
+/**
+ * Do the actual insertion or update. No permissions checking is done here.
+ */
+function _nodehierarchy_save_node(&$node) {
+  if (!isset($node->nodehierarchy_parents)) {
+    return;
+  }
+
+  dsm($node->nodehierarchy_parents);
+  foreach ($node->nodehierarchy_parents as $i => $item) {
+    $node->nodehierarchy_parents[$i] = (object)$item;
+    $node->nodehierarchy_parents[$i]->cnid = $node->nid;
+    if (!empty($node->nodehierarchy_parents[$i]->remove)) {
+      $node->nodehierarchy_parents[$i]->pnid = NULL;
+    }
+    _nodehierarchy_record_save($node->nodehierarchy_parents[$i]);
+  }
+}
+
+/**
+ * Save a nodehierarchy record, resetting weights if applicable
+ */
+function _nodehierarchy_record_save(&$item) {
+  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+
+  dpm("nh_record_save");
+  unset($item->cnid);
+  if (!empty($item->hid)) {
+    // Remove the item if it's no longer needed.
+    if (empty($item->pnid)) {
+      $hierarchy_manager->hierarchyDeleteRecord($item->hid);
+    }
+    else {
+      $existing_item = $hierarchy_manager->hierarchyGetRecord($item->hid);
+      // If the parent has been changed:
+      if ($existing_item->pnid !== $item->pnid) {
+        $item->cweight = $hierarchy_manager->hierarchyGetParentNextChildWeight($item->pnid);
+      }
+    }
+  }
+  else {
+    dpm("set cweight");
+    $item->cweight = $hierarchy_manager->hierarchyGetParentNextChildWeight($item->pnid);
+  }
+  dsm($item);
+  if ($item->pnid) {
+    if (!empty($item->hid)) {
+//      $hierarchy_manager->insertHierarchy($item);
+    }
+    else {
+      // First item?
+      $item->hid = 0;
+      $hierarchy_manager->insertHierarchy($item);
+    }
+  }
+}
+
+
 /**
  * Implements hook_node_prepare_form().
  */
 function nodehierarchy_node_prepare_form(NodeInterface $node) {
+
+  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+  $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
+
   // Load the parents if that hasn't been done before.
   $nid = $node->id();
   if (!isset($node->nodehierarchy_parents) && !empty($nid)) {
-    $node->nodehierarchy_parents = nodehierarchy_get_node_parents($node->id());
+    $node->nodehierarchy_parents = $hierarchy_storage->hierarchyGetParents($node->id());
   }
   // Cannot use module_invoke_all because it doesn't support references.
   foreach (\Drupal::moduleHandler()->getImplementations('nodehierarchy_default_parents') as $module) {
@@ -80,10 +156,8 @@ function nodehierarchy_node_prepare_form(NodeInterface $node) {
     $function($node);
   }
 
-  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
 
-  if ( ($hierarchy_manager->hierarchyCanBeChild($node)) ||
-    ($hierarchy_manager->hierarchyCanBeParent($node)) ) {
+  if ( ($hierarchy_manager->hierarchyCanBeChild($node)) || ($hierarchy_manager->hierarchyCanBeParent($node)) ) {
     if (!isset($node->nodehierarchy_parents) || empty($node->nodehierarchy_parents)) {
       // Create a default nodeheirarchy object.
       $nid = empty($nid) ? null : $node->id();
@@ -107,39 +181,6 @@ function nodehierarchy_node_prepare_form(NodeInterface $node) {
       $node->nodehierarchy_parents[] = $parent;
     }
   }
-}
-
-/**
- * Get all the parents for the given node.
- */
-function nodehierarchy_get_node_parents($node, $limit = NULL) {
-  $cnid = $node;
-
-  // If a node object was passed, then the parents may already have been loaded.
-  if (is_object($node)) {
-    if (isset($node->nodehierarchy_parents)) {
-      return $node->nodehierarchy_parents;
-    }
-    $cnid = $node->nid;
-  }
-
-  $out = array();
-
-  $query = db_select('nodehierarchy', 'nh')
-    ->fields('nh')
-    ->where('cnid = :cnid', array(':cnid' => $cnid))
-    ->orderBy('pweight', 'ASC');
-
-  if ($limit) {
-    $query->range(0, $limit);
-  }
-
-  $result = $query->execute()->fetchAll();
-
-  foreach ($result as $item) {
-    $out[] = $item;
-  }
-  return $out;
 }
 
 /**
