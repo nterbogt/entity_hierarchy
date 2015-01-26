@@ -228,11 +228,12 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
 
     $query = db_select('nodehierarchy', 'nh')
       ->fields('nh')
-//      ->fields('n', array('title'))
+      ->fields('nfd', array('title'))
       ->where('pnid = :pnid', array(':pnid' => $pnid))
       ->orderBy('cweight', 'ASC');
 
     $query->leftJoin('node', 'n', 'nh.cnid = n.nid');
+    $query->leftJoin('node_field_data', 'nfd', 'nfd.nid = n.nid');
 
     if ($limit) {
       $query->range(0, $limit);
@@ -244,6 +245,31 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
       $children[] = $item;
     }
     return $children;
+  }
+
+/**
+* Get a tree of nodes of the given type.
+*/
+  public function hierarchyNodesByType($types) {
+    $out = array();
+
+    if ($types) {
+      $query = db_select('node', 'n')
+        ->fields('n', array('nid', 'type'))
+        ->fields('nh', array('cweight', 'pnid'))
+        ->fields('nfd', array('title', 'uid', 'status'))
+        ->condition('n.type', $types, 'IN')
+        ->orderBy('nh.cweight', 'ASC');
+      $query->leftJoin('nodehierarchy', 'nh', 'nh.cnid = n.nid');
+      $query->leftJoin('node_field_data', 'nfd', 'nfd.nid = n.nid');
+
+      $result = $query->execute();
+      foreach ($result as $item) {
+        $out[$item->nid] = $item;
+      }
+    }
+
+    return $out;
   }
 
   /**

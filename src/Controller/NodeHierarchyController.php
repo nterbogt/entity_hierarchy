@@ -29,8 +29,11 @@ class NodeHierarchyController extends ControllerBase {
     $path = explode('/', $curr_path);
     $nid = $path[2];
 
-    $node = Node::load($path[$nid]);
-    return t('Children of %t', array('%t' => $node->getTitle()));
+    $node = Node::load($nid);
+    if (is_object($node)){
+      return t('Children of %t', array('%t' => $node->getTitle()));
+    }
+
   }
 
   public function nodeLoad(NodeInterface $node) {

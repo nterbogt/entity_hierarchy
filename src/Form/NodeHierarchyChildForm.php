@@ -28,12 +28,12 @@ class NodeHierarchyChildForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+    // Todo: don't show Children tab if page type not supported
     $url = \Drupal\Core\Url::fromRoute('<current>');
     $curr_path = $url->toString();
     $path = explode('/', $curr_path);
     $nid = $path[2];
-    $node = Node::load($path[$nid]);
-    $node_type = $node->getType();
+    $node = Node::load($nid);
 
     $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
     $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
@@ -89,6 +89,9 @@ class NodeHierarchyChildForm extends ConfigFormBase {
         || $node->access('update'))) {
 
       // Todo: question: are we getting the correct values back from hierarchyGetAllowedChildTypes? Doesn't seem so...
+      if (is_object($node)) {
+        $node_type = $node->getType();
+      }
       $allowed_child_types = $hierarchy_manager->hierarchyGetAllowedChildTypes($node_type);
       foreach ($allowed_child_types as $type) {
         if ($node->access('create')) {

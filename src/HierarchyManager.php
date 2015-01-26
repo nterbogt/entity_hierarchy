@@ -367,27 +367,19 @@ class HierarchyManager implements HierarchyManagerInterface {
       return end($out);
     }
 
-//  dpm('child type: '.$child_type);
-//  dpm('parent: '.$parent);
-//  dpm('exclude: '.$exclude);
-
     $default_value = $parent;
 
     // If no other modules defined the pulldown, then define it here.
     $options = array(0 => '-- ' . t('NONE') . ' --');
-    $items = _nodehierarchy_parent_options($child_type, $exclude);
+    $items = $this->hierarchyParentOptions($child_type, $exclude);
 
-//  dpm($items);
-//  foreach ($items as $key => $item) {
-    $item = node_load($parent);
-    if(is_object($item))  {
-      $title = $item->getTitle();
-      $options[1] = $title;//_nodehierarchy_parent_option_title($item);
+    foreach ($items as $key => $item) {
+      if(is_object($item))  {
+        $options[$key] = $this->hierarchyParentOptionTitle($item);
+      }
     }
-//  }
 
-//  dpm($options);
-    // Make sure the current value is enabled so items can be resaved.
+    // Make sure the current value is enabled so items can be re-saved.
     if ($default_value && isset($items[$default_value])) {
       $items[$default_value]->disabled = 0;
     }
@@ -404,6 +396,142 @@ class HierarchyManager implements HierarchyManagerInterface {
     );
     return $out;
   }
+
+  /**
+   * Get the title of the given item to display in a pulldown.
+   */
+  private function hierarchyParentOptionTitle($item) {
+    return str_repeat('--', $item->depth - 1) . ' ' . Unicode::truncate($item->title, 45, TRUE, FALSE);
+  }
+
+
+  /**
+   * Return a list of menu items that are valid possible parents for the given node.
+   */
+  private function hierarchyParentOptions($child_type, $exclude = NULL) {
+    static $options = array();
+
+    // If these options have already been generated, then return that saved version.
+    if (isset($options[$child_type][$exclude])) {
+      return $options[$child_type][$exclude];
+    }
+
+    $types = $this->hierarchyGetAllowedParentTypes();
+    $parent_types = $this->hierarchyGetAllowedParentTypes($child_type);
+
+    // Build the whole tree.
+    $parent_tree = $this->hierarchyOutlineStorage->hierarchyNodesByType($types);
+    $parent_tree = $this->hierarchyBuildTree($parent_tree);
+
+    // Remove or disable items that can't be parents.
+    $parent_tree = $this->hierarchyTreeDisableTypes($parent_tree, $parent_types);
+
+    // Remove items which the user does not have permission to.
+    $parent_tree = $this->hierarchyTreeDisableNoaccess($parent_tree);
+
+    // Remove the excluded item(s). This prevents a child being assigned as it's own parent.
+    $out = $this->hierarchyTreeRemoveNid($parent_tree, $exclude);
+
+    // Convert the tree to a flattened list (with depth)
+    $out = $this->hierarchyFlattenTree($out);
+
+    // Static caching to prevent these options being built more than once.
+    $options[$child_type][$exclude] = $out;
+
+    return $out;
+  }
+
+  /**
+   * Mark nodes which the user does not have edit access to as disabled.
+   */
+  private function hierarchyTreeDisableNoaccess(NodeInterface $nodes) {
+    $current_user = \Drupal::currentUser();
+    if (!$current_user->hasPermission('create child of any parent')) {
+      foreach ($nodes as $nid => $node) {
+        $nodes[$nid]->disabled = $nodes[$nid]->disabled || !$node->access('update');
+
+        if (!empty($node->children)) {
+          $nodes[$nid]->children = $this->hierarchyTreeDisableNoaccess($node->children);
+        }
+      }
+    }
+    return $nodes;
+  }
+
+
+  /**
+   * Get a tree of nodes of the given type.
+   */
+  private function hierarchyBuildTree($nodes) {
+    foreach ($nodes as $node) {
+      $node->is_child = FALSE;
+      $node->disabled = FALSE;
+      if (!empty($node->pnid)) {
+        if(isset($nodes[$node->pnid])) {
+          $node->is_child = TRUE;
+          $nodes[$node->pnid]->children[$node->nid] = &$nodes[$node->nid];
+        }
+      }
+    }
+    foreach ($nodes as $nid => $node) {
+      if ($node->is_child) {
+        unset($nodes[$nid]);
+      }
+    }
+    return $nodes;
+  }
+
+  /**
+   * Mark nodes that are not of the given types as disabled.
+   */
+  function hierarchyTreeDisableTypes($nodes, $allowed_types) {
+    foreach ($nodes as $nid => $node) {
+      if (!in_array($node->type, $allowed_types)) {
+        $nodes[$nid]->disabled = TRUE;
+      }
+      if (!empty($node->children)) {
+        $nodes[$nid]->children = $this->hierarchyTreeDisableTypes($node->children, $allowed_types);
+      }
+    }
+    return $nodes;
+  }
+
+  /**
+   * Mark nodes with the given node and it's decendents as disabled.
+   */
+  function hierarchyTreeRemoveNid($nodes, $exclude) {
+    foreach ($nodes as $nid => $node) {
+      if ($nid == $exclude) {
+        unset($nodes[$nid]);
+      }
+      else if (!empty($node->children)) {
+        $nodes[$nid]->children = $this->hierarchyTreeRemoveNid($node->children, $exclude);
+      }
+    }
+    return $nodes;
+  }
+
+  /**
+   * Flatten the tree of nodes.
+   */
+  function hierarchyFlattenTree($nodes, $depth = 1) {
+    $out = $children = array();
+    foreach ($nodes as $nid => $node) {
+      $node->depth = $depth;
+      $children = array();
+      if (!empty($node->children)) {
+        $children = $this->hierarchyFlattenTree($node->children, $depth + 1);
+      }
+
+      // Only output this option if there are non-disabled chidren.
+      if (!$node->disabled || $children) {
+        $out[$nid] = $node;
+        $out += $children;
+      }
+    }
+    return $out;
+  }
+
 
   /**
    * {@inheritdoc}
