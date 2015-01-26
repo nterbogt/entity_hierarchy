@@ -61,18 +61,17 @@ class NodeHierarchyChildForm extends ConfigFormBase {
           '#value' => $node,
         );
         $url = Url::fromRoute('entity.node.canonical', array('node'=>$node->id()));
-//        dsm($url);
         $child_item['title']      = array('#type' => 'markup', '#markup' => $this->l($node->getTitle(), $url));
         $child_item['type']       = array('#type' => 'markup', '#markup' => $type_names[$node->getType()]);
 
-        $cweight = $form_state->getValue($child->nhid['cweight']);
+        $cweight = $form_state->getValue($child->hid['cweight']);
         $child_item['cweight']    = array(
           '#type' => 'weight',
           '#delta' => $delta,
           '#default_value' => isset($cweight) ? $cweight : $child->cweight,
         );
 
-        $form['children'][$child->nhid] = $child_item;
+        $form['children'][$child->hid] = $child_item;
       }
     }
 
