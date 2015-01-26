@@ -64,13 +64,6 @@ class HierarchyManager implements HierarchyManagerInterface {
   protected $hierarchyTreeFlattened;
 
   /**
-   * The entity type
-   *
-   * @var string
-   */
-  protected $childType;
-
-  /**
    * Constructs a HierarchyManager object.
    */
   public function __construct(EntityManagerInterface $entity_manager, TranslationInterface $translation, ConfigFactoryInterface $config_factory, HierarchyOutlineStorageInterface $hierarchy_outline_storage) {
@@ -353,7 +346,7 @@ class HierarchyManager implements HierarchyManagerInterface {
   /**
    * Get the allowed child types for the given parent.
    */
-  private function hierarchyGetAllowedChildTypes($parent_type) {
+  public function hierarchyGetAllowedChildTypes($parent_type) {
     // TODO: is this function still required? Any reason to think we may need array_filter($config->get...)?
     $config =  \Drupal::config('nodehierarchy.settings');
     $child_types = $config->get('nh_allowchild_'.$parent_type);
@@ -891,6 +884,54 @@ class HierarchyManager implements HierarchyManagerInterface {
     return $links;
   }
 
+  /**
+   * Do the actual insertion or update. No permissions checking is done here.
+   */
+  function hierarchySaveNode(&$node) {
+    if (!isset($node->nodehierarchy_parents)) {
+      return;
+    }
+
+    foreach ($node->nodehierarchy_parents as $i => $item) {
+      $node->nodehierarchy_parents[$i] = (object)$item;
+      $node->nodehierarchy_parents[$i]->cnid = $node->nid;
+      if (!empty($node->nodehierarchy_parents[$i]->remove)) {
+        $node->nodehierarchy_parents[$i]->pnid = NULL;
+      }
+      $this->hierarchyRecordSave($node->nodehierarchy_parents[$i]);
+    }
+  }
+
+  /**
+   * Save a nodehierarchy record, resetting weights if applicable
+   */
+  private function hierarchyRecordSave(&$item) {
+
+    unset($item->cnid);
+    if (!empty($item->hid)) {
+      // Remove the item if it's no longer needed.
+      if (empty($item->pnid)) {
+        $this->hierarchyDeleteRecord($item->hid);
+      }
+      else {
+        $existing_item = $this->hierarchyGetRecord($item->hid);
+        // If the parent has been changed:
+        if ($existing_item->pnid !== $item->pnid) {
+          $item->cweight = $this->hierarchyGetParentNextChildWeight($item->pnid);
+        }
+      }
+    }
+    else {
+      $item->cweight = $this->hierarchyGetParentNextChildWeight($item->pnid);
+    }
+//    dsm($item);
+    if ($item->pnid) {
+      $this->insertHierarchy($item);
+
+        $this->insertHierarchy($item);
+    }
+  }
+
   public function insertHierarchy($item){
     return $this->hierarchyOutlineStorage->insert($item);
   }
@@ -912,6 +953,18 @@ class HierarchyManager implements HierarchyManagerInterface {
   public function hierarchyDeleteRecord($hid) {
     return $this->hierarchyOutlineStorage->hierarchyRecordDelete($hid);
   }
+
+  /**
+   * Get the default menu link values for a new nodehierarchy menu link.
+   */
+  public function hierarchyDefaultRecord($cnid = NULL, $npid = NULL) {
+    return (object)array(
+      'pnid' => $npid,
+      'weight' => 0,
+      'cnid' => $cnid,
+    );
+  }
+
 
   /**
    * {@inheritdoc}

@@ -70,75 +70,21 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
  *
  *  {@inheritdoc}
  */
-function nodehierarchy_node_insert(EntityInterface $node) {
+function nodehierarchy_node_insert(NodeInterface $node) {
+  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
   $user = \Drupal::currentUser();
   $uid = $user->id();
-  $node_uid = 1;//$node->getOwnerId();
+  $node_uid = $node->getOwnerId();
   if ($user->hasPermission('edit all node parents') || ($node_uid == $uid && $user->hasPermission('edit own node parents'))) {
-    _nodehierarchy_save_node($node);
-  }
-}
-
-/**
- * Do the actual insertion or update. No permissions checking is done here.
- */
-function _nodehierarchy_save_node(&$node) {
-  if (!isset($node->nodehierarchy_parents)) {
-    return;
-  }
-
-  dsm($node->nodehierarchy_parents);
-  foreach ($node->nodehierarchy_parents as $i => $item) {
-    $node->nodehierarchy_parents[$i] = (object)$item;
-    $node->nodehierarchy_parents[$i]->cnid = $node->nid;
-    if (!empty($node->nodehierarchy_parents[$i]->remove)) {
-      $node->nodehierarchy_parents[$i]->pnid = NULL;
-    }
-    _nodehierarchy_record_save($node->nodehierarchy_parents[$i]);
-  }
-}
-
-/**
- * Save a nodehierarchy record, resetting weights if applicable
- */
-function _nodehierarchy_record_save(&$item) {
-  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
-
-  dpm("nh_record_save");
-  unset($item->cnid);
-  if (!empty($item->hid)) {
-    // Remove the item if it's no longer needed.
-    if (empty($item->pnid)) {
-      $hierarchy_manager->hierarchyDeleteRecord($item->hid);
-    }
-    else {
-      $existing_item = $hierarchy_manager->hierarchyGetRecord($item->hid);
-      // If the parent has been changed:
-      if ($existing_item->pnid !== $item->pnid) {
-        $item->cweight = $hierarchy_manager->hierarchyGetParentNextChildWeight($item->pnid);
-      }
-    }
-  }
-  else {
-    dpm("set cweight");
-    $item->cweight = $hierarchy_manager->hierarchyGetParentNextChildWeight($item->pnid);
-  }
-  dsm($item);
-  if ($item->pnid) {
-    if (!empty($item->hid)) {
-//      $hierarchy_manager->insertHierarchy($item);
-    }
-    else {
-      // First item?
-      $item->hid = 0;
-      $hierarchy_manager->insertHierarchy($item);
-    }
+    $hierarchy_manager->hierarchySaveNode($node);
   }
 }
 
 
 /**
  * Implements hook_node_prepare_form().
+ *
+ * {@inheritdoc}
  */
 function nodehierarchy_node_prepare_form(NodeInterface $node) {
 
@@ -161,7 +107,7 @@ function nodehierarchy_node_prepare_form(NodeInterface $node) {
     if (!isset($node->nodehierarchy_parents) || empty($node->nodehierarchy_parents)) {
       // Create a default nodeheirarchy object.
       $nid = empty($nid) ? null : $node->id();
-      $parent = _nodehierarchy_default_record($nid, 0);
+      $parent = $hierarchy_manager->hierarchyDefaultRecord($nid, 0);
 
       // Set the type default if there is one.
       if (empty($nid)) {
@@ -184,17 +130,6 @@ function nodehierarchy_node_prepare_form(NodeInterface $node) {
 }
 
 /**
- * Get the default menu link values for a new nodehierarchy menu link.
- */
-function _nodehierarchy_default_record($cnid = NULL, $npid = NULL) {
-  return (object)array(
-    'pnid' => $npid,
-    'weight' => 0,
-    'cnid' => $cnid,
-  );
-}
-
-/**
  * Implementation of hook_form_alter().
  *
  * So we don't see preview or delete buttons for hierarchy.
@@ -204,13 +139,6 @@ function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_
   endsWith($form_id,"_node_form") || endsWith($form_id,"_node_edit_form") ? $node_type = $form_id : $node_type = '';
   endsWith($form_id,"_node_delete_form") ? $node_delete_type = $form_id : $node_delete_type = '';
   $type = $form['type']['#default_value'];  // The type of node
-
-////  dsm('form id: '.$form_id);
-////  dsm('node type:'.$node_type);
-////  dsm('node_delete_type: '.$node_delete_type);
-////  dsm(array_keys($form));
-////  dsm($type);
-////  dsm($form);
 
   switch ($form_id) {
     case 'node_type_edit_form':
@@ -327,27 +255,9 @@ function _nodehierarchy_parent_option_title($item) {
 }
 
 /**
- * Get the parent selector key from a menu_link array. Returns either nid:mlid or nid
- */
-function _nodehierarchy_get_parent_selector_value($parent) {
-  $out = 0;
-  // If the parent value is a node ID, laod the menu_link for that node.
-  if (is_numeric($parent)) {
-    $out = trim($parent . ':' . _nodehierarchy_get_node_mlid($parent), ':');
-  }
-  elseif (is_numeric($parent['mlid'])) {
-    $out = $parent['nid'] . ':' . $parent['mlid'];
-  }
-  elseif (!empty($parent['nid'])) {
-    $out = $parent['nid'];
-  }
-  return $out;
-}
-
-/**
  * Return a list of menu items that are valid possible parents for the given node.
  */
-function _nodehierarchy_parent_options(HierarchyManager $child_type, $exclude = NULL) {
+function _nodehierarchy_parent_options($child_type, $exclude = NULL) {
   static $options = array();
 
   // If these options have already been generated, then return that saved version.
@@ -446,165 +356,8 @@ function _nodehierarchy_tree_data($result, $exclude = NULL, $allowed_types, $dep
   return $enabled_tree ? array($remnant, $tree) : array($remnant, array());
 }
 
-/**
- * Get the menu link id for the given node.
- */
-function _nodehierarchy_get_node_mlids($nid) {
-  $out = array();
-  $result = db_query("SELECT mlid FROM {menu_links} WHERE module = :module AND link_path = :link_path ORDER BY mlid", array(':module' => 'nodehierarchy', ':link_path' => 'node/' . $nid), array('fetch' => \PDO::FETCH_ASSOC));
-  foreach ($result as $link) {
-    $out[] = $link['mlid'];
-  }
-  return $out;
-}
 
-/**
- * Get the primary menu link id for the given node. Optionally create one if needed.
- */
-function _nodehierarchy_get_node_mlid($nid, $create = FALSE) {
-  $out = NULL;
-
-  if ($nid) {
-    $out = db_query("SELECT mlid FROM {menu_links} WHERE module = :module AND link_path = :link_path ORDER BY mlid LIMIT 1", array(':module' => 'nodehierarchy', ':link_path' => 'node/' . $nid))->fetchField();
-
-    // Create a new menu item if needed.
-    if ($create && !$out) {
-      $menu_link = _nodehierarchy_create_node_menu_link($nid);
-      $out = $menu_link['mlid'];
-    }
-  }
-  return $out;
-}
-
-/**
- * Count the children of the given node.
- */
-function _nodehierarchy_get_children_count($parent) {
-  if ($plid = _nodehierarchy_get_node_mlid($parent)) {
-    return _nodehierarchy_get_children_count_plid($plid);
-  }
-  return 0;
-}
-/**
- * Count the children of the given menu link.
- */
-function _nodehierarchy_get_children_count_plid($plid) {
-  if ($plid) {
-    $out = db_query("SELECT count(mlid) as children_count
-                     FROM {menu_links} WHERE module = :module AND plid = :plid
-                     AND router_path = :router_path", array(':module' => 'nodehierarchy', ':plid' => $plid, ':router_path' => 'node/%'))->fetchField();
-    return $out;
-  }
-  return 0;
-}
-
-/**
- * Get the children of the given node.
- */
-function _nodehierarchy_get_children_menu_links($pnid, $limit = FALSE) {
-  $children = array();
-//  $query = "
-//       SELECT nh_menu_links.*
-//         FROM {node} node
-//    LEFT JOIN {nodehierarchy_menu_links} nodehierarchy_menu_links ON node.nid = nodehierarchy_menu_links.nid
-//    LEFT JOIN {menu_links} nh_menu_links ON nodehierarchy_menu_links.mlid = nh_menu_links.mlid
-//    LEFT JOIN {nodehierarchy_menu_links} nh_parent ON nh_menu_links.plid = nh_parent.mlid
-//        WHERE (nh_parent.nid = :pnid)
-//     ORDER BY nh_menu_links.weight ASC";
-
-//  if ($limit) {
-//    $query .= " LIMIT $limit";
-//  }
-//
-//  $result = db_query($query, array(':pnid' => $pnid), array('fetch' => PDO::FETCH_ASSOC));
-//  foreach ($result as $item) {
-//    $item['pnid'] = $pnid;
-//    $children[] = _nodehierarchy_prepare_menu_link($item);
-//  }
-  return $children;
-}
-
-/**
- * Get the menu link for the given node.
- */
-function _nodehierarchy_create_node_menu_link($nid) {
-  $node = Node::load($nid);
-  $menu_link = _nodehierarchy_default_menu_link($node->getTitle());
-  $menu_link['link_title'] = $node->getTitle();
-  _nodehierarchy_save_menu_link($menu_link);
-  return $menu_link;
-}
-
-/**
-* Save a menu link with changes if needed.
- */
-function _nodehierarchy_save_menu_link(&$menu_link) {
-  // Item is being moved to a new parent.
-  $old_plid = _nodehierarchy_get_plid_from_mlid($menu_link['mlid']);
-  if ($old_plid !== (int) $menu_link['plid']) {
-    // Get the next weight for the new parent.
-    $menu_link['weight'] = _nodehierarchy_get_menu_link_next_child_weight($menu_link['plid']);
-  }
-
-  // Save the parent
-  $menu_link->save();
-  // Create the link reference.
-  _nodehierarchy_create_nodehierarchy_menu_link_reference($menu_link);
-}
-
-/**
- * Get the default menu link values for a new nodehierarchy menu link.
- */
-function _nodehierarchy_default_menu_link($nid = NULL, $plid = 0, $enabled = FALSE) {
-  $config = \Drupal::config('nodehierarchy_default_menu_name');
-  return array(
-    'mlid' => NULL,
-    'module' => 'nodehierarchy',
-    'menu_name' => $config->get('nodehierarchy_default_menu_name'),//variable_get('nodehierarchy_default_menu_name', 'navigation'),
-    'router_path' => 'node/%',
-    'link_path' => !empty($nid) ? 'node/' . $nid : '',
-    'hidden' => !$enabled,
-    'enabled' => $enabled,
-    'plid' => $plid,
-    'weight' => 0,
-    'nid' => !empty($nid) ? $nid : NULL,
-    'customized' => 0,
-  );
-}
-
-/**
- * Get the parent link ID from the given menu link id.
- */
-function _nodehierarchy_get_plid_from_mlid($mlid) {
-  if ($mlid) {
-    return (int) db_query("SELECT plid FROM {menu_links} WHERE mlid = :mlid", array(':mlid' => $mlid))->fetchField();
-  }
-  return NULL;
-}
-/**
- * Get the next child weight for a given plid.
- */
-function _nodehierarchy_get_menu_link_next_child_weight($plid) {
-  $out = db_query("SELECT MAX(weight) FROM {menu_links} WHERE module = :module AND plid = :plid", array(':module' => 'nodehierarchy', ':plid' => $plid))->fetchField();
-  if ($out !== NULL) {
-    return $out + 1;
-  }
-  return 0;
-}
-
-/**
- * Create a link from the node to its menu item.
- *
- * This pivot table can be used for more efficiently joining to the menu links table for views integration.
- */
-function _nodehierarchy_create_nodehierarchy_menu_link_reference($menu_link) {
-  if (!db_query("SELECT mlid FROM {nodehierarchy_menu_links} WHERE mlid = :mlid", array(':mlid' => $menu_link['mlid']))->fetchField()) {
-    //drupal_write_record('nodehierarchy_menu_links', $menu_link);
-    \Drupal::database()->merge('nodehierarchy_menu_links', $menu_link);
-  }
-}
-
-/* Helper Functions */
+/* Helper Functions for strings */
 function startsWith($haystack, $needle) {
   // search backwards starting from haystack length characters from the end
   return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== FALSE;

@@ -193,31 +193,57 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
    * {@inheritdoc}
    */
   public function insert($item) {
-    dpm("Insert");
-//    return $this->connection
-//      ->insert('nodehierarchy')
-//      ->fields(array(
-//        'hid' => $item->nhid,
-//        'pnid' => $item->pnid,
-////        'cnid' => $item->cnid,
-//        'weight' => $item->weight,
-//        )
-//      )
-//      ->execute();
 
     return $this->connection->insert('nodehierarchy')
       ->fields(array(
-        'hid' => $item->nhid,
+//        'hid' => $item->nhid,  // hid set automatically (primary key)
         'pnid' => $item->pnid,
 //        'cnid' => $item->cnid,
         'cweight' => $item->cweight,
         )
       )
       ->execute();
-//    dsm($item->nhid);
-//    dsm($item->pnid);
-//    dsm($item->cnid);
-//    dsm($item->weight);
+  }
+
+  /**
+   * Count the children of the given node.
+   */
+  function hierarchyGetNodeChildrenCount($node) {
+    $pnid = $node;
+    if (is_object($node)) {
+      $pnid = $node->nid;
+    }
+
+    return (int)db_query("SELECT count(*) FROM {nodehierarchy} WHERE pnid = :pnid", array(':pnid' => $pnid))->fetchField();
+  }
+
+  /**
+   * Get the children of the given node.
+   */
+  public function hierarchyGetNodeChildren($node, $limit = FALSE) {
+    $pnid = $node;
+    if (is_object($node)) {
+      $pnid = $node->nid;
+    }
+
+    $query = db_select('nodehierarchy', 'nh')
+      ->fields('nh')
+//      ->fields('n', array('title'))
+      ->where('pnid = :pnid', array(':pnid' => $pnid))
+      ->orderBy('cweight', 'ASC');
+
+    $query->leftJoin('node', 'n', 'nh.cnid = n.nid');
+
+    if ($limit) {
+      $query->range(0, $limit);
+    }
+
+    $result = $query->execute()->fetchAll();
+    $children = array();
+    foreach ($result as $item) {
+      $children[] = $item;
+    }
+    return $children;
   }
 
   /**

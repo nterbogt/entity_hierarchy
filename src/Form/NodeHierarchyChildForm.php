@@ -28,45 +28,51 @@ class NodeHierarchyChildForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    // $config = $this->config('nodehierarchy.child.settings');
-
-    // Load the node object associated with this form
-    // Should we not use $form_state->getFormObject()->getEntity(); instead?
     $url = \Drupal\Core\Url::fromRoute('<current>');
     $curr_path = $url->toString();
     $path = explode('/', $curr_path);
     $nid = $path[2];
-
     $node = Node::load($path[$nid]);
     $node_type = $node->getType();
 
-    $children_links = _nodehierarchy_get_children_menu_links($nid, FALSE);
+    $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
+    $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+
+    $children = $hierarchy_storage->hierarchyGetNodeChildren($node, FALSE);
+
     $form['children'] = array('#tree' => TRUE);
     $type_names = node_type_get_names();
-    foreach ($children_links as $child_link) {
-      list(, $nid) = explode('/', $child_link['link_path']);
-      if ($child = node_load($nid)) {
+
+    // Find the maximum weight.
+    $delta = count($children);
+    foreach ($children as $child) {
+      $delta = max($delta, $child->cweight);
+    }
+
+    foreach ($children as $child) {
+      if ($node = node_load($child->cnid)) {
         $child_item = array();
-        $child_item['menu_link']  = array(
-          '#type' => 'value',
-          '#value' => $child_link,
-        );
-        $child_item['node']       = array(
+        $child_item['child']  = array(
           '#type' => 'value',
           '#value' => $child,
         );
-        $child_item['title']      = array('#type' => 'markup', '#markup' => l($child->title, $child_link['link_path']));
-        $child_item['type']       = array('#type' => 'markup', '#markup' => $type_names[$child->type]);
+        $child_item['node']       = array(
+          '#type' => 'value',
+          '#value' => $node,
+        );
+        $child_item['title']      = array('#type' => 'markup', '#markup' => l($node->title, 'node/' . $node->nid));
+        $child_item['type']       = array('#type' => 'markup', '#markup' => $type_names[$node->type]);
 
-        $child_item['weight']     = array(
+        $child_item['cweight']    = array(
           '#type' => 'weight',
-          '#delta' => 50,
-          '#default_value' => isset($form_state[$child_link['mlid']]['weight']) ? $form_state[$child_link['mlid']]['weight'] : $child_link['weight'],
+          '#delta' => $delta,
+          '#default_value' => isset($form_state[$child->nhid]['cweight']) ? $form_state[$child->nhid]['cweight'] : $child->cweight,
         );
 
-        $form['children'][$child_link['mlid']] = $child_item;
+        $form['children'][$child->nhid] = $child_item;
       }
     }
+
     if (element_children($form['children'])) {
       $form['submit'] = array(
         '#type' => 'submit',
@@ -75,24 +81,21 @@ class NodeHierarchyChildForm extends ConfigFormBase {
     }
     else {
       $form['no_children'] = array('#type' => 'markup', '#markup' => t('This node has no children.'));
-      unset($form['submit']);
     }
 
     // TODO: add using theme_ function like D7
-    if (\Drupal::currentUser()->hasPermission('create child nodes')
-      && (\Drupal::currentUser()->hasPermission('create child of any parent')
-      || $node->access('update'))) {
+    $current_user = \Drupal::currentUser();
+    if ($current_user->hasPermission('create child nodes') && ($current_user->hasPermission('create child of any parent')
+        || $node->access('update'))) {
 
-      foreach (nodehierarchy_get_allowed_child_types($node_type) as $key) {
+      $allowed_child_types = $hierarchy_manager->hierarchyGetAllowedChildTypes($node_type);
+      $all_content_types = array_keys(\Drupal\node\Entity\NodeType::loadMultiple());
+      $types_selected = array_intersect($all_content_types, $allowed_child_types);
+      foreach ($types_selected as $type) {
         if ($node->access('create')) {
           $destination = (array) drupal_get_destination() + array('parent' => $nid);
-          //$key = str_replace('_', '-', $key);
-          //$title = t('Add a new %s.', array('%s' => $type_name));
-
-          //$create_links[] = l($type_name, "node/add/$key", array('query' => $destination, 'attributes' => array('title' => $title)));
-          $url = Url::fromRoute('node.add', array('node_type' => $node_type), array('query' => $destination));
-          $create_links[] = $this->l($node_type, $url);
-
+          $url = Url::fromRoute('node.add', array('node_type' => $type), array('query' => $destination));
+          $create_links[] = $this->l($type, $url);
         }
         if ($create_links) {
           $out = '<div class="newchild">' .
@@ -109,8 +112,6 @@ class NodeHierarchyChildForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
-    // dpm($values);
-
     $config = $this->config('nodehierarchy.child.settings');
     $config->set('children', $values['children']);
     $config->save();
