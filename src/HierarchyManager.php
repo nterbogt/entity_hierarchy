@@ -1022,7 +1022,7 @@ class HierarchyManager implements HierarchyManagerInterface {
 
     foreach ($node->nodehierarchy_parents as $i => $item) {
       $node->nodehierarchy_parents[$i] = (object)$item;
-      $node->nodehierarchy_parents[$i]->cnid = $node->nid;
+      $node->nodehierarchy_parents[$i]->cnid = (int)$node->id();
       if (!empty($node->nodehierarchy_parents[$i]->remove)) {
         $node->nodehierarchy_parents[$i]->pnid = NULL;
       }
@@ -1035,7 +1035,6 @@ class HierarchyManager implements HierarchyManagerInterface {
    */
   private function hierarchyRecordSave(&$item) {
 
-    unset($item->cnid);
     if (!empty($item->hid)) {
       // Remove the item if it's no longer needed.
       if (empty($item->pnid)) {

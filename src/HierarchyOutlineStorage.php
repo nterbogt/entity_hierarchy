@@ -198,7 +198,7 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
       ->fields(array(
 //        'hid' => $item->nhid,  // hid set automatically (primary key)
         'pnid' => $item->pnid,
-//        'cnid' => $item->cnid,
+        'cnid' => $item->cnid,
         'cweight' => $item->cweight,
         )
       )
@@ -209,9 +209,10 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
    * Count the children of the given node.
    */
   function hierarchyGetNodeChildrenCount($node) {
+//    dsm($node);
     $pnid = $node;
     if (is_object($node)) {
-      $pnid = $node->nid;
+      $pnid = $node->id();
     }
 
     return (int)db_query("SELECT count(*) FROM {nodehierarchy} WHERE pnid = :pnid", array(':pnid' => $pnid))->fetchField();
@@ -223,7 +224,7 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
   public function hierarchyGetNodeChildren($node, $limit = FALSE) {
     $pnid = $node;
     if (is_object($node)) {
-      $pnid = $node->nid;
+      $pnid = $node->id();
     }
 
     $query = db_select('nodehierarchy', 'nh')
