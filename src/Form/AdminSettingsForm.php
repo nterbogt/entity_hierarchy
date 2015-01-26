@@ -23,7 +23,7 @@ class AdminSettingsForm extends ConfigFormBase {
   protected $node_types;
 
   public function __construct(array $node_types) {
-    $this->node_types = node_type_get_names();;
+    $this->node_types = node_type_get_names();
   }
   /**
    * {@inheritdoc}

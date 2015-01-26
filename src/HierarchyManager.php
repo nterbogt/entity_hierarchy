@@ -349,7 +349,7 @@ class HierarchyManager implements HierarchyManagerInterface {
   public function hierarchyGetAllowedChildTypes($parent_type) {
     // TODO: is this function still required? Any reason to think we may need array_filter($config->get...)?
     $config =  \Drupal::config('nodehierarchy.settings');
-    $child_types = $config->get('nh_allowchild_'.$parent_type);
+    $child_types = array_filter($config->get('nh_allowchild_'.$parent_type));
     return array_unique($child_types);
   }
 

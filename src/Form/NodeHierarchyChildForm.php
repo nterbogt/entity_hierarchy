@@ -83,15 +83,14 @@ class NodeHierarchyChildForm extends ConfigFormBase {
       $form['no_children'] = array('#type' => 'markup', '#markup' => t('This node has no children.'));
     }
 
-    // TODO: add using theme_ function like D7
+    // TODO: add using renderable array instead, then find suitable place for code
     $current_user = \Drupal::currentUser();
     if ($current_user->hasPermission('create child nodes') && ($current_user->hasPermission('create child of any parent')
         || $node->access('update'))) {
 
+      // Todo: question: are we getting the correct values back from hierarchyGetAllowedChildTypes? Doesn't seem so...
       $allowed_child_types = $hierarchy_manager->hierarchyGetAllowedChildTypes($node_type);
-      $all_content_types = array_keys(\Drupal\node\Entity\NodeType::loadMultiple());
-      $types_selected = array_intersect($all_content_types, $allowed_child_types);
-      foreach ($types_selected as $type) {
+      foreach ($allowed_child_types as $type) {
         if ($node->access('create')) {
           $destination = (array) drupal_get_destination() + array('parent' => $nid);
           $url = Url::fromRoute('node.add', array('node_type' => $type), array('query' => $destination));
@@ -121,11 +120,3 @@ class NodeHierarchyChildForm extends ConfigFormBase {
 
 }
 
-/**
- * Get the allwed parent types for the given child type.
- */
-function nodehierarchy_get_allowed_child_types($parent_type) {
-  $config = \Drupal::config('nodehierarchy.settings');
-  $child_types = array_filter($config->get('nh_allowchild_' . $parent_type));
-  return array_unique($child_types);
-}
