@@ -390,7 +390,7 @@ class HierarchyManager implements HierarchyManagerInterface {
       '#default_value' => $default_value,
       '#attributes' => array('class' => array('nodehierarchy-parent-selector')),
       '#options' => $options,
-      //'#items' => $items,
+      '#items' => $items,
       //'#theme' => 'nodehierarchy_parent_selector',
       //'#element_validate' => array('nodehierarchy_parent_selector_validate'),
     );
