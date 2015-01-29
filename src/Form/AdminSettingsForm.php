@@ -100,5 +100,13 @@ class AdminSettingsForm extends ConfigFormBase {
     parent::submitForm($form, $form_state);
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  protected function getEditableConfigNames() {
+    return ['nodehierarchy.settings'];
+  }
+
+
 }
 
