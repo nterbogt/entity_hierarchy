@@ -13,13 +13,11 @@ use Drupal\Core\Render\Element;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
 use Drupal\Component\Utility\Unicode;
-use Drupal\nodehierarchy\HierarchyManager;
 use Drupal\node\NodeTypeInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Extension\Extension;
-use Drupal\nodehierarchy\HierarchyManagerInterface;
 use Drupal\Component\Utility\String;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Url;
@@ -64,100 +62,17 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
   }
 }
 
-
-/**
- * Implements hook_ENTITY_TYPE_insert() for node entities.
- *
- *  {@inheritdoc}
- */
-function nodehierarchy_node_insert(NodeInterface $node) {
-  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
-  $user = \Drupal::currentUser();
-  $uid = $user->id();
-  $node_uid = $node->getOwnerId();
-  if ($user->hasPermission('edit all node parents') || ($node_uid == $uid && $user->hasPermission('edit own node parents'))) {
-    $hierarchy_manager->hierarchySaveNode($node);
-  }
-}
-
-
-/**
- * Implements hook_node_prepare_form().
- *
- * {@inheritdoc}
- */
-function nodehierarchy_node_prepare_form(NodeInterface $node) {
-
-  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
-  $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
-
-  // Load the parents if that hasn't been done before.
-  $nid = $node->id();
-  if (!isset($node->nodehierarchy_parents) && !empty($nid)) {
-    $node->nodehierarchy_parents = $hierarchy_storage->hierarchyGetParents($node->id());
-  }
-  // Cannot use module_invoke_all because it doesn't support references.
-  foreach (\Drupal::moduleHandler()->getImplementations('nodehierarchy_default_parents') as $module) {
-    $function = $module . '_nodehierarchy_default_parents';
-    $function($node);
-  }
-
-
-  if ( ($hierarchy_manager->hierarchyCanBeChild($node)) || ($hierarchy_manager->hierarchyCanBeParent($node)) ) {
-    if (!isset($node->nodehierarchy_parents) || empty($node->nodehierarchy_parents)) {
-      // Create a default nodeheirarchy object.
-      $nid = empty($nid) ? null : $node->id();
-      $parent = $hierarchy_manager->hierarchyDefaultRecord($nid, 0);
-
-      // Set the type default if there is one.
-      if (empty($nid)) {
-        $config = \Drupal::config('nodehierarchy.settings');
-        $default = $config->get('nh_defaultparent_'.$node->getEntityType());//variable_get('nh_defaultparent_' . $node->type, 0);
-        // Get the parent node id from passed in from the get params.
-        $pnid = !empty($_GET['parent']) ? (int) $_GET['parent'] : $default;
-        // Get the parent from the get string. User must have update perms for parent unless it is the default.
-        $account = \Drupal::currentUser();
-        if ($pnid && $parent_node = node_load($pnid)) {
-          if (($hierarchy_manager->hierarchyCanBeParent($node)) && ($account->hasPermission('create child of any parent')
-              || $node->access("update") || $parent_node->id() == $default)) {
-            $parent->pnid = $pnid;
-          }
-        }
-      }
-      $node->nodehierarchy_parents[] = $parent;
-    }
-  }
-}
-
 /**
  * Implementation of hook_form_alter().
  *
  * So we don't see preview or delete buttons for hierarchy.
  */
 function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  // Check if the form id string ends with "_node_form"
-  endsWith($form_id,"_node_form") || endsWith($form_id,"_node_edit_form") ? $node_type = $form_id : $node_type = '';
+
+  // Does the form ID end with '_node_delete_form' ?
   endsWith($form_id,"_node_delete_form") ? $node_delete_type = $form_id : $node_delete_type = '';
-  $type = $form['type']['#default_value'];  // The type of node (page)
 
   switch ($form_id) {
-    case 'node_type_edit_form':
-      //$type = $form['old_type']['#value'];
-
-      $form['nodehierarchy'] = array(
-        '#type' => 'details',
-        '#group' => 'additional_settings',
-        '#title' => t('Node Hierarchy'),
-        '#weight' => 10,
-      );
-
-      // $form['#attached']['library'][] = nodehierarchy/nodehierarchy.nodetypeform;
-      // Right now, we add this js to all admin pages using hook_page_attachments; see below.
-
-      $form['nodehierarchy'] += _nodehierarchy_get_node_type_settings_form($type);
-
-      // TODO: right now the values are not being saved for the node type form
-      break;
     case $node_delete_type:
       // TODO: Fix the descendant count code to deal with multiparent situations.
       if ($count = _nodehierarchy_get_children_count($form['nid']['#value'])) {
@@ -186,6 +101,90 @@ function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function nodehierarchy_form_node_type_edit_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+  $type = $form['type']['#default_value'];  // The type of node (page)
+
+  $form['nodehierarchy'] = array(
+    '#type' => 'details',
+    '#group' => 'additional_settings',
+    '#title' => t('Node Hierarchy'),
+    '#weight' => 10,
+  );
+
+  // $form['#attached']['library'][] = nodehierarchy/nodehierarchy.nodetypeform;
+  // Right now, we add this js to all admin pages using hook_page_attachments; see below.
+
+  $form['nodehierarchy'] += $hierarchy_manager->hierarchyGetNodeTypeSettingsForm($type);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_insert() for node entities.
+ *
+ *  {@inheritdoc}
+ */
+function nodehierarchy_node_insert(NodeInterface $node) {
+  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+  $user = \Drupal::currentUser();
+  $uid = $user->id();
+  $node_uid = $node->getOwnerId();
+  if ($user->hasPermission('edit all node parents') || ($node_uid == $uid && $user->hasPermission('edit own node parents'))) {
+    $hierarchy_manager->hierarchySaveNode($node);
+  }
+}
+
+/**
+ * Implements hook_node_prepare_form().
+ *
+ * {@inheritdoc}
+ */
+function nodehierarchy_node_prepare_form(NodeInterface $node) {
+
+  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+  $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
+
+  // Load the parents if that hasn't been done before.
+  $nid = $node->id();
+  if (!isset($node->nodehierarchy_parents) && !empty($nid)) {
+    $node->nodehierarchy_parents = $hierarchy_storage->hierarchyGetParents($node->id());
+  }
+  // Cannot use module_invoke_all because it doesn't support references.
+  foreach (\Drupal::moduleHandler()->getImplementations('nodehierarchy_default_parents') as $module) {
+    $function = $module . '_nodehierarchy_default_parents';
+    $function($node);
+  }
+
+
+  if ( ($hierarchy_manager->hierarchyCanBeChild($node)) || ($hierarchy_manager->hierarchyCanBeParent($node)) ) {
+    if (!isset($node->nodehierarchy_parents) || empty($node->nodehierarchy_parents)) {
+      // Create a default nodehierarchy object.
+      $nid = empty($nid) ? null : $node->id();
+      $parent = $hierarchy_manager->hierarchyDefaultRecord($nid, 0);
+
+      // Set the type default if there is one.
+      if (empty($nid)) {
+        $config = \Drupal::config('nodehierarchy.settings');
+        $default = $config->get('nh_defaultparent_'.$node->getEntityType());//variable_get('nh_defaultparent_' . $node->type, 0);
+        // Get the parent node id from passed in from the get params.
+        $pnid = !empty($_GET['parent']) ? (int) $_GET['parent'] : $default;
+        // Get the parent from the get string. User must have update perms for parent unless it is the default.
+        $account = \Drupal::currentUser();
+        if ($pnid && $parent_node = Node::load($pnid)) {
+          if (($hierarchy_manager->hierarchyCanBeParent($node)) && ($account->hasPermission('create child of any parent')
+              || $node->access("update") || $parent_node->id() == $default)) {
+            $parent->pnid = $pnid;
+          }
+        }
+      }
+      $node->nodehierarchy_parents[] = $parent;
+    }
+  }
+}
+
+/**
  * Implements hook_page_attachments().
  */
 function nodehierarchy_page_attachments(&$page) {
@@ -194,57 +193,6 @@ function nodehierarchy_page_attachments(&$page) {
     // Load nodehierarchy.js on admin pages
     $page['#attached']['library'][] = 'nodehierarchy/nodehierarchy.nodetypeform';
   }
-}
-
-/**
- * Get the nodehierarchy setting form for a particular node type.
- */
-function _nodehierarchy_get_node_type_settings_form($key, $append_key = FALSE) {
-  $config =  \Drupal::config('nodehierarchy.settings');
-
-  $form['nh_allowchild'] = array(
-    '#type' => 'checkboxes',
-    '#title' => t('Allowed child node types'),
-    '#options' => node_type_get_names(),
-    '#default_value' => $config->get('nh_allowchild_'.$key),
-    '#description' => t('Node types which can be created as child nodes of this node type.'),
-  );
-
-  //$form['nh_defaultparent'] = _nodehierarchy_get_parent_selector($key, $config->get('nh_defaultparent_'.$key));
-  // TODO: add default parent support later
-  //$form['nh_defaultparent']['#title'] = t('Default Parent');
-
-  $form['nh_createmenu'] = array(
-    '#type' => 'radios',
-    '#title' => t('Show item in menu'),
-    '#default_value' => $config->get('nh_createmenu_'.$key), //variable_get('nh_createmenu_' . $key, 'optional_no'),
-    '#options' => array(
-      'never' => t('Never'),
-      'optional_no' => t('Optional - default to no'),
-      'optional_yes' => t('Optional - default to yes'),
-      'always' => t('Always'),
-    ),
-    '#description' => t("Users must have the 'administer menu' or 'customize nodehierarchy menus' permission to override default options."),
-  );
-  $form['nh_multiple'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Allow multiple parents'),
-    '#default_value' => $config->get('nh_multiple_'.$key),
-    '#description' => t('Can nodes of this type have multiple parents?.'),
-  );
-
-  //$form += module_invoke_all('nodehierarchy_node_type_settings_form', $key);
-
-  // If we need to append the node type key to the form elements, we do so.
-  if ($append_key) {
-    // Appending the key does not work recursively, so fieldsets etc. are not supported.
-    $children = \Drupal\Core\Render\Element::children($form);
-    foreach ($children as $form_key) {
-      $form[$form_key . '_' . $key] = $form[$form_key];
-      unset($form[$form_key]);
-    }
-  }
-  return $form;
 }
 
 /* Helper Functions for strings */

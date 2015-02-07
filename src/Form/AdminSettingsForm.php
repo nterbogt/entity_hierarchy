@@ -37,6 +37,7 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('nodehierarchy.settings');
+    $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
 
     // Individual type settings.
     $form['nodehierarchy_types'] = array(
@@ -53,7 +54,7 @@ class AdminSettingsForm extends ConfigFormBase {
         '#title' => $type,
         '#open' => FALSE,
       );
-      $form['nodehierarchy_types'][$key] += _nodehierarchy_get_node_type_settings_form($key, TRUE);
+      $form['nodehierarchy_types'][$key] += $hierarchy_manager->hierarchyGetNodeTypeSettingsForm($key, TRUE);
     }
 
     // Menu generation.

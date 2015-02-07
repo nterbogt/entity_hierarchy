@@ -1082,6 +1082,57 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
+   * Get the nodehierarchy setting form for a particular node type.
+   */
+  function hierarchyGetNodeTypeSettingsForm($key, $append_key = FALSE) {
+    $config =  \Drupal::config('nodehierarchy.settings');
+
+    $form['nh_allowchild'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Allowed child node types'),
+      '#options' => node_type_get_names(),
+      '#default_value' => $config->get('nh_allowchild_'.$key),
+      '#description' => t('Node types which can be created as child nodes of this node type.'),
+    );
+
+    //$form['nh_defaultparent'] = _nodehierarchy_get_parent_selector($key, $config->get('nh_defaultparent_'.$key));
+    // TODO: add default parent support later
+    //$form['nh_defaultparent']['#title'] = t('Default Parent');
+
+    $form['nh_createmenu'] = array(
+      '#type' => 'radios',
+      '#title' => t('Show item in menu'),
+      '#default_value' => $config->get('nh_createmenu_'.$key), //variable_get('nh_createmenu_' . $key, 'optional_no'),
+      '#options' => array(
+        'never' => t('Never'),
+        'optional_no' => t('Optional - default to no'),
+        'optional_yes' => t('Optional - default to yes'),
+        'always' => t('Always'),
+      ),
+      '#description' => t("Users must have the 'administer menu' or 'customize nodehierarchy menus' permission to override default options."),
+    );
+    $form['nh_multiple'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Allow multiple parents'),
+      '#default_value' => $config->get('nh_multiple_'.$key),
+      '#description' => t('Can nodes of this type have multiple parents?.'),
+    );
+
+    //$form += module_invoke_all('nodehierarchy_node_type_settings_form', $key);
+
+    // If we need to append the node type key to the form elements, we do so.
+    if ($append_key) {
+      // Appending the key does not work recursively, so fieldsets etc. are not supported.
+      $children = \Drupal\Core\Render\Element::children($form);
+      foreach ($children as $form_key) {
+        $form[$form_key . '_' . $key] = $form[$form_key];
+        unset($form[$form_key]);
+      }
+    }
+    return $form;
+  }
+
+  /**
    * Get the default menu link values for a new nodehierarchy menu link.
    */
   public function hierarchyDefaultRecord($cnid = NULL, $npid = NULL) {
