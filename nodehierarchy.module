@@ -138,7 +138,7 @@ function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_
   // Check if the form id string ends with "_node_form"
   endsWith($form_id,"_node_form") || endsWith($form_id,"_node_edit_form") ? $node_type = $form_id : $node_type = '';
   endsWith($form_id,"_node_delete_form") ? $node_delete_type = $form_id : $node_delete_type = '';
-  $type = $form['type']['#default_value'];  // The type of node
+  $type = $form['type']['#default_value'];  // The type of node (page)
 
   switch ($form_id) {
     case 'node_type_edit_form':

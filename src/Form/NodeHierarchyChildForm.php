@@ -132,7 +132,7 @@ class NodeHierarchyChildForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   protected function getEditableConfigNames() {
-    return ['nodehierarchy.settings'];
+    return ['nodehierarchy.child.settings'];
   }
 
 }
