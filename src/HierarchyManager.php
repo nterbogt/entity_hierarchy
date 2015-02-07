@@ -76,78 +76,6 @@ class HierarchyManager implements HierarchyManagerInterface {
   /**
    * {@inheritdoc}
    */
-  public function getAllHierarchies() {
-    if (!isset($this->hierarchies)) {
-      $this->loadHierarchies();
-    }
-    return $this->hierarchies;
-  }
-
-  /**
-   * Loads Hierarchies Array.
-   */
-  protected function loadHierarchies() {
-    $this->hierarchies = array();
-    $nids = $this->hierarchyOutlineStorage->getHierarchies();
-
-    if ($nids) {
-      $hierarchy_links = $this->hierarchyOutlineStorage->loadMultiple($nids);
-      $nodes = $this->entityManager->getStorage('node')->loadMultiple($nids);
-      // @todo: Sort by weight and translated title.
-
-      // @todo: use route name for links, not system path.
-      foreach ($hierarchy_links as $link) {
-        $nid = $link['nid'];
-        if (isset($nodes[$nid]) && $nodes[$nid]->status) {
-          $link['url'] = $nodes[$nid]->urlInfo();
-          $link['title'] = $nodes[$nid]->label();
-          $link['type'] = $nodes[$nid]->bundle();
-          $this->hierarchies[$link['hid']] = $link;
-        }
-      }
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getLinkDefaults($nid) {
-    return array(
-      'original_hid' => 0,
-      'nid' => $nid,
-      'hid' => 0,
-      'pid' => 0,
-      'has_children' => 0,
-      'weight' => 0,
-      'options' => array(),
-    );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getParentDepthLimit(array $hierarchy_link) {
-    return static::HIERARCHY_MAX_DEPTH - 1 - (($hierarchy_link['hid'] && $hierarchy_link['has_children']) ? $this->findChildrenRelativeDepth($hierarchy_link) : 0);
-  }
-
-  /**
-   * Determine the relative depth of the children of a given hierarchy link.
-   *
-   * @param array
-   *   The hierarchy link.
-   *
-   * @return int
-   *   The difference between the max depth in the hierarchy tree and the depth of
-   *   the passed hierarchy link.
-   */
-  protected function findChildrenRelativeDepth(array $hierarchy_link) {
-    $max_depth = $this->hierarchyOutlineStorage->getChildRelativeDepth($hierarchy_link, static::HIERARCHY_MAX_DEPTH);
-    return ($max_depth > $hierarchy_link['depth']) ? $max_depth - $hierarchy_link['depth'] : 0;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function addFormElements(array $form, FormStateInterface $form_state, NodeInterface $node, AccountInterface $account, $collapsed = TRUE) {
     // If the form is being processed during the Ajax callback of our hierarchy hid
     // dropdown, then $form_state will hold the value that was selected.
@@ -193,11 +121,11 @@ class HierarchyManager implements HierarchyManagerInterface {
       // This is the top level node in a maximum depth hierarchy and thus cannot be moved.
       $options[$node->id()] = $node->label();
     }
-    else {
-      foreach ($this->getAllHierarchies() as $hierarchy) {
-        $options[$hierarchy['nid']] = $hierarchy['title'];
-      }
-    }
+//    else {
+//      foreach ($this->getAllHierarchies() as $hierarchy) {
+//        $options[$hierarchy['nid']] = $hierarchy['title'];
+//      }
+//    }
 
     if ($account->hasPermission('create new hierarchies') && ($nid == 'new' || ($nid != $node->hierarchy['original_hid']))) {
       // The node can become a new hierarchy, if it is not one already.
@@ -543,43 +471,6 @@ class HierarchyManager implements HierarchyManagerInterface {
   /**
    * {@inheritdoc}
    */
-  public function updateOutline(NodeInterface $node) {
-    if (empty($node->hierarchy['hid'])) {
-      return FALSE;
-    }
-
-    if (!empty($node->hierarchy['hid'])) {
-      if ($node->hierarchy['hid'] == 'new') {
-        // New nodes that are their own hierarchy.
-        $node->hierarchy['hid'] = $node->id();
-      }
-      elseif (!isset($node->hierarchy['original_hid'])) {
-        $node->hierarchy['original_hid'] = $node->hierarchy['hid'];
-      }
-    }
-
-    // Ensure we create a new hierarchy link if either the node itself is new, or the
-    // hid was selected the first time, so that the original_hid is still empty.
-    $new = empty($node->hierarchy['nid']) || empty($node->hierarchy['original_hid']);
-
-    $node->hierarchy['nid'] = $node->id();
-
-    // Create a new hierarchy from a node.
-    if ($node->hierarchy['hid'] == $node->id()) {
-      $node->hierarchy['pid'] = 0;
-    }
-    elseif ($node->hierarchy['pid'] < 0) {
-      // -1 is the default value in HierarchyManager::addParentSelectFormElements().
-      // The node save should have set the hid equal to the node ID, but
-      // handle it here if it did not.
-      $node->hierarchy['pid'] = $node->hierarchy['hid'];
-    }
-    return $this->saveHierarchyLink($node->hierarchy, $new);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function getHierarchyParents(array $item, array $parent = array()) {
     $hierarchy = array();
     if ($item['pid'] == 0) {
@@ -651,7 +542,7 @@ class HierarchyManager implements HierarchyManagerInterface {
         '#title' => $this->t('Parent item'),
         '#default_value' => $hierarchy_link['pid'],
         '#description' => $this->t('The parent page in the hierarchy. The maximum depth for a hierarchy and all child pages is !maxdepth. Some pages in the selected hierarchy may not be available as parents if selecting them would exceed this limit.', array('!maxdepth' => static::HIERARCHY_MAX_DEPTH)),
-        '#options' => $this->getTableOfContents($hierarchy_link['hid'], $hierarchy_link['parent_depth_limit'], array($hierarchy_link['nid'])),
+        //'#options' => $this->getTableOfContents($hierarchy_link['hid'], $hierarchy_link['parent_depth_limit'], array($hierarchy_link['nid'])),
         '#attributes' => array('class' => array('hierarchy-title-select')),
         '#prefix' => '<div id="edit-hierarchy-plid-wrapper">',
         '#suffix' => '</div>',
@@ -707,72 +598,6 @@ class HierarchyManager implements HierarchyManagerInterface {
         $this->recurseTableOfContents($data['below'], $indent . '--', $toc, $exclude, $depth_limit);
       }
     }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getTableOfContents($hid, $depth_limit, array $exclude = array()) {
-    $tree = $this->hierarchyTreeAllData($hid);
-    $toc = array();
-    $this->recurseTableOfContents($tree, '', $toc, $exclude, $depth_limit);
-
-    return $toc;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function deleteFromHierarchy($nid) {
-    $original = $this->loadHierarchyLink($nid, FALSE);
-    $this->hierarchyOutlineStorage->delete($nid);
-
-    if ($nid == $original['hid']) {
-      // Handle deletion of a top-level post.
-      $result = $this->hierarchyOutlineStorage->loadHierarchyChildren($nid);
-
-      foreach ($result as $child) {
-        $child['hid'] = $child['nid'];
-        $this->updateOutline($child);
-      }
-    }
-    $this->updateOriginalParent($original);
-    $this->hierarchies = NULL;
-    \Drupal::cache('data')->deleteTags(array('hid:' . $original['hid']));
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function hierarchyTreeAllData($hid, $link = NULL, $max_depth = NULL) {
-    $tree = &drupal_static(__METHOD__, array());
-    $language_interface = \Drupal::languageManager()->getCurrentLanguage();
-
-    // Use $nid as a flag for whether the data being loaded is for the whole
-    // tree.
-    $nid = isset($link['nid']) ? $link['nid'] : 0;
-    // Generate a cache ID (cid) specific for this $hid, $link, $language, and
-    // depth.
-    $cid = 'hierarchy-links:' . $hid . ':all:' . $nid . ':' . $language_interface->getId() . ':' . (int) $max_depth;
-
-    if (!isset($tree[$cid])) {
-      // If the tree data was not in the static cache, build $tree_parameters.
-      $tree_parameters = array(
-        'min_depth' => 1,
-        'max_depth' => $max_depth,
-      );
-      if ($nid) {
-        $active_trail = $this->getActiveTrailIds($hid, $link);
-        $tree_parameters['expanded'] = $active_trail;
-        $tree_parameters['active_trail'] = $active_trail;
-        $tree_parameters['active_trail'][] = $nid;
-      }
-
-      // Build the tree using the parameters; the resulting tree will be cached.
-      $tree[$cid] = $this->hierarchyTreeBuild($hid, $tree_parameters);
-    }
-
-    return $tree[$cid];
   }
 
   /**
@@ -857,89 +682,6 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
-   * Builds a hierarchy tree, translates links, and checks access.
-   *
-   * @param int $hid
-   *   The Hierarchy ID to find links for.
-   * @param array $parameters
-   *   (optional) An associative array of build parameters. Possible keys:
-   *   - expanded: An array of parent link ids to return only hierarchy links that are
-   *     children of one of the plids in this list. If empty, the whole outline
-   *     is built, unless 'only_active_trail' is TRUE.
-   *   - active_trail: An array of nids, representing the coordinates of the
-   *     currently active hierarchy link.
-   *   - only_active_trail: Whether to only return links that are in the active
-   *     trail. This option is ignored, if 'expanded' is non-empty.
-   *   - min_depth: The minimum depth of hierarchy links in the resulting tree.
-   *     Defaults to 1, which is the default to build a whole tree for a hierarchy.
-   *   - max_depth: The maximum depth of hierarchy links in the resulting tree.
-   *   - conditions: An associative array of custom database select query
-   *     condition key/value pairs; see _menu_build_tree() for the actual query.
-   *
-   * @return array
-   *   A fully built hierarchy tree.
-   */
-  protected function hierarchyTreeBuild($hid, array $parameters = array()) {
-    // Build the hierarchy tree.
-    $data = $this->doHierarchyTreeBuild($hid, $parameters);
-    // Check access for the current user to each item in the tree.
-    $this->hierarchyTreeCheckAccess($data['tree'], $data['node_links']);
-    return $data['tree'];
-  }
-
-  /**
-   * Builds a hierarchy tree.
-   *
-   * This function may be used build the data for a menu tree only, for example
-   * to further massage the data manually before further processing happens.
-   * _menu_tree_check_access() needs to be invoked afterwards.
-   *
-   * @see menu_build_tree()
-   */
-  protected function doHierarchyTreeBuild($hid, array $parameters = array()) {
-    // Static cache of already built menu trees.
-    $trees = &drupal_static(__METHOD__, array());
-    $language_interface = \Drupal::languageManager()->getCurrentLanguage();
-
-    // Build the cache id; sort parents to prevent duplicate storage and remove
-    // default parameter values.
-    if (isset($parameters['expanded'])) {
-      sort($parameters['expanded']);
-    }
-    $tree_cid = 'hierarchy-links:' . $hid . ':tree-data:' . $language_interface->getId() . ':' . hash('sha256', serialize($parameters));
-
-    // If we do not have this tree in the static cache, check {cache_data}.
-    if (!isset($trees[$tree_cid])) {
-      $cache = \Drupal::cache('data')->get($tree_cid);
-      if ($cache && $cache->data) {
-        $trees[$tree_cid] = $cache->data;
-      }
-    }
-
-    if (!isset($trees[$tree_cid])) {
-      $min_depth = (isset($parameters['min_depth']) ? $parameters['min_depth'] : 1);
-      $result = $this->hierarchyOutlineStorage->getHierarchyMenuTree($hid, $parameters, $min_depth, static::HIERARCHY_MAX_DEPTH);
-
-      // Build an ordered array of links using the query result object.
-      $links = array();
-      foreach ($result as $link) {
-        $link = (array) $link;
-        $links[$link['nid']] = $link;
-      }
-      $active_trail = (isset($parameters['active_trail']) ? $parameters['active_trail'] : array());
-      $data['tree'] = $this->buildHierarchyOutlineData($links, $active_trail, $min_depth);
-      $data['node_links'] = array();
-      $this->hierarchyTreeCollectNodeLinks($data['tree'], $data['node_links']);
-
-      // Cache the data, if it is not already in the cache.
-      \Drupal::cache('data')->set($tree_cid, $data, Cache::PERMANENT, array('hid:' . $hid));
-      $trees[$tree_cid] = $data;
-    }
-
-    return $trees[$tree_cid];
-  }
-
-  /**
    * {@inheritdoc}
    */
   public function hierarchyTreeCollectNodeLinks(&$tree, &$node_links) {
@@ -953,20 +695,6 @@ class HierarchyManager implements HierarchyManagerInterface {
         $this->hierarchyTreeCollectNodeLinks($tree[$key]['below'], $node_links);
       }
     }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function hierarchyTreeGetFlat(array $hierarchy_link) {
-    if (!isset($this->hierarchyTreeFlattened[$hierarchy_link['nid']])) {
-      // Call $this->hierarchyTreeAllData() to take advantage of caching.
-      $tree = $this->hierarchyTreeAllData($hierarchy_link['hid'], $hierarchy_link, $hierarchy_link['depth'] + 1);
-      $this->hierarchyTreeFlattened[$hierarchy_link['nid']] = array();
-      $this->flatHierarchyTree($tree, $this->hierarchyTreeFlattened[$hierarchy_link['nid']]);
-    }
-
-    return $this->hierarchyTreeFlattened[$hierarchy_link['nid']];
   }
 
   /**
@@ -986,30 +714,6 @@ class HierarchyManager implements HierarchyManagerInterface {
         $this->flatHierarchyTree($data['below'], $flat);
       }
     }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function loadHierarchyLink($nid, $translate = TRUE) {
-    $links = $this->loadHierarchyLinks(array($nid), $translate);
-    return isset($links[$nid]) ? $links[$nid] : FALSE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function loadHierarchyLinks($nids, $translate = TRUE) {
-    $result = $this->hierarchyOutlineStorage->loadMultiple($nids);
-    $links = array();
-    foreach ($result as $link) {
-      if ($translate) {
-        $this->hierarchyLinkTranslate($link);
-      }
-      $links[$link['nid']] = $link;
-    }
-
-    return $links;
   }
 
   /**
@@ -1141,175 +845,6 @@ class HierarchyManager implements HierarchyManagerInterface {
       'weight' => 0,
       'cnid' => $cnid,
     );
-  }
-
-
-  /**
-   * {@inheritdoc}
-   */
-  public function saveHierarchyLink(array $link, $new) {
-    // Keep track of Hierarchy IDs for cache clear.
-    $affected_hids[$link['hid']] = $link['hid'];
-    $link += $this->getLinkDefaults($link['nid']);
-    if ($new) {
-      // Insert new.
-      $parents = $this->getHierarchyParents($link, (array) $this->loadHierarchyLink($link['pid'], FALSE));
-      $this->hierarchyOutlineStorage->insert($link, $parents);
-
-      // Update the has_children status of the parent.
-      $this->updateParent($link);
-    }
-    else {
-      $original = $this->loadHierarchyLink($link['nid'], FALSE);
-      // Using the Hierarchy ID as the key keeps this unique.
-      $affected_hids[$original['hid']] = $original['hid'];
-      // Handle links that are moving.
-      if ($link['hid'] != $original['hid'] || $link['pid'] != $original['pid']) {
-        // Update the hid for this page and all children.
-        if ($link['pid'] == 0) {
-          $link['depth'] = 1;
-          $parent = array();
-        }
-        // In case the form did not specify a proper PID we use the BID as new
-        // parent.
-        elseif (($parent_link = $this->loadHierarchyLink($link['pid'], FALSE)) && $parent_link['hid'] != $link['hid']) {
-          $link['pid'] = $link['hid'];
-          $parent = $this->loadHierarchyLink($link['pid'], FALSE);
-          $link['depth'] = $parent['depth'] + 1;
-        }
-        else {
-          $parent = $this->loadHierarchyLink($link['pid'], FALSE);
-          $link['depth'] = $parent['depth'] + 1;
-        }
-        $this->setParents($link, $parent);
-        $this->moveChildren($link, $original);
-
-        // Update the has_children status of the original parent.
-        $this->updateOriginalParent($original);
-        // Update the has_children status of the new parent.
-        $this->updateParent($link);
-      }
-      // Update the weight and pid.
-      $this->hierarchyOutlineStorage->update($link['nid'], array(
-        'weight' => $link['weight'],
-        'pid' => $link['pid'],
-        'hid' => $link['hid'],
-      ));
-    }
-    $cache_tags = [];
-    foreach ($affected_hids as $hid) {
-      $cache_tags[] = 'hid:' . $hid;
-    }
-    \Drupal::cache('data')->deleteTags($cache_tags);
-    return $link;
-  }
-
-  /**
-   * Moves children from the original parent to the updated link.
-   *
-   * @param array $link
-   *   The link being saved.
-   * @param array $original
-   *   The original parent of $link.
-   */
-  protected function moveChildren(array $link, array $original) {
-    $p = 'p1';
-    $expressions = array();
-    for ($i = 1; $i <= $link['depth']; $p = 'p' . ++$i) {
-      $expressions[] = array($p, ":p_$i", array(":p_$i" => $link[$p]));
-    }
-    $j = $original['depth'] + 1;
-    while ($i <= static::HIERARCHY_MAX_DEPTH && $j <= static::HIERARCHY_MAX_DEPTH) {
-      $expressions[] = array('p' . $i++, 'p' . $j++, array());
-    }
-    while ($i <= static::HIERARCHY_MAX_DEPTH) {
-      $expressions[] = array('p' . $i++, 0, array());
-    }
-
-    $shift = $link['depth'] - $original['depth'];
-    if ($shift > 0) {
-      // The order of expressions must be reversed so the new values don't
-      // overwrite the old ones before they can be used because "Single-table
-      // UPDATE assignments are generally evaluated from left to right"
-      // @see http://dev.mysql.com/doc/refman/5.0/en/update.html
-      $expressions = array_reverse($expressions);
-    }
-
-    $this->hierarchyOutlineStorage->updateMovedChildren($link['hid'], $original, $expressions, $shift);
-  }
-
-  /**
-   * Sets the has_children flag of the parent of the node.
-   *
-   * This method is mostly called when a hierarchy link is moved/created etc. So we
-   * want to update the has_children flag of the new parent hierarchy link.
-   *
-   * @param array $link
-   *   The hierarchy link, data reflecting its new position, whose new parent we want
-   *   to update.
-   *
-   * @return bool
-   *   TRUE if the update was successful (either there is no parent to update,
-   *   or the parent was updated successfully), FALSE on failure.
-   */
-  protected function updateParent(array $link) {
-    if ($link['pid'] == 0) {
-      // Nothing to update.
-      return TRUE;
-    }
-    return $this->hierarchyOutlineStorage->update($link['pid'], array('has_children' => 1));
-  }
-
-  /**
-   * Updates the has_children flag of the parent of the original node.
-   *
-   * This method is called when a hierarchy link is moved or deleted. So we want to
-   * update the has_children flag of the parent node.
-   *
-   * @param array $original
-   *   The original link whose parent we want to update.
-   *
-   * @return bool
-   *   TRUE if the update was successful (either there was no original parent to
-   *   update, or the original parent was updated successfully), FALSE on
-   *   failure.
-   */
-  protected function updateOriginalParent(array $original) {
-    if ($original['pid'] == 0) {
-      // There were no parents of this link. Nothing to update.
-      return TRUE;
-    }
-    // Check if $original had at least one child.
-    $original_number_of_children = $this->hierarchyOutlineStorage->countOriginalLinkChildren($original);
-
-    $parent_has_children = ((bool) $original_number_of_children) ? 1 : 0;
-    // Update the parent. If the original link did not have children, then the
-    // parent now does not have children. If the original had children, then the
-    // the parent has children now (still).
-    return $this->hierarchyOutlineStorage->update($original['pid'], array('has_children' => $parent_has_children));
-  }
-
-  /**
-   * Sets the p1 through p9 properties for a hierarchy link being saved.
-   *
-   * @param array $link
-   *   The hierarchy link to update.
-   * @param array $parent
-   *   The parent values to set.
-   */
-  protected function setParents(array &$link, array $parent) {
-    $i = 1;
-    while ($i < $link['depth']) {
-      $p = 'p' . $i++;
-      $link[$p] = $parent[$p];
-    }
-    $p = 'p' . $i++;
-    // The parent (p1 - p9) corresponding to the depth always equals the nid.
-    $link[$p] = $link['nid'];
-    while ($i <= static::HIERARCHY_MAX_DEPTH) {
-      $p = 'p' . $i++;
-      $link[$p] = 0;
-    }
   }
 
   /**
@@ -1446,56 +981,6 @@ class HierarchyManager implements HierarchyManagerInterface {
       }
     }
     return $tree;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function hierarchySubtreeData($link) {
-    $tree = &drupal_static(__METHOD__, array());
-
-    // Generate a cache ID (cid) specific for this $link.
-    $cid = 'hierarchy-links:subtree-cid:' . $link['nid'];
-
-    if (!isset($tree[$cid])) {
-      $tree_cid_cache = \Drupal::cache('data')->get($cid);
-
-      if ($tree_cid_cache && $tree_cid_cache->data) {
-        // If the cache entry exists, it will just be the cid for the actual data.
-        // This avoids duplication of large amounts of data.
-        $cache = \Drupal::cache('data')->get($tree_cid_cache->data);
-
-        if ($cache && isset($cache->data)) {
-          $data = $cache->data;
-        }
-      }
-
-      // If the subtree data was not in the cache, $data will be NULL.
-      if (!isset($data)) {
-        $result = $this->hierarchyOutlineStorage->getHierarchySubtree($link, static::HIERARCHY_MAX_DEPTH);
-        $links = array();
-        foreach ($result as $item) {
-          $links[] = $item;
-        }
-        $data['tree'] = $this->buildHierarchyOutlineData($links, array(), $link['depth']);
-        $data['node_links'] = array();
-        $this->hierarchyTreeCollectNodeLinks($data['tree'], $data['node_links']);
-        // Compute the real cid for hierarchy subtree data.
-        $tree_cid = 'hierarchy-links:subtree-data:' . hash('sha256', serialize($data));
-        // Cache the data, if it is not already in the cache.
-
-        if (!\Drupal::cache('data')->get($tree_cid)) {
-          \Drupal::cache('data')->set($tree_cid, $data, Cache::PERMANENT, array('hid:' . $link['hid']));
-        }
-        // Cache the cid of the (shared) data using the hierarchy and item-specific cid.
-        \Drupal::cache('data')->set($cid, $tree_cid, Cache::PERMANENT, array('hid:' . $link['hid']));
-      }
-      // Check access for the current user to each item in the tree.
-      $this->hierarchyTreeCheckAccess($data['tree'], $data['node_links']);
-      $tree[$cid] = $data['tree'];
-    }
-
-    return $tree[$cid];
   }
 
 }

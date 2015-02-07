@@ -115,8 +115,8 @@ function nodehierarchy_form_node_type_edit_form_alter(&$form, FormStateInterface
     '#weight' => 10,
   );
 
-  // $form['#attached']['library'][] = nodehierarchy/nodehierarchy.nodetypeform;
   // Right now, we add this js to all admin pages using hook_page_attachments; see below.
+  // $form['#attached']['library'][] = nodehierarchy/nodehierarchy.nodetypeform;
 
   $form['nodehierarchy'] += $hierarchy_manager->hierarchyGetNodeTypeSettingsForm($type);
 }
