@@ -7,8 +7,8 @@
 
 namespace Drupal\nodehierarchy;
 
+use Drupal\nodehierarchy\HierarchyOutlineStorageInterface;
 use Drupal\Component\Utility\Unicode;
-use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -845,142 +845,6 @@ class HierarchyManager implements HierarchyManagerInterface {
       'weight' => 0,
       'cnid' => $cnid,
     );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function hierarchyTreeCheckAccess(&$tree, $node_links = array()) {
-    if ($node_links) {
-      // @todo Extract that into its own method.
-      $nids = array_keys($node_links);
-
-      // @todo This should be actually filtering on the desired node status field
-      //   language and just fall back to the default language.
-      $nids = \Drupal::entityQuery('node')
-        ->condition('nid', $nids)
-        ->condition('status', 1)
-        ->execute();
-
-      foreach ($nids as $nid) {
-        foreach ($node_links[$nid] as $mlid => $link) {
-          $node_links[$nid][$mlid]['access'] = TRUE;
-        }
-      }
-    }
-    $this->doHierarchyTreeCheckAccess($tree);
-  }
-
-  /**
-   * Sorts the menu tree and recursively checks access for each item.
-   */
-  protected function doHierarchyTreeCheckAccess(&$tree) {
-    $new_tree = array();
-    foreach ($tree as $key => $v) {
-      $item = &$tree[$key]['link'];
-      $this->hierarchyLinkTranslate($item);
-      if ($item['access']) {
-        if ($tree[$key]['below']) {
-          $this->doHierarchyTreeCheckAccess($tree[$key]['below']);
-        }
-        // The weights are made a uniform 5 digits by adding 50000 as an offset.
-        // After calling $this->hierarchyLinkTranslate(), $item['title'] has the
-        // translated title. Adding the nid to the end of the index insures that
-        // it is unique.
-        $new_tree[(50000 + $item['weight']) . ' ' . $item['title'] . ' ' . $item['nid']] = $tree[$key];
-      }
-    }
-    // Sort siblings in the tree based on the weights and localized titles.
-    ksort($new_tree);
-    $tree = $new_tree;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function hierarchyLinkTranslate(&$link) {
-    $node = NULL;
-    // Access will already be set in the tree functions.
-    if (!isset($link['access'])) {
-      $node = $this->entityManager->getStorage('node')->load($link['nid']);
-      $link['access'] = $node && $node->access('view');
-    }
-    // For performance, don't localize a link the user can't access.
-    if ($link['access']) {
-      // @todo - load the nodes en-mass rather than individually.
-      if (!$node) {
-        $node = $this->entityManager->getStorage('node')
-          ->load($link['nid']);
-      }
-      // The node label will be the value for the current user's language.
-      $link['title'] = $node->label();
-      $link['options'] = array();
-    }
-    return $link;
-  }
-
-  /**
-   * Sorts and returns the built data representing a hierarchy tree.
-   *
-   * @param array $links
-   *   A flat array of hierarchy links that are part of the hierarchy. Each array element
-   *   is an associative array of information about the hierarchy link, containing the
-   *   fields from the {hierarchy} table. This array must be ordered depth-first.
-   * @param array $parents
-   *   An array of the node ID values that are in the path from the current
-   *   page to the root of the hierarchy tree.
-   * @param int $depth
-   *   The minimum depth to include in the returned hierarchy tree.
-   *
-   * @return array
-   *   An array of hierarchy links in the form of a tree. Each item in the tree is an
-   *   associative array containing:
-   *   - link: The hierarchy link item from $links, with additional element
-   *     'in_active_trail' (TRUE if the link ID was in $parents).
-   *   - below: An array containing the sub-tree of this item, where each element
-   *     is a tree item array with 'link' and 'below' elements. This array will be
-   *     empty if the hierarchy link has no items in its sub-tree having a depth
-   *     greater than or equal to $depth.
-   */
-  protected function buildHierarchyOutlineData(array $links, array $parents = array(), $depth = 1) {
-    // Reverse the array so we can use the more efficient array_pop() function.
-    $links = array_reverse($links);
-    return $this->buildHierarchyOutlineRecursive($links, $parents, $depth);
-  }
-
-  /**
-   * Builds the data representing a hierarchy tree.
-   *
-   * The function is a bit complex because the rendering of a link depends on
-   * the next hierarchy link.
-   */
-  protected function buildHierarchyOutlineRecursive(&$links, $parents, $depth) {
-    $tree = array();
-    while ($item = array_pop($links)) {
-      // We need to determine if we're on the path to root so we can later build
-      // the correct active trail.
-      $item['in_active_trail'] = in_array($item['nid'], $parents);
-      // Add the current link to the tree.
-      $tree[$item['nid']] = array(
-        'link' => $item,
-        'below' => array(),
-      );
-      // Look ahead to the next link, but leave it on the array so it's available
-      // to other recursive function calls if we return or build a sub-tree.
-      $next = end($links);
-      // Check whether the next link is the first in a new sub-tree.
-      if ($next && $next['depth'] > $depth) {
-        // Recursively call buildHierarchyOutlineRecursive to build the sub-tree.
-        $tree[$item['nid']]['below'] = $this->buildHierarchyOutlineRecursive($links, $parents, $next['depth']);
-        // Fetch next link after filling the sub-tree.
-        $next = end($links);
-      }
-      // Determine if we should exit the loop and $request = return.
-      if (!$next || $next['depth'] < $depth) {
-        break;
-      }
-    }
-    return $tree;
   }
 
 }

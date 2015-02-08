@@ -51,6 +51,12 @@ interface HierarchyOutlineStorageInterface {
    */
   public function update($nid, $fields);
 
+  public function hierarchyNodesByType($types);
 
+  public function hierarchyLoadParentNextChildWeight($pnid);
+
+  public function hierarchyRecordLoad($hid);
+
+  public function hierarchyRecordDelete($hid);
 
 }
