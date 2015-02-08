@@ -7,7 +7,6 @@
 
 namespace Drupal\nodehierarchy;
 
-use Drupal\nodehierarchy\HierarchyOutlineStorageInterface;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -153,6 +152,59 @@ class HierarchyManager implements HierarchyManagerInterface {
         'speed' => 'fast',
       ),
     );
+    return $form;
+  }
+
+  /**
+   * Builds the parent selection form element for the node form or outline tab.
+   *
+   * This function is also called when generating a new set of options during the
+   * Ajax callback, so an array is returned that can be used to replace an
+   * existing form element.
+   *
+   * @param array $hierarchy_link
+   *   A fully loaded hierarchy link that is part of the hierarchy hierarchy.
+   *
+   * @return array
+   *   A parent selection form element.
+   */
+  protected function addParentSelectFormElements(array $hierarchy_link) {
+    if ($this->configFactory->get('hierarchy.settings')->get('override_parent_selector')) {
+      return array();
+    }
+    // Offer a message or a drop-down to choose a different parent page.
+    $form = array(
+      '#type' => 'hidden',
+      '#value' => -1,
+      '#prefix' => '<div id="edit-hierarchy-plid-wrapper">',
+      '#suffix' => '</div>',
+    );
+
+    if ($hierarchy_link['nid'] === $hierarchy_link['hid']) {
+      // This is a hierarchy - at the top level.
+      if ($hierarchy_link['original_hid'] === $hierarchy_link['hid']) {
+        $form['#prefix'] .= '<em>' . $this->t('This is the top-level page in this hierarchy.') . '</em>';
+      }
+      else {
+        $form['#prefix'] .= '<em>' . $this->t('This will be the top-level page in this hierarchy.') . '</em>';
+      }
+    }
+    elseif (!$hierarchy_link['hid']) {
+      $form['#prefix'] .= '<em>' . $this->t('No hierarchy selected.') . '</em>';
+    }
+    else {
+      $form = array(
+        '#type' => 'select',
+        '#title' => $this->t('Parent item'),
+        '#default_value' => $hierarchy_link['pid'],
+        '#description' => $this->t('The parent page in the hierarchy. The maximum depth for a hierarchy and all child pages is !maxdepth. Some pages in the selected hierarchy may not be available as parents if selecting them would exceed this limit.', array('!maxdepth' => static::HIERARCHY_MAX_DEPTH)),
+        //'#options' => $this->getTableOfContents($hierarchy_link['hid'], $hierarchy_link['parent_depth_limit'], array($hierarchy_link['nid'])),
+        '#attributes' => array('class' => array('hierarchy-title-select')),
+        '#prefix' => '<div id="edit-hierarchy-plid-wrapper">',
+        '#suffix' => '</div>',
+      );
+    }
+
     return $form;
   }
 
@@ -386,7 +438,6 @@ class HierarchyManager implements HierarchyManagerInterface {
     return $nodes;
   }
 
-
   /**
    * Get a tree of nodes of the given type.
    */
@@ -458,262 +509,6 @@ class HierarchyManager implements HierarchyManagerInterface {
       }
     }
     return $out;
-  }
-
-
-  /**
-   * {@inheritdoc}
-   */
-  public function checkNodeIsRemovable(NodeInterface $node) {
-    return (!empty($node->hierarchy['hid']) && (($node->hierarchy['hid'] != $node->id()) || !$node->hierarchy['has_children']));
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getHierarchyParents(array $item, array $parent = array()) {
-    $hierarchy = array();
-    if ($item['pid'] == 0) {
-      $hierarchy['p1'] = $item['nid'];
-      for ($i = 2; $i <= static::HIERARCHY_MAX_DEPTH; $i++) {
-        $parent_property = "p$i";
-        $hierarchy[$parent_property] = 0;
-      }
-      $hierarchy['depth'] = 1;
-    }
-    else {
-      $i = 1;
-      $hierarchy['depth'] = $parent['depth'] + 1;
-      while ($i < $hierarchy['depth']) {
-        $p = 'p' . $i++;
-        $hierarchy[$p] = $parent[$p];
-      }
-      $p = 'p' . $i++;
-      // The parent (p1 - p9) corresponding to the depth always equals the nid.
-      $hierarchy[$p] = $item['nid'];
-      while ($i <= static::HIERARCHY_MAX_DEPTH) {
-        $p = 'p' . $i++;
-        $hierarchy[$p] = 0;
-      }
-    }
-    return $hierarchy;
-  }
-
-  /**
-   * Builds the parent selection form element for the node form or outline tab.
-   *
-   * This function is also called when generating a new set of options during the
-   * Ajax callback, so an array is returned that can be used to replace an
-   * existing form element.
-   *
-   * @param array $hierarchy_link
-   *   A fully loaded hierarchy link that is part of the hierarchy hierarchy.
-   *
-   * @return array
-   *   A parent selection form element.
-   */
-  protected function addParentSelectFormElements(array $hierarchy_link) {
-    if ($this->configFactory->get('hierarchy.settings')->get('override_parent_selector')) {
-      return array();
-    }
-    // Offer a message or a drop-down to choose a different parent page.
-    $form = array(
-      '#type' => 'hidden',
-      '#value' => -1,
-      '#prefix' => '<div id="edit-hierarchy-plid-wrapper">',
-      '#suffix' => '</div>',
-    );
-
-    if ($hierarchy_link['nid'] === $hierarchy_link['hid']) {
-      // This is a hierarchy - at the top level.
-      if ($hierarchy_link['original_hid'] === $hierarchy_link['hid']) {
-        $form['#prefix'] .= '<em>' . $this->t('This is the top-level page in this hierarchy.') . '</em>';
-      }
-      else {
-        $form['#prefix'] .= '<em>' . $this->t('This will be the top-level page in this hierarchy.') . '</em>';
-      }
-    }
-    elseif (!$hierarchy_link['hid']) {
-      $form['#prefix'] .= '<em>' . $this->t('No hierarchy selected.') . '</em>';
-    }
-    else {
-      $form = array(
-        '#type' => 'select',
-        '#title' => $this->t('Parent item'),
-        '#default_value' => $hierarchy_link['pid'],
-        '#description' => $this->t('The parent page in the hierarchy. The maximum depth for a hierarchy and all child pages is !maxdepth. Some pages in the selected hierarchy may not be available as parents if selecting them would exceed this limit.', array('!maxdepth' => static::HIERARCHY_MAX_DEPTH)),
-        //'#options' => $this->getTableOfContents($hierarchy_link['hid'], $hierarchy_link['parent_depth_limit'], array($hierarchy_link['nid'])),
-        '#attributes' => array('class' => array('hierarchy-title-select')),
-        '#prefix' => '<div id="edit-hierarchy-plid-wrapper">',
-        '#suffix' => '</div>',
-      );
-    }
-
-    return $form;
-  }
-
-  /**
-   * Recursively processes and formats hierarchy links for getTableOfContents().
-   *
-   * This helper function recursively modifies the table of contents array for
-   * each item in the hierarchy tree, ignoring items in the exclude array or at a depth
-   * greater than the limit. Truncates titles over thirty characters and appends
-   * an indentation string incremented by depth.
-   *
-   * @param array $tree
-   *   The data structure of the hierarchy's outline tree. Includes hidden links.
-   * @param string $indent
-   *   A string appended to each node title. Increments by '--' per depth
-   *   level.
-   * @param array $toc
-   *   Reference to the table of contents array. This is modified in place, so the
-   *   function does not have a return value.
-   * @param array $exclude
-   *   Optional array of Node ID values. Any link whose node ID is in this
-   *   array will be excluded (along with its children).
-   * @param int $depth_limit
-   *   Any link deeper than this value will be excluded (along with its children).
-   */
-  protected function recurseTableOfContents(array $tree, $indent, array &$toc, array $exclude, $depth_limit) {
-    $nids = array();
-    foreach ($tree as $data) {
-      if ($data['link']['depth'] > $depth_limit) {
-        // Don't iterate through any links on this level.
-        break;
-      }
-      if (!in_array($data['link']['nid'], $exclude)) {
-        $nids[] = $data['link']['nid'];
-      }
-    }
-
-    $nodes = $this->entityManager->getStorage('node')->loadMultiple($nids);
-
-    foreach ($tree as $data) {
-      $nid = $data['link']['nid'];
-      if (in_array($nid, $exclude)) {
-        continue;
-      }
-      $toc[$nid] = $indent . ' ' . Unicode::truncate($nodes[$nid]->label(), 30, TRUE, TRUE);
-      if ($data['below']) {
-        $this->recurseTableOfContents($data['below'], $indent . '--', $toc, $exclude, $depth_limit);
-      }
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getActiveTrailIds($hid, $link) {
-    $nid = isset($link['nid']) ? $link['nid'] : 0;
-    // The tree is for a single item, so we need to match the values in its
-    // p columns and 0 (the top level) with the plid values of other links.
-    $active_trail = array(0);
-    for ($i = 1; $i < static::HIERARCHY_MAX_DEPTH; $i++) {
-      if (!empty($link["p$i"])) {
-        $active_trail[] = $link["p$i"];
-      }
-    }
-    return $active_trail;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function hierarchyTreeOutput(array $tree) {
-    $build = array();
-    $items = array();
-
-    // Pull out just the hierarchy links we are going to render so that we
-    // get an accurate count for the first/last classes.
-    foreach ($tree as $data) {
-      if ($data['link']['access']) {
-        $items[] = $data;
-      }
-    }
-
-    $num_items = count($items);
-    foreach ($items as $i => $data) {
-      $class = array();
-      if ($i == 0) {
-        $class[] = 'first';
-      }
-      if ($i == $num_items - 1) {
-        $class[] = 'last';
-      }
-      // Set a class for the <li>-tag. Since $data['below'] may contain local
-      // tasks, only set 'expanded' class if the link also has children within
-      // the current hierarchy.
-      if ($data['link']['has_children'] && $data['below']) {
-        $class[] = 'expanded';
-      }
-      elseif ($data['link']['has_children']) {
-        $class[] = 'collapsed';
-      }
-      else {
-        $class[] = 'leaf';
-      }
-      // Set a class if the link is in the active trail.
-      if ($data['link']['in_active_trail']) {
-        $class[] = 'active-trail';
-        $data['link']['localized_options']['attributes']['class'][] = 'active-trail';
-      }
-
-      // Allow hierarchy-specific theme overrides.
-      $element['#theme'] = 'hierarchy_link__hierarchy_toc_' . $data['link']['hid'];
-      $element['#attributes']['class'] = $class;
-      $element['#title'] = $data['link']['title'];
-      $node = $this->entityManager->getStorage('node')->load($data['link']['nid']);
-      $element['#url'] = $node->urlInfo();
-      $element['#localized_options'] = !empty($data['link']['localized_options']) ? $data['link']['localized_options'] : array();
-      $element['#below'] = $data['below'] ? $this->hierarchyTreeOutput($data['below']) : $data['below'];
-      $element['#original_link'] = $data['link'];
-      // Index using the link's unique nid.
-      $build[$data['link']['nid']] = $element;
-    }
-    if ($build) {
-      // Make sure drupal_render() does not re-order the links.
-      $build['#sorted'] = TRUE;
-      // Add the theme wrapper for outer markup.
-      // Allow hierarchy-specific theme overrides.
-      $build['#theme_wrappers'][] = 'hierarchy_tree__hierarchy_toc_' . $data['link']['hid'];
-    }
-
-    return $build;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function hierarchyTreeCollectNodeLinks(&$tree, &$node_links) {
-    // All hierarchy links are nodes.
-    // @todo clean this up.
-    foreach ($tree as $key => $v) {
-      $nid = $v['link']['nid'];
-      $node_links[$nid][$tree[$key]['link']['nid']] = &$tree[$key]['link'];
-      $tree[$key]['link']['access'] = FALSE;
-      if ($tree[$key]['below']) {
-        $this->hierarchyTreeCollectNodeLinks($tree[$key]['below'], $node_links);
-      }
-    }
-  }
-
-  /**
-   * Recursively converts a tree of menu links to a flat array.
-   *
-   * @param array $tree
-   *   A tree of menu links in an array.
-   * @param array $flat
-   *   A flat array of the menu links from $tree, passed by reference.
-   *
-   * @see static::hierarchyTreeGetFlat().
-   */
-  protected function flatHierarchyTree(array $tree, array &$flat) {
-    foreach ($tree as $data) {
-      $flat[$data['link']['nid']] = $data['link'];
-      if ($data['below']) {
-        $this->flatHierarchyTree($data['below'], $flat);
-      }
-    }
   }
 
   /**
