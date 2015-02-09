@@ -56,7 +56,6 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
     // Only show the form is the user has permission
     if ($can_set_parent) {
       $collapsed = TRUE;  // Todo: fix
-      $form = $hierarchy_manager->addFormElements($form, $form_state, $node, $account, $collapsed);
       $form = $hierarchy_manager->addHierarchyFormElement($form, $form_state, $node, $account, $collapsed);
     }
   }
@@ -193,6 +192,20 @@ function nodehierarchy_page_attachments(&$page) {
     // Load nodehierarchy.js on admin pages
     $page['#attached']['library'][] = 'nodehierarchy/nodehierarchy.nodetypeform';
   }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_load() for node entities.
+ */
+function nodehierarchy_node_load($nodes) {
+// Should we be loading the parent selection here instead using the code below?
+//  $nids = array_keys($nodes);
+//  $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
+//  $pids = $hierarchy_storage->loadHierarchies($nids);
+//  foreach ($pids as $pid) {
+//    $title = Node::load($pid)->getTitle();
+//    $nodes[$pid['nid']]->nodehierarchy_parents = $pid;
+//  }
 }
 
 /* Helper Functions for strings */

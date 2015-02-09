@@ -18,22 +18,19 @@ use Drupal\node\NodeInterface;
 interface HierarchyManagerInterface {
 
   /**
-   * Builds the common elements of the hierarchy form for the node and outline forms.
+   * Loads multiple hierarchy entries.
    *
-   * @param array $form
-   *   An associative array containing the structure of the form.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The current state of the form.
-   * @param \Drupal\node\NodeInterface $node
-   *   The node whose form is being viewed.
-   * @param \Drupal\Core\Session\AccountInterface $account
-   *   The account viewing the form.
-   * @param bool $collapsed
-   *   If TRUE, the fieldset starts out collapsed.
+   * The entries of a hierarchy entry is documented in
+   * \Drupal\nodehierarchy\HierarchyOutlineStorageInterface::loadHierarchies.
    *
-   * @return array
-   *   The form structure, with the hierarchy elements added.
+   * @param int[] $nids
+   *   An array of nids to load.
+   *
+   * @return array[]
+   *   The parent ID(s)
+   *
+   * @see \Drupal\nodehierarchy\HierarchyOutlineStorageInterface::loadHierarchies
    */
-  public function addFormElements(array $form, FormStateInterface $form_state, NodeInterface $node, AccountInterface $account, $collapsed = TRUE);
+  public function loadHierarchy($nids);
 
 }

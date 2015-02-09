@@ -202,5 +202,17 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
 //      ->execute();
   }
 
+  public function loadHierarchies($nids) {
+    $results = db_select('nodehierarchy', 'h')
+      ->fields('h', array('pnid'))
+      ->condition('h.cnid', $nids, 'IN')
+      ->execute()
+      ->fetchAllAssoc('pnid', \PDO::FETCH_ASSOC);
+    $pnids = array();
+    foreach ($results as $result) {
+      $pnids[] = $result['pnid'];
+    }
+    return $pnids;
+  }
 
 }

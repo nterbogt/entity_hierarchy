@@ -72,142 +72,6 @@ class HierarchyManager implements HierarchyManagerInterface {
     $this->hierarchyOutlineStorage = $hierarchy_outline_storage;
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function addFormElements(array $form, FormStateInterface $form_state, NodeInterface $node, AccountInterface $account, $collapsed = TRUE) {
-    // If the form is being processed during the Ajax callback of our hierarchy hid
-    // dropdown, then $form_state will hold the value that was selected.
-    if ($form_state->hasValue('hierarchy')) {
-      $node->hierarchy = $form_state->getValue('hierarchy');
-    }
-    $form['old-hierarchy'] = array(
-      '#type' => 'details',
-      '#title' => $this->t('Set Hierarchy Page'),
-      '#weight' => 10,
-      '#open' => !$collapsed,
-      '#group' => 'advanced',
-      '#attributes' => array(
-        'class' => array('hierarchy-outline-form'),
-      ),
-      '#attached' => array(
-        'library' => array('hierarchy/drupal.hierarchy'),
-      ),
-      '#tree' => TRUE,
-    );
-    foreach (array('nid', 'has_children', 'original_hid', 'parent_depth_limit') as $key) {
-      $form['old-hierarchy'][$key] = array(
-        '#type' => 'value',
-        '#value' => $node->hierarchy[$key],
-      );
-    }
-
-    $form['old-hierarchy']['pid'] = $this->addParentSelectFormElements($node->hierarchy);
-
-    // @see \Drupal\hierarchy\Form\HierarchyAdminEditForm::hierarchyAdminTableTree(). The
-    // weight may be larger than 15.
-    $form['old-hierarchy']['weight'] = array(
-      '#type' => 'weight',
-      '#title' => $this->t('Weight'),
-      '#default_value' => $node->hierarchy['weight'],
-      '#delta' => max(15, abs($node->hierarchy['weight'])),
-      '#weight' => 5,
-      '#description' => $this->t('Pages at a given level are ordered first by weight and then by title.'),
-    );
-    $options = array();
-    $nid = !$node->isNew() ? $node->id() : 'new';
-    if ($node->id() && ($nid == $node->hierarchy['original_hid']) && ($node->hierarchy['parent_depth_limit'] == 0)) {
-      // This is the top level node in a maximum depth hierarchy and thus cannot be moved.
-      $options[$node->id()] = $node->label();
-    }
-//    else {
-//      foreach ($this->getAllHierarchies() as $hierarchy) {
-//        $options[$hierarchy['nid']] = $hierarchy['title'];
-//      }
-//    }
-
-    if ($account->hasPermission('create new hierarchies') && ($nid == 'new' || ($nid != $node->hierarchy['original_hid']))) {
-      // The node can become a new hierarchy, if it is not one already.
-      $options = array($nid => $this->t('- Create a new hierarchy -')) + $options;
-    }
-    if (!$node->hierarchy['hid']) {
-      // The node is not currently in the hierarchy.
-      $options = array(0 => $this->t('- None -')) + $options;
-    }
-
-    // Add a drop-down to select the destination hierarchy.
-    $form['old-hierarchy']['hid'] = array(
-      '#type' => 'select',
-      '#title' => $this->t('Hierarchy'),
-      '#default_value' => $node->hierarchy['hid'],
-      '#options' => $options,
-      '#access' => (bool) $options,
-      '#description' => $this->t('Your page will be a part of the selected hierarchy.'),
-      '#weight' => -5,
-      '#attributes' => array('class' => array('hierarchy-title-select')),
-      '#ajax' => array(
-        'callback' => 'hierarchy_form_update',
-        'wrapper' => 'edit-hierarchy-plid-wrapper',
-        'effect' => 'fade',
-        'speed' => 'fast',
-      ),
-    );
-    return $form;
-  }
-
-  /**
-   * Builds the parent selection form element for the node form or outline tab.
-   *
-   * This function is also called when generating a new set of options during the
-   * Ajax callback, so an array is returned that can be used to replace an
-   * existing form element.
-   *
-   * @param array $hierarchy_link
-   *   A fully loaded hierarchy link that is part of the hierarchy hierarchy.
-   *
-   * @return array
-   *   A parent selection form element.
-   */
-  protected function addParentSelectFormElements(array $hierarchy_link) {
-    if ($this->configFactory->get('hierarchy.settings')->get('override_parent_selector')) {
-      return array();
-    }
-    // Offer a message or a drop-down to choose a different parent page.
-    $form = array(
-      '#type' => 'hidden',
-      '#value' => -1,
-      '#prefix' => '<div id="edit-hierarchy-plid-wrapper">',
-      '#suffix' => '</div>',
-    );
-
-    if ($hierarchy_link['nid'] === $hierarchy_link['hid']) {
-      // This is a hierarchy - at the top level.
-      if ($hierarchy_link['original_hid'] === $hierarchy_link['hid']) {
-        $form['#prefix'] .= '<em>' . $this->t('This is the top-level page in this hierarchy.') . '</em>';
-      }
-      else {
-        $form['#prefix'] .= '<em>' . $this->t('This will be the top-level page in this hierarchy.') . '</em>';
-      }
-    }
-    elseif (!$hierarchy_link['hid']) {
-      $form['#prefix'] .= '<em>' . $this->t('No hierarchy selected.') . '</em>';
-    }
-    else {
-      $form = array(
-        '#type' => 'select',
-        '#title' => $this->t('Parent item'),
-        '#default_value' => $hierarchy_link['pid'],
-        '#description' => $this->t('The parent page in the hierarchy. The maximum depth for a hierarchy and all child pages is !maxdepth. Some pages in the selected hierarchy may not be available as parents if selecting them would exceed this limit.', array('!maxdepth' => static::HIERARCHY_MAX_DEPTH)),
-        //'#options' => $this->getTableOfContents($hierarchy_link['hid'], $hierarchy_link['parent_depth_limit'], array($hierarchy_link['nid'])),
-        '#attributes' => array('class' => array('hierarchy-title-select')),
-        '#prefix' => '<div id="edit-hierarchy-plid-wrapper">',
-        '#suffix' => '</div>',
-      );
-    }
-
-    return $form;
-  }
-
   public function addHierarchyFormElement(array $form, FormStateInterface $form_state, NodeInterface $node, AccountInterface $account, $collapsed = TRUE) {
     $access = $account->hasPermission('administer hierarchy');
     $form['hierarchy'] =
@@ -220,7 +84,7 @@ class HierarchyManager implements HierarchyManagerInterface {
         '#access' => $access,
         '#tree' => FALSE,
       );
-    $form['nodehierarchy']['nodehierarchy_parents'] = array('#tree' => TRUE);
+    $form['hierarchy']['nodehierarchy_parents'] = array('#tree' => TRUE);
 
     foreach ((array)$node->nodehierarchy_parents as $key => $parent) {
       $form['hierarchy']['nodehierarchy_parents'][$key] = $this->hierarchyNodeParentFormItems($node, $parent, $key);
@@ -640,6 +504,10 @@ class HierarchyManager implements HierarchyManagerInterface {
       'weight' => 0,
       'cnid' => $cnid,
     );
+  }
+
+  public function loadHierarchy($nids) {
+    return $this->hierarchyOutlineStorage->loadHierarchies($nids);
   }
 
 }

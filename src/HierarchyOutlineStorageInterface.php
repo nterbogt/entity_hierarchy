@@ -59,4 +59,5 @@ interface HierarchyOutlineStorageInterface {
 
   public function hierarchyRecordDelete($hid);
 
+  public function loadHierarchies($nids);
 }
