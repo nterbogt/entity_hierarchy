@@ -114,10 +114,10 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
 
     return $this->connection->insert('nodehierarchy')
       ->fields(array(
-//        'hid' => $item->nhid,  // hid set automatically (primary key)
         'pnid' => $item->pnid,
         'cnid' => $item->cnid,
         'cweight' => $item->cweight,
+        'pweight' => $item->pweight,
         )
       )
       ->execute();
@@ -195,11 +195,11 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
    * {@inheritdoc}
    */
   public function update($nid, $fields) {
-//    return $this->connection
-//      ->update('hierarchy')
-//      ->fields($fields)
-//      ->condition('nid', $nid)
-//      ->execute();
+    return $this->connection
+      ->update('nodehierarchy')
+      ->fields($fields)
+      ->condition('hid', $nid)
+      ->execute();
   }
 
   public function loadHierarchies($nids) {

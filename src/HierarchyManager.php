@@ -417,8 +417,6 @@ class HierarchyManager implements HierarchyManagerInterface {
 //    dsm($item);
     if ($item->pnid) {
       $this->insertHierarchy($item);
-
-        $this->insertHierarchy($item);
     }
   }
 
