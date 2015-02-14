@@ -107,7 +107,7 @@ function nodehierarchy_form_node_type_edit_form_alter(&$form, FormStateInterface
   $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
   $type = $form['type']['#default_value'];  // The type of node (page)
 
-  $form['nodehierarchy'] = array(
+  $form['hierarchy'] = array(
     '#type' => 'details',
     '#group' => 'additional_settings',
     '#title' => t('Node Hierarchy'),
@@ -117,7 +117,7 @@ function nodehierarchy_form_node_type_edit_form_alter(&$form, FormStateInterface
   // Right now, we add this js to all admin pages using hook_page_attachments; see below.
   // $form['#attached']['library'][] = nodehierarchy/nodehierarchy.nodetypeform;
 
-  $form['nodehierarchy'] += $hierarchy_manager->hierarchyGetNodeTypeSettingsForm($type);
+  $form['hierarchy'] += $hierarchy_manager->hierarchyGetNodeTypeSettingsForm($type);
 }
 
 /**
@@ -133,6 +133,14 @@ function nodehierarchy_node_insert(NodeInterface $node) {
   if ($user->hasPermission('edit all node parents') || ($node_uid == $uid && $user->hasPermission('edit own node parents'))) {
     $hierarchy_manager->hierarchySaveNode($node);
   }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_update().
+ */
+function nodehierarchy_node_update(EntityInterface $node) {
+  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+  $hierarchy_manager->hierarchySaveNode($node);
 }
 
 /**
@@ -192,6 +200,13 @@ function nodehierarchy_page_attachments(&$page) {
     // Load nodehierarchy.js on admin pages
     $page['#attached']['library'][] = 'nodehierarchy/nodehierarchy.nodetypeform';
   }
+}
+
+/**
+ * Implements hook_node_submit().
+ */
+function nodehierarchy_node_submit(NodeInterface $node, $form, FormStateInterface $form_state) {
+  $node->nodehierarchy_parents = $form_state->getValue('nodehierarchy_parents');
 }
 
 /**

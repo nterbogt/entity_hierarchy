@@ -194,11 +194,12 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
   /**
    * {@inheritdoc}
    */
-  public function update($nid, $fields) {
+  public function update($hid, $fields) {
+    unset($fields->remove);
     return $this->connection
       ->update('nodehierarchy')
       ->fields($fields)
-      ->condition('hid', $nid)
+      ->condition('hid', $hid)
       ->execute();
   }
 

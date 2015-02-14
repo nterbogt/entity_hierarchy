@@ -140,9 +140,9 @@ class HierarchyManager implements HierarchyManagerInterface {
       );
     }
 
-    $item['nhid'] = array(
+    $item['hid'] = array(
       '#type' => 'value',
-      '#value' => isset($parent->nhid) ? $parent->nhid : NULL,
+      '#value' => isset($parent->hid) ? $parent->hid : NULL,
     );
     $item['cweight'] = array(
       '#type' => 'value',
@@ -153,7 +153,7 @@ class HierarchyManager implements HierarchyManagerInterface {
       '#value' => isset($parent->pweight) ? $parent->pweight : NULL,
     );
 
-    if (!empty($parent->nhid)) {
+    if (!empty($parent->hid)) {
       $item['remove'] = array(
         '#type' => 'checkbox',
         '#title' => t('Remove this parent'),
@@ -383,6 +383,8 @@ class HierarchyManager implements HierarchyManagerInterface {
       return;
     }
 
+//    dsm($node->nodehierarchy_parents);
+
     foreach ($node->nodehierarchy_parents as $i => $item) {
       $node->nodehierarchy_parents[$i] = (object)$item;
       $node->nodehierarchy_parents[$i]->cnid = (int)$node->id();
@@ -414,14 +416,23 @@ class HierarchyManager implements HierarchyManagerInterface {
     else {
       $item->cweight = $this->hierarchyGetParentNextChildWeight($item->pnid);
     }
-//    dsm($item);
+
     if ($item->pnid) {
-      $this->insertHierarchy($item);
+      if (empty($item->hid)) {
+        $this->insertHierarchy($item);
+      }
+      else {
+        $this->updateHierarchy($item);
+      }
     }
   }
 
   public function insertHierarchy($item){
     return $this->hierarchyOutlineStorage->insert($item);
+  }
+
+  public function updateHierarchy($item){
+    return $this->hierarchyOutlineStorage->update($item->hid, $item);
   }
 
   /**
