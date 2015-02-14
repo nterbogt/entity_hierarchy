@@ -40,7 +40,16 @@ class NodeHierarchyChildForm extends ConfigFormBase {
 
 //    dsm($children);
 
-    $form['children'] = array('#tree' => TRUE);
+    $form['children'] = array(
+      '#type' => 'table',
+      '#header' => array(t('Position'), t('Title'), t('Type'), t('Operations')),
+      '#tabledrag' => array(
+        array(
+          'action' => 'order',
+          'relationship' => 'sibling',
+          'group' => 'mytable-order-weight',
+        )),
+      );
     $type_names = node_type_get_names();
 
     // Find the maximum weight.
@@ -72,6 +81,7 @@ class NodeHierarchyChildForm extends ConfigFormBase {
         );
 
         $form['children'][$child->hid] = $child_item;
+        $form['children'][$child->hid]['#attributes']['class'][] = 'draggable';
       }
     }
 
