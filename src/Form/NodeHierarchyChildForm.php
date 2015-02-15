@@ -11,6 +11,10 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
+use Drupal\Core\Render\Element;
+use Drupal\Component\Utility\String;
+use Drupal\Core\Entity\EntityForm;
+
 
 /**
  * Defines a form for Node Hierarchy Admin settings.
@@ -31,23 +35,21 @@ class NodeHierarchyChildForm extends ConfigFormBase {
     $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
     $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
 
-    $url = \Drupal\Core\Url::fromRoute('<current>');
+    $url = Url::fromRoute('<current>');
     $curr_path = $url->toString();
     $path = explode('/', $curr_path);
     $nid = $path[2];
     $node = Node::load($nid);
     $children = $hierarchy_storage->hierarchyGetNodeChildren($node);
 
-//    dsm($children);
-
     $form['children'] = array(
       '#type' => 'table',
-      '#header' => array(t('Position'), t('Title'), t('Type'), t('Operations')),
+      '#header' => array(t('Title'), t('Type'), t('Weight') , t('Operations')),
       '#tabledrag' => array(
         array(
           'action' => 'order',
           'relationship' => 'sibling',
-          'group' => 'mytable-order-weight',
+          'group' => 'children-order-weight',
         )),
       );
     $type_names = node_type_get_names();
@@ -59,42 +61,61 @@ class NodeHierarchyChildForm extends ConfigFormBase {
     }
 
     foreach ($children as $child) {
-      if ($node = node_load($child->cnid)) {
-        $child_item = array();
-        $child_item['child']  = array(
-          '#type' => 'value',
-          '#value' => $child,
-        );
-        $child_item['node'] = array(
-          '#type' => 'value',
-          '#value' => $node,
-        );
+      if ($node = Node::load($child->cnid)) {
         $url = Url::fromRoute('entity.node.canonical', array('node'=>$node->id()));
-        $child_item['title']      = array('#type' => 'markup', '#markup' => $this->l($node->getTitle(), $url));
-        $child_item['type']       = array('#type' => 'markup', '#markup' => $type_names[$node->getType()]);
-
-        $cweight = $form_state->getValue($child->hid['cweight']);
-        $child_item['cweight']    = array(
-          '#type' => 'weight',
-          '#delta' => $delta,
-          '#default_value' => isset($cweight) ? $cweight : $child->cweight,
-        );
-
-        $form['children'][$child->hid] = $child_item;
         $form['children'][$child->hid]['#attributes']['class'][] = 'draggable';
+        $form['children'][$child->hid]['#weight'] = $child->cweight;
+        $form['children'][$child->hid]['title'] = array(
+          '#markup' => $this->l(String::checkPlain($node->getTitle()), $url),
+        );
+        $form['children'][$child->hid]['type'] = array(
+          '#markup' => String::checkPlain($type_names[$node->getType()]),
+        );
+        // TableDrag: Weight column element.
+        $form['children'][$child->hid]['weight'] = array(
+          '#type' => 'weight',
+          '#title' => t('Weight for @title', array('@title' => $this->l($node->getTitle(), $url))),
+          '#title_display' => 'invisible',
+          '#default_value' => $child->cweight,
+          // Classify the weight element for #tabledrag.
+          '#attributes' => array('class' => array('children-order-weight')),
+        );
+        // Operations column.
+        $form['children'][$child->hid]['operations'] = array(
+          '#type' => 'operations',
+          '#links' => array(),
+        );
+        $id = $node->id();
+        $form['children'][$child->hid]['operations']['#links']['edit'] = array(
+          'title' => t('Edit'),
+          'url' => Url::fromRoute('entity.node.edit_form', array('node'=>$node->id())),
+        );
+        $form['children'][$child->hid]['operations']['#links']['delete'] = array(
+          'title' => t('Delete'),
+          'url' => Url::fromRoute('entity.node.delete_form', array('node'=>$node->id())),
+        );
+        $form['children'][$child->hid]['operations']['#links']['children'] = array(
+          'title' => t('Children'),
+          'url' => Url::fromRoute('nodehierarchy.nodehierarchy_node_load', array('node'=>$node->id())),
+        );
       }
     }
 
-    if (element_children($form['children'])) {
+    if (Element::children($form['children'])) {
+      $form['actions'] = array('#type' => 'actions');
       $form['submit'] = array(
         '#type' => 'submit',
         '#value' => t('Save child order'),
+        // TableSelect: Enable the built-in form validation for #tableselect for
+        // this form button, so as to ensure that the bulk operations form cannot
+        // be submitted without any selected items.
       );
     }
     else {
       $form['no_children'] = array('#type' => 'markup', '#markup' => t('This node has no children.'));
     }
 
+    // Build the add child links
     // TODO: add using renderable array instead, then find suitable place for code
     $current_user = \Drupal::currentUser();
     if ($current_user->hasPermission('create child nodes') && ($current_user->hasPermission('create child of any parent')
