@@ -42,23 +42,19 @@ class NodeHierarchyChildForm extends ConfigFormBase {
     $node = Node::load($nid);
     $children = $hierarchy_storage->hierarchyGetNodeChildren($node);
 
-    $form['children'] = array(
-      '#type' => 'table',
-      '#header' => array(t('Title'), t('Type'), t('Weight') , t('Operations')),
-      '#tabledrag' => array(
-        array(
-          'action' => 'order',
-          'relationship' => 'sibling',
-          'group' => 'children-order-weight',
-        )),
+    if ($children) {
+      $form['children'] = array(
+        '#type' => 'table',
+        '#header' => array(t('Title'), t('Type'), t('Weight') , t('Operations')),
+        '#tabledrag' => array(
+          array(
+            'action' => 'order',
+            'relationship' => 'sibling',
+            'group' => 'children-order-weight',
+          )),
       );
-    $type_names = node_type_get_names();
-
-    // Find the maximum weight.
-    $delta = count($children);
-    foreach ($children as $child) {
-      $delta = max($delta, $child->cweight);
     }
+    $type_names = node_type_get_names();
 
     foreach ($children as $child) {
       if ($node = Node::load($child->cnid)) {
@@ -102,13 +98,9 @@ class NodeHierarchyChildForm extends ConfigFormBase {
     }
 
     if (Element::children($form['children'])) {
-      $form['actions'] = array('#type' => 'actions');
       $form['submit'] = array(
         '#type' => 'submit',
         '#value' => t('Save child order'),
-        // TableSelect: Enable the built-in form validation for #tableselect for
-        // this form button, so as to ensure that the bulk operations form cannot
-        // be submitted without any selected items.
       );
     }
     else {
