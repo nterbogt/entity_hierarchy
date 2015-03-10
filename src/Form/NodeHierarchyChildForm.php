@@ -13,27 +13,27 @@ use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Render\Element;
 use Drupal\Component\Utility\String;
-use Drupal\Core\Entity\EntityForm;
+use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\nodehierarchy\HierarchyManagerInterface;
+use Drupal\Core\Entity\ContentEntityForm;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 
 /**
  * Defines a form for Node Hierarchy Admin settings.
  */
-class NodeHierarchyChildForm extends ConfigFormBase {
+class NodeHierarchyChildForm extends ContentEntityForm {
+
 
   /**
    * {@inheritdoc}
    */
-  public function getFormID() {
-    return 'nodehierarchy_child_form';
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function buildForm(array $form, FormStateInterface $form_state) {
+  public function form(array $form, FormStateInterface $form_state) {
     $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
     $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+
+    $children = $this->entity;
+    $id = $this->entity->id();
 
     $url = Url::fromRoute('<current>');
     $curr_path = $url->toString();
@@ -136,26 +136,34 @@ class NodeHierarchyChildForm extends ConfigFormBase {
         $form['newchild']['#suffix'] = $out;
       }
     }
-    return parent::buildForm($form, $form_state);
+    return parent::form($form, $form_state);
   }
+
+//  /**
+//   * {@inheritdoc}
+//   */
+//  public function submitForm(array &$form, FormStateInterface $form_state) {
+//    $values = $form_state->getValues();
+//    $config = $this->config('nodehierarchy.child.settings');
+//    $config->set('children', $values['children']);
+//    $config->save();
+//
+//    parent::submitForm($form, $form_state);
+//  }
+
+//  /**
+//   * {@inheritdoc}
+//   */
+//  protected function getEditableConfigNames() {
+//    return ['nodehierarchy.child.settings'];
+//  }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
-    $values = $form_state->getValues();
-    $config = $this->config('nodehierarchy.child.settings');
-    $config->set('children', $values['children']);
-    $config->save();
-
-    parent::submitForm($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getEditableConfigNames() {
-    return ['nodehierarchy.child.settings'];
+  public function save(array $form, FormStateInterface $form_state) {
+    $hierarchy = $this->entity;
+    $hierarchy->save();
   }
 
 }

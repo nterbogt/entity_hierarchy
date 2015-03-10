@@ -378,7 +378,7 @@ class HierarchyManager implements HierarchyManagerInterface {
   /**
    * Do the actual insertion or update. No permissions checking is done here.
    */
-  function hierarchySaveNode(&$node) {
+  public function hierarchySaveNode(&$node) {
     if (!isset($node->nodehierarchy_parents)) {
       return;
     }
