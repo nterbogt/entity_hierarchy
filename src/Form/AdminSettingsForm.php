@@ -22,9 +22,6 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   protected $node_types;
 
-  public function __construct(array $node_types) {
-    $this->node_types = node_type_get_names();
-  }
   /**
    * {@inheritdoc}
    */
@@ -35,7 +32,16 @@ class AdminSettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
+  protected function getEditableConfigNames() {
+    return ['nodehierarchy.settings'];
+  }
+
+
+  /**
+   * {@inheritdoc}
+   */
   public function buildForm(array $form, FormStateInterface $form_state) {
+    $this->node_types = node_type_get_names();
     $config = $this->config('nodehierarchy.settings');
     $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
 
@@ -44,10 +50,9 @@ class AdminSettingsForm extends ConfigFormBase {
       '#type' => 'fieldset',
       '#title' => $this->t('Node Type Settings'),
       '#description' => $this->t('Settings for individual node types. These can also be individually set for each content type.'),
-                                  //array("!ct" => l(t("Content Types"), "admin/structure/types"))),
+      //array("!ct" => l(t("Content Types"), "admin/structure/types"))),
     );
-    $node_types=$this->node_types;
-    foreach ($node_types as $key => $type) {
+    foreach ($this->node_types as $key => $type) {
       // Individual type settings.
       $form['nodehierarchy_types'][$key] = array(
         '#type' => 'details',
@@ -101,13 +106,4 @@ class AdminSettingsForm extends ConfigFormBase {
     parent::submitForm($form, $form_state);
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  protected function getEditableConfigNames() {
-    return ['nodehierarchy.settings'];
-  }
-
-
 }
-
