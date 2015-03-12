@@ -174,7 +174,7 @@ function nodehierarchy_node_prepare_form(NodeInterface $node) {
       // Set the type default if there is one.
       if (empty($nid)) {
         $config = \Drupal::config('nodehierarchy.settings');
-        $default = $config->get('nh_defaultparent_'.$node->getEntityType());//variable_get('nh_defaultparent_' . $node->type, 0);
+//        $default = $config->get('nh_defaultparent_'.$node->getEntityType());//variable_get('nh_defaultparent_' . $node->type, 0);
         // Get the parent node id from passed in from the get params.
         $pnid = !empty($_GET['parent']) ? (int) $_GET['parent'] : $default;
         // Get the parent from the get string. User must have update perms for parent unless it is the default.

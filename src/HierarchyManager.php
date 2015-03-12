@@ -271,7 +271,7 @@ class HierarchyManager implements HierarchyManagerInterface {
     $parent_tree = $this->hierarchyTreeDisableTypes($parent_tree, $parent_types);
 
     // Remove items which the user does not have permission to.
-    $parent_tree = $this->hierarchyTreeDisableNoaccess($parent_tree);
+//    $parent_tree = $this->hierarchyTreeDisableNoaccess($parent_tree);
 
     // Remove the excluded item(s). This prevents a child being assigned as it's own parent.
     $out = $this->hierarchyTreeRemoveNid($parent_tree, $exclude);
