@@ -50,7 +50,7 @@ class AdminSettingsForm extends ConfigFormBase {
       '#type' => 'fieldset',
       '#title' => $this->t('Node Type Settings'),
       '#description' => $this->t('Settings for individual node types. These can also be individually set for each content type.'),
-                                  //array("!ct" => l(t("Content Types"), "admin/structure/types"))),
+      //array("!ct" => l(t("Content Types"), "admin/structure/types"))),
     );
     foreach ($this->node_types as $key => $type) {
       // Individual type settings.
@@ -107,4 +107,5 @@ class AdminSettingsForm extends ConfigFormBase {
   }
 
 }
+
 
