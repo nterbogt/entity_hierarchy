@@ -57,8 +57,24 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
     if ($can_set_parent) {
       $collapsed = TRUE;  // Todo: fix
       $form = $hierarchy_manager->addHierarchyFormElement($form, $form_state, $node, $account, $collapsed);
-    }
+      // For submit callbacks.
+      $form['#entity_builders'][] = 'nodehierarchy_node_builder';
+      $form['actions']['submit']['#submit'][] = 'nodehierarchy_node_form_submit';    }
   }
+}
+
+/**
+ * Entity form builder to add the hierarchy information to the node.
+ */
+function nodehierarchy_node_builder($entity_type, NodeInterface $node, &$form, FormStateInterface $form_state) {
+  $node->nodehierarchy_parents = $form_state->getValue('nodehierarchy_parents');
+}
+
+/**
+ * Todo: check if this is necessary; see https://www.drupal.org/node/2420295
+ */
+function nodehierarchy_node_form_submit($form, FormStateInterface $form_state) {
+  $node = $form_state->getFormObject()->getEntity();
 }
 
 /**
@@ -70,6 +86,8 @@ function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_
 
   // Does the form ID end with '_node_delete_form' ?
   endsWith($form_id,"_node_delete_form") ? $node_delete_type = $form_id : $node_delete_type = '';
+  // Todo: fix
+  $node_delete_type = 'abcdefg';
 
   switch ($form_id) {
     case $node_delete_type:
@@ -174,7 +192,7 @@ function nodehierarchy_node_prepare_form(NodeInterface $node) {
       // Set the type default if there is one.
       if (empty($nid)) {
         $config = \Drupal::config('nodehierarchy.settings');
-        $default = $config->get('nh_defaultparent_'.$node->getEntityType());//variable_get('nh_defaultparent_' . $node->type, 0);
+//        $default = $config->get('nh_defaultparent_'.$node->getEntityType());//variable_get('nh_defaultparent_' . $node->type, 0);
         // Get the parent node id from passed in from the get params.
         $pnid = !empty($_GET['parent']) ? (int) $_GET['parent'] : $default;
         // Get the parent from the get string. User must have update perms for parent unless it is the default.
@@ -203,24 +221,17 @@ function nodehierarchy_page_attachments(&$page) {
 }
 
 /**
- * Implements hook_node_submit().
- */
-function nodehierarchy_node_submit(NodeInterface $node, $form, FormStateInterface $form_state) {
-  $node->nodehierarchy_parents = $form_state->getValue('nodehierarchy_parents');
-}
-
-/**
  * Implements hook_ENTITY_TYPE_load() for node entities.
  */
 function nodehierarchy_node_load($nodes) {
 // Should we be loading the parent selection here instead using the code below?
-//  $nids = array_keys($nodes);
-//  $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
-//  $pids = $hierarchy_storage->loadHierarchies($nids);
-//  foreach ($pids as $pid) {
-//    $title = Node::load($pid)->getTitle();
-//    $nodes[$pid['nid']]->nodehierarchy_parents = $pid;
-//  }
+  $nids = array_keys($nodes);
+  $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
+  $pids = $hierarchy_storage->loadHierarchies($nids);
+  foreach ($pids as $pid) {
+    $title = Node::load($pid)->getTitle();
+    $nodes[$pid['nid']]->nodehierarchy_parents = $pid;
+  }
 }
 
 /* Helper Functions for strings */

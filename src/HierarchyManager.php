@@ -128,6 +128,7 @@ class HierarchyManager implements HierarchyManagerInterface {
 
     $pnid = $parent->pnid;
     $nid = $node->id();
+
     // If a node can be a child of another add a selector to pick the parent. Otherwise set the parent to 0.
     if ($this->hierarchyCanBeChild($node)) {
       $item['pnid'] = $this->hierarchyGetParentSelector($node->getType(), empty($pnid) ? null : $pnid, empty($nid) ? null : $nid);
@@ -416,7 +417,6 @@ class HierarchyManager implements HierarchyManagerInterface {
     else {
       $item->cweight = $this->hierarchyGetParentNextChildWeight($item->pnid);
     }
-
     if ($item->pnid) {
       if (empty($item->hid)) {
         $this->insertHierarchy($item);
