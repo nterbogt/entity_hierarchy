@@ -91,20 +91,20 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
 //          'url' => Url::fromRoute('nodehierarchy.nodehierarchy_node_load', array('node'=>$node->id())),
 //        );
       }
-      else {
-        $form['children'][] = array();
-      }
     }
 
-    if (Element::children($form['children'])) {
-      $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Save child order'),
-      );
+    if (is_array($form['children'])){
+      if (Element::children($form['children'])) {
+        $form['submit'] = array(
+          '#type' => 'submit',
+          '#value' => t('Save child order'),
+        );
+      }
     }
     else {
       $form['no_children'] = array('#type' => 'markup', '#markup' => t('This node has no children.'));
     }
+
 
     // Build the add child links
     // TODO: add using renderable array instead, then find suitable place for code
