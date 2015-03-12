@@ -1,0 +1,5 @@
+nodehierarchy.admin:
+  title: Node Hierarchy
+  description: 'Configure Node Hierarchies per Entity Type'
+  parent: system.admin_structure
+  route_name: nodehierarchy.admin
