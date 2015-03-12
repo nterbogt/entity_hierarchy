@@ -128,6 +128,7 @@ class HierarchyManager implements HierarchyManagerInterface {
 
     $pnid = $parent->pnid;
     $nid = $node->id();
+
     // If a node can be a child of another add a selector to pick the parent. Otherwise set the parent to 0.
     if ($this->hierarchyCanBeChild($node)) {
       $item['pnid'] = $this->hierarchyGetParentSelector($node->getType(), empty($pnid) ? null : $pnid, empty($nid) ? null : $nid);
@@ -271,7 +272,7 @@ class HierarchyManager implements HierarchyManagerInterface {
     $parent_tree = $this->hierarchyTreeDisableTypes($parent_tree, $parent_types);
 
     // Remove items which the user does not have permission to.
-//    $parent_tree = $this->hierarchyTreeDisableNoaccess($parent_tree);
+    $parent_tree = $this->hierarchyTreeDisableNoaccess($parent_tree);
 
     // Remove the excluded item(s). This prevents a child being assigned as it's own parent.
     $out = $this->hierarchyTreeRemoveNid($parent_tree, $exclude);
@@ -416,7 +417,6 @@ class HierarchyManager implements HierarchyManagerInterface {
     else {
       $item->cweight = $this->hierarchyGetParentNextChildWeight($item->pnid);
     }
-
     if ($item->pnid) {
       if (empty($item->hid)) {
         $this->insertHierarchy($item);

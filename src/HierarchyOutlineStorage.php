@@ -111,7 +111,6 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
    * {@inheritdoc}
    */
   public function insert($item) {
-
     return $this->connection->insert('nodehierarchy')
       ->fields(array(
         'pnid' => $item->pnid,

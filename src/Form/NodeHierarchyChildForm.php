@@ -97,15 +97,15 @@ class NodeHierarchyChildForm extends ConfigFormBase {
       }
     }
 
-    if (Element::children($form['children'])) {
-      $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Save child order'),
-      );
-    }
-    else {
+//    if (Element::children($form['children'])) {
+//      $form['submit'] = array(
+//        '#type' => 'submit',
+//        '#value' => t('Save child order'),
+//      );
+//    }
+//    else {
       $form['no_children'] = array('#type' => 'markup', '#markup' => t('This node has no children.'));
-    }
+//    }
 
     // Build the add child links
     // TODO: add using renderable array instead, then find suitable place for code
@@ -144,6 +144,7 @@ class NodeHierarchyChildForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
+    dsm($values);
     $config = $this->config('nodehierarchy.child.settings');
     $config->set('children', $values['children']);
     $config->save();
