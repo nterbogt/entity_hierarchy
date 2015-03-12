@@ -93,16 +93,9 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
       }
     }
 
-    if (is_array($form['children'])){
-      if (Element::children($form['children'])) {
-        $form['submit'] = array(
-          '#type' => 'submit',
-          '#value' => t('Save child order'),
-        );
-      }
-    }
-    else {
+    if (!is_array($form['children'])){
       $form['no_children'] = array('#type' => 'markup', '#markup' => t('This node has no children.'));
+//      unset($form['actions']);
     }
 
 
@@ -135,34 +128,31 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
         $form['newchild']['#suffix'] = $out;
       }
     }
-    return parent::form($form, $form_state);
+    return $form;
   }
 
-//  /**
-//   * {@inheritdoc}
-//   */
-//  public function submitForm(array &$form, FormStateInterface $form_state) {
-//    $values = $form_state->getValues();
-//    $config = $this->config('nodehierarchy.child.settings');
-//    $config->set('children', $values['children']);
-//    $config->save();
-//
-//    parent::submitForm($form, $form_state);
-//  }
-
-//  /**
-//   * {@inheritdoc}
-//   */
-//  protected function getEditableConfigNames() {
-//    return ['nodehierarchy.child.settings'];
-//  }
+  /**
+   * {@inheritdoc}
+   */
+  protected function actions(array $form, FormStateInterface $form_state) {
+    $actions = parent::actions($form, $form_state);
+    $actions['submit']['#value'] = $this->t('Update child order');
+    $actions['delete']['#value'] = $this->t('Remove all children');
+//    $actions['delete']['#access'] = $this->bookManager->checkNodeIsRemovable($this->entity);
+    // Don't show the actions links if there's no children
+    if ($form['no_children']) {
+      unset ($actions['submit']);
+      unset ($actions['delete']);
+    }
+    return $actions;
+  }
 
   /**
    * {@inheritdoc}
    */
   public function save(array $form, FormStateInterface $form_state) {
-    $hierarchy = $this->entity;
-    $hierarchy->save();
+    $entity = $this->entity;
+    $entity->save();
   }
 
 }
