@@ -2,28 +2,24 @@
 
 /**
  * @file
- * Contains \Drupal\nodehierarchy\Form\NodeHierarchyChildForm.
+ * Contains \Drupal\nodehierarchy\Form\NodehierarchyChildrenForm.
  */
 
 namespace Drupal\nodehierarchy\Form;
 
-use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Render\Element;
 use Drupal\Component\Utility\String;
-use Drupal\Core\Entity\EntityManagerInterface;
-use Drupal\nodehierarchy\HierarchyManagerInterface;
 use Drupal\Core\Entity\ContentEntityForm;
+use Drupal\Core\Entity\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-
 
 /**
  * Defines a form for Node Hierarchy Admin settings.
  */
-class NodeHierarchyChildForm extends ContentEntityForm {
-
+class NodeHierarchyChildrenForm extends ContentEntityForm {
 
   /**
    * {@inheritdoc}
@@ -90,22 +86,25 @@ class NodeHierarchyChildForm extends ContentEntityForm {
           'title' => t('Delete'),
           'url' => Url::fromRoute('entity.node.delete_form', array('node'=>$node->id())),
         );
-        $form['children'][$child->hid]['operations']['#links']['children'] = array(
-          'title' => t('Children'),
-          'url' => Url::fromRoute('nodehierarchy.nodehierarchy_node_load', array('node'=>$node->id())),
-        );
+//        $form['children'][$child->hid]['operations']['#links']['children'] = array(
+//          'title' => t('Children'),
+//          'url' => Url::fromRoute('nodehierarchy.nodehierarchy_node_load', array('node'=>$node->id())),
+//        );
+      }
+      else {
+        $form['children'][] = array();
       }
     }
 
-//    if (Element::children($form['children'])) {
-//      $form['submit'] = array(
-//        '#type' => 'submit',
-//        '#value' => t('Save child order'),
-//      );
-//    }
-//    else {
+    if (Element::children($form['children'])) {
+      $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Save child order'),
+      );
+    }
+    else {
       $form['no_children'] = array('#type' => 'markup', '#markup' => t('This node has no children.'));
-//    }
+    }
 
     // Build the add child links
     // TODO: add using renderable array instead, then find suitable place for code

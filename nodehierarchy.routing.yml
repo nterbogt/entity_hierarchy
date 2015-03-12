@@ -5,11 +5,11 @@ nodehierarchy.admin:
     _title: 'Node Hierarchy'
   requirements: 
     _permission: 'administer hierarchy'
-nodehierarchy.nodehierarchy_child_form:
+entity.node.nodehierarchy_children_form:
   path: '/node/{node}/children'
   defaults:
     _title_callback: '\Drupal\nodehierarchy\Controller\NodeHierarchyController::getTitle'
-    _entity_form: '\Drupal\nodehierarchy\Form\NodeHierarchyChildForm'
+    _entity_form: 'node.nodehierarchy_children'
     _title: 'Children'
   requirements:
     _permission: 'create child nodes'
