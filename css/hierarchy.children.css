@@ -1,0 +1,10 @@
+table#edit-children {border: 2px solid;}
+table#edit-children, .tabledrag-toggle-weight-wrapper {width:80%;}
+table#edit-children th:first-child, table#edit-children td:first-child {width:72%}
+table#edit-children th:last-child, table#edit-children td:last-child {width:13%}
+table#edit-children th {text-align: center;}
+table#edit-children td {text-align: center;}
+table#edit-children td:first-child, table#edit-children th:first-child {text-align: left;}
+table#edit-children th:first-child {padding-left: 3em;}
+table#edit-children .dropbutton-widget {width: 100%;}
+table#edit-children .dropbutton-multiple {margin-right: 0;}

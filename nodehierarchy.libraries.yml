@@ -8,8 +8,8 @@ nodehierarchy.nodetypeform:
     - core/drupal
     - core/drupal.form
 
-admin:
+nodehierarchy.children:
   version: VERSION
   css:
     theme:
-      css/hierarchy.admin.css: {}
+      css/hierarchy.children.css: {}

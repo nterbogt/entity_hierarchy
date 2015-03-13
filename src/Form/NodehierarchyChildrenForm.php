@@ -78,13 +78,17 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
     if ($children) {
       $form['children'] = array(
         '#type' => 'table',
-        '#header' => array(t('Title'), t('Type'), t('Weight') , t('Operations')),
+        '#header' => array(t('Child Title'), t('Type'), t('Weight') , t('Operations')),
         '#tabledrag' => array(
           array(
             'action' => 'order',
             'relationship' => 'sibling',
             'group' => 'children-order-weight',
           )),
+      );
+      // Add CSS to the form via .libraries.yml file
+      $form['#attached'] = array(
+        'library' => array('nodehierarchy/nodehierarchy.children'),
       );
     }
     $type_names = node_type_get_names();
@@ -132,6 +136,7 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
     }
 
     if (!is_array($form['children'])){
+      // Todo: better use the #empty instead; see https://www.drupal.org/node/1876710
       $form['no_children'] = array('#type' => 'markup', '#markup' => t('This node has no children.'));
     }
 
