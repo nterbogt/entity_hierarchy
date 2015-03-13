@@ -1,7 +1,15 @@
 nodehierarchy.nodetypeform:
-  version: 0
+  version: VERSION
   js:
     js/nodehierarchy.js: {}
   dependencies:
     - core/jquery
     - core/drupalSettings
+    - core/drupal
+    - core/drupal.form
+
+admin:
+  version: VERSION
+  css:
+    theme:
+      css/hierarchy.admin.css: {}
