@@ -124,10 +124,10 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
           'url' => Url::fromRoute('entity.node.delete_form', array('node'=>$node->id())),
         );
         // The link to the child tab
-//        $form['children'][$child->hid]['operations']['#links']['children'] = array(
-//          'title' => t('Children'),
-//          'url' => Url::fromRoute('nodehierarchy.nodehierarchy_node_load', array('node'=>$node->id())),
-//        );
+        $form['children'][$child->hid]['operations']['#links']['children'] = array(
+          'title' => t('Children'),
+          'url' => Url::fromRoute('entity.node.nodehierarchy_children_form', array('node'=>$node->id())),
+        );
       }
     }
 
