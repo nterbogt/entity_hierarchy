@@ -33,4 +33,6 @@ interface HierarchyManagerInterface {
    */
   public function loadHierarchy($nids);
 
+  public function updateHierarchy($item);
+
 }

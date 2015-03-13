@@ -14,12 +14,49 @@ use Drupal\Core\Render\Element;
 use Drupal\Component\Utility\String;
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\nodehierarchy\HierarchyManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Defines a form for Node Hierarchy Admin settings.
  */
 class NodeHierarchyChildrenForm extends ContentEntityForm {
+
+  /**
+   * The hierarchy being displayed.
+   *
+   * @var \Drupal\node\NodeInterface
+   */
+  protected $entity;
+
+  /**
+   * HierarchyManager service.
+   *
+   * @var \Drupal\nodehierarchy\HierarchyManagerInterface
+   */
+  protected $hierarchyManager;
+
+  /**
+   * Constructs a NodehierarchyChildrenForm object.
+   *
+   * @param \Drupal\nodehierarchy\HierarchyManagerInterface $hierarchy_manager
+   *   The HierarchyManager service.
+   *
+   * Todo: this constructor is not currently needed, but should fix the save()
+   * method to use it instead of calling the HierarchyManager service directly.
+   */
+  public function __construct(EntityManagerInterface $entity_manager, HierarchyManagerInterface $hierarchy_manager) {
+    parent::__construct($entity_manager);
+    $this->hierarchyManager = $hierarchy_manager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getBaseFormId() {
+    // Don't show a parent form here
+    return NULL;
+  }
 
   /**
    * {@inheritdoc}
@@ -63,7 +100,7 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
         $form['children'][$child->hid]['type'] = array(
           '#markup' => String::checkPlain($type_names[$node->getType()]),
         );
-        // TableDrag: Weight column element.
+        //
         $form['children'][$child->hid]['weight'] = array(
           '#type' => 'weight',
           '#title' => t('Weight for @title', array('@title' => $this->l($node->getTitle(), $url))),
@@ -86,6 +123,7 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
           'title' => t('Delete'),
           'url' => Url::fromRoute('entity.node.delete_form', array('node'=>$node->id())),
         );
+        // The link to the child tab
 //        $form['children'][$child->hid]['operations']['#links']['children'] = array(
 //          'title' => t('Children'),
 //          'url' => Url::fromRoute('nodehierarchy.nodehierarchy_node_load', array('node'=>$node->id())),
@@ -95,9 +133,7 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
 
     if (!is_array($form['children'])){
       $form['no_children'] = array('#type' => 'markup', '#markup' => t('This node has no children.'));
-//      unset($form['actions']);
     }
-
 
     // Build the add child links
     // TODO: add using renderable array instead, then find suitable place for code
@@ -139,7 +175,7 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
     $actions['submit']['#value'] = $this->t('Update child order');
     $actions['delete']['#value'] = $this->t('Remove all children');
 //    $actions['delete']['#access'] = $this->bookManager->checkNodeIsRemovable($this->entity);
-    // Don't show the actions links if there's no children
+    // Don't show the actions links if there are no children
     if ($form['no_children']) {
       unset ($actions['submit']);
       unset ($actions['delete']);
@@ -149,10 +185,24 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
 
   /**
    * {@inheritdoc}
+   *
+   * Here we are loading the weights/IDs from the values set using the tabledrag
+   * in the form() function above.
+   *
+   * We then create an object containing only the child weight and hierarchy ID,
+   * and write that to the database.
+   *
+   * We don't do any checking because no Save button will be shown if no
+   * children are present.
    */
   public function save(array $form, FormStateInterface $form_state) {
-    $entity = $this->entity;
-    $entity->save();
+    $children = $form_state->getValue('children');
+    $hierarchyManager = \Drupal::service('nodehierarchy.manager');
+    foreach ($children as $hid => $child) {
+      $item->hid = $hid;
+      $item->cweight = $child['weight'];
+      $hierarchyManager->updateHierarchy($item);
+    }
   }
 
 }
