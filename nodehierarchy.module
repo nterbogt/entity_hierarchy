@@ -13,19 +13,12 @@ use Drupal\Core\Render\Element;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Component\Utility\Unicode;
-use Drupal\node\NodeTypeInterface;
-use Drupal\Core\Language\LanguageInterface;
-use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
-use Drupal\Core\Template\Attribute;
-use Drupal\Core\Extension\Extension;
-use Drupal\Component\Utility\String;
-use Drupal\Core\Url;
 
 /**
- * Implements hook_help().
+ * Implements @see hook_help().
  */
 function nodehierarchy_help($route_name, RouteMatchInterface $route_match) {
+  // TODO: improve help text
   switch ($route_name) {
     case 'help.page.nodehierarchy':
       return t('A module to make nodes hierarchical.');
@@ -33,7 +26,7 @@ function nodehierarchy_help($route_name, RouteMatchInterface $route_match) {
 }
 
 /**
- * Implements hook_form_BASE_FORM_ID_alter() for node_form().
+ * Implements @see hook_form_BASE_FORM_ID_alter() for node_form().
  *
  * Adds the hierarchy form element to the node form.
  */
@@ -57,24 +50,26 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
     if ($can_set_parent) {
       $collapsed = TRUE;  // Todo: fix
       $form = $hierarchy_manager->addHierarchyFormElement($form, $form_state, $node, $account, $collapsed);
-      // For submit callbacks.
+      // Form API entity_builders callback; see https://www.drupal.org/node/2420295
       $form['#entity_builders'][] = 'nodehierarchy_node_builder';
-      $form['actions']['submit']['#submit'][] = 'nodehierarchy_node_form_submit';    }
+    }
   }
 }
 
 /**
- * Entity form builder to add the hierarchy information to the node.
+ * Entity form builder adds the hierarchy information to the node object.
+ *
+ * This function is called from the #entity_builders callback.
+ *
+ * @see nodehierarchy_form_node_form_alter
+ * @see EntityForm::buildEntity
+ *
+ * As per book.module, an entity field may be better suited to this task.
+ * @see \Drupal\Core\Entity\ContentEntityBase
+ * @see core/lib/Drupal/Core/Entity/ContentEntityBase.php
  */
 function nodehierarchy_node_builder($entity_type, NodeInterface $node, &$form, FormStateInterface $form_state) {
   $node->nodehierarchy_parents = $form_state->getValue('nodehierarchy_parents');
-}
-
-/**
- * Todo: check if this is necessary; see https://www.drupal.org/node/2420295
- */
-function nodehierarchy_node_form_submit($form, FormStateInterface $form_state) {
-  $node = $form_state->getFormObject()->getEntity();
 }
 
 /**
@@ -245,7 +240,10 @@ function nodehierarchy_node_load($nodes) {
   }
 }
 
-/* Helper Functions for strings */
+/**
+ * Helper functions for strings to determine if a string starts or ends with a
+ * substring.
+ */
 function startsWith($haystack, $needle) {
   // search backwards starting from haystack length characters from the end
   return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== FALSE;
