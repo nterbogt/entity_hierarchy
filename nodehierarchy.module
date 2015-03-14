@@ -36,9 +36,13 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
   $node = $form_state->getFormObject()->getEntity();
   $account = \Drupal::currentUser();
 
+  /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
   $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
 
   // If this node type can be a child.
+  // TODO: Probably should be doing access checking using a class like
+  // EntityAccessControlHandler::access
+  /** @see \Drupal\Core\Entity\EntityAccessControlHandler::access */
   if ( ($hierarchy_manager->hierarchyCanBeChild($node)) || ($hierarchy_manager->hierarchyCanBeParent($node)) ) {
     // if the current user can edit the current node's hierarchy settings (or create new children)
     $uid = $node->getOwnerId();
@@ -57,14 +61,17 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
 }
 
 /**
- * Entity form builder adds the hierarchy information to the node object.
+ * Entity form builder adds the hierarchy information to the node object. More
+ * officially, this builds an updated entity object based upon the submitted
+ * form values.
  *
  * This function is called from the #entity_builders callback.
  *
  * @see nodehierarchy_form_node_form_alter
  * @see EntityForm::buildEntity
  *
- * As per book.module, an entity field may be better suited to this task.
+ * As per https://www.drupal.org/node/2420295, an entity field may be better
+ * suited to this task.
  * @see \Drupal\Core\Entity\ContentEntityBase
  * @see core/lib/Drupal/Core/Entity/ContentEntityBase.php
  */
@@ -73,25 +80,35 @@ function nodehierarchy_node_builder($entity_type, NodeInterface $node, &$form, F
 }
 
 /**
- * Implements hook_entity_type_build().
+ * Implements @see hook_entity_type_build().
+ *
+ * Here we're adding a form controller class for a custom node form without
+ * overriding the default node form.
+ *
+ * More specifically, we're adding a children form to a tab named children.
+ * This routing information for this tab is set in the .routing.yml file, and
+ * the .links.task.yml file.
+ *
+ * @see \Drupal\nodehierarchy\Form\NodehierarchyChildrenForm
  */
 function nodehierarchy_entity_type_build(array &$entity_types) {
-  /** @var $entity_types \Drupal\Core\Entity\EntityTypeInterface[] */
+  /** @type $entity_types \Drupal\Core\Entity\EntityTypeInterface[] */
   $entity_types['node']
     ->setFormClass('nodehierarchy_children', 'Drupal\nodehierarchy\Form\NodehierarchyChildrenForm')
     ->setLinkTemplate('nodehierarchy-children-form', '/node/{node}/children');
 }
 
 /**
- * Implementation of hook_form_alter().
+ * Implements @see hook_form_alter().
  *
- * So we don't see preview or delete buttons for hierarchy.
+ * Right now, we're defining functionality for the node delete form. Most likely
+ * this functionality will all me moved in the near future.
  */
 function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 
   // Does the form ID end with '_node_delete_form' ?
   endsWith($form_id,"_node_delete_form") ? $node_delete_type = $form_id : $node_delete_type = '';
-  // Todo: fix
+  // Todo: fix (we set the value incorrectly on purpose so this id is never called.
   $node_delete_type = 'abcdefg';
 
   switch ($form_id) {
@@ -123,12 +140,20 @@ function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_
 }
 
 /**
- * Implements hook_form_FORM_ID_alter().
+ * Implements @see hook_form_FORM_ID_alter().
+ *
+ * Here we are altering the node type edit form to include hierarchy settings,
+ * such as setting which content types should support one or more child content
+ * types.
+ *
+ * @see HierarchyManager::hierarchyGetNodeTypeSettingsForm
  */
 function nodehierarchy_form_node_type_edit_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-
+  /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
   $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
-  $type = $form['type']['#default_value'];  // The type of node (page)
+  // TODO: check if there's any reason we're not including the base $form
+  // declaration in the class method.
+  $type = $form['type']['#default_value'];  // The content type
 
   $form['hierarchy'] = array(
     '#type' => 'details',
@@ -144,12 +169,18 @@ function nodehierarchy_form_node_type_edit_form_alter(&$form, FormStateInterface
 }
 
 /**
- * Implements hook_ENTITY_TYPE_insert() for node entities.
+ * Implements @see hook_ENTITY_TYPE_insert() for node entities.
  *
- *  {@inheritdoc}
+ * This function will be called whenever a new node is created. We will write
+ * the hierarchy information to the database if a parent is set on the node
+ * add form.
+ *
+ * @see HierarchyManager::hierarchySaveNode
  */
 function nodehierarchy_node_insert(NodeInterface $node) {
+  /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
   $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+  // TODO: check if we really need a permission check here. (Don't even show the form if no permission.)
   $user = \Drupal::currentUser();
   $uid = $user->id();
   $node_uid = $node->getOwnerId();
@@ -159,7 +190,13 @@ function nodehierarchy_node_insert(NodeInterface $node) {
 }
 
 /**
- * Implements hook_ENTITY_TYPE_update().
+ * Implements @see hook_ENTITY_TYPE_update().
+ *
+ * This function will be called whenever a node is updated. We will write
+ * the hierarchy information to the database if a parent is set on the node
+ * edit form or delete the parent if a checkbox is selected.
+ *
+ * @see HierarchyManager::hierarchySaveNode
  */
 function nodehierarchy_node_update(EntityInterface $node) {
   $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
@@ -167,13 +204,20 @@ function nodehierarchy_node_update(EntityInterface $node) {
 }
 
 /**
- * Implements hook_node_prepare_form().
+ * Implements @see hook_node_prepare_form().
  *
- * {@inheritdoc}
+ * We are loading the hierarchy parents for a given node id, and adding it to
+ * the node object for later processing in
+ * HierarchyManager::addHierarchyFormElement, which is called in
+ * nodehierarchy_form_node_form_alter().
+ *
+ * @see nodehierarchy_form_node_form_alter
+ * @see HierarchyManager::addHierarchyFormElement
  */
 function nodehierarchy_node_prepare_form(NodeInterface $node) {
-
+  /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
   $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+  /** @var \Drupal\nodehierarchy\HierarchyOutlineStorage $hierarchy_storage */
   $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
 
   // Load the parents if that hasn't been done before.
@@ -215,7 +259,10 @@ function nodehierarchy_node_prepare_form(NodeInterface $node) {
 }
 
 /**
- * Implements hook_page_attachments().
+ * Implements @see hook_page_attachments().
+ *
+ * Right now, we're attaching an un-used jS file to all admin pages. Need to
+ * re-visit this and only load on the appropriate pages and/or forms.
  */
 function nodehierarchy_page_attachments(&$page) {
   // This returns TRUE for admin paths.
@@ -226,12 +273,16 @@ function nodehierarchy_page_attachments(&$page) {
 }
 
 /**
- * Implements hook_ENTITY_TYPE_load() for node entities.
+ * Implements @see hook_ENTITY_TYPE_load() for node entities.
+ *
+ * Don't think this function is being used right now, so will investigate and
+ * either delete or improve docs.
  */
 function nodehierarchy_node_load($nodes) {
-// Should we be loading the parent selection here instead using the code below?
+// TODO: Should we be loading the parent selection here instead using the code below?
 
   $nids = array_keys($nodes);
+  /** @var \Drupal\nodehierarchy\HierarchyOutlineStorage $hierarchy_storage */
   $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
   $pids = $hierarchy_storage->loadHierarchies($nids);
   foreach ($pids as $pid) {
