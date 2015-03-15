@@ -28,7 +28,13 @@ function nodehierarchy_help($route_name, RouteMatchInterface $route_match) {
 /**
  * Implements @see hook_form_BASE_FORM_ID_alter() for node_form().
  *
- * Adds the hierarchy form element to the node form.
+ * Adds a vertical tab to the node form allowing a hierarchy parent to be
+ * selected or deleted. Here we're doing some permission checking, then
+ * presenting the form using the HierarchyManager class. We then use an
+ * #entity_builders callback function to save the form data to the node object.
+ *
+ * @see HierarchyManager::addHierarchyFormElement
+ * @see nodehierarchy_node_builder
  */
 function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   // TODO: nodehierarchy_set_breadcrumbs($node, TRUE);
@@ -41,7 +47,7 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
 
   // If this node type can be a child.
   // TODO: Probably should be doing access checking using a class like
-  // EntityAccessControlHandler::access
+  // EntityAccessControlHandler::access or more at the route/level
   /** @see \Drupal\Core\Entity\EntityAccessControlHandler::access */
   if ( ($hierarchy_manager->hierarchyCanBeChild($node)) || ($hierarchy_manager->hierarchyCanBeParent($node)) ) {
     // if the current user can edit the current node's hierarchy settings (or create new children)
@@ -52,7 +58,7 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
 
     // Only show the form is the user has permission
     if ($can_set_parent) {
-      $collapsed = TRUE;  // Todo: fix
+      $collapsed = TRUE;  // Todo: fix (check if a parent is already set)
       $form = $hierarchy_manager->addHierarchyFormElement($form, $form_state, $node, $account, $collapsed);
       // Form API entity_builders callback; see https://www.drupal.org/node/2420295
       $form['#entity_builders'][] = 'nodehierarchy_node_builder';
@@ -230,7 +236,6 @@ function nodehierarchy_node_prepare_form(NodeInterface $node) {
     $function = $module . '_nodehierarchy_default_parents';
     $function($node);
   }
-
 
   if ( ($hierarchy_manager->hierarchyCanBeChild($node)) || ($hierarchy_manager->hierarchyCanBeParent($node)) ) {
     if (!isset($node->nodehierarchy_parents) || empty($node->nodehierarchy_parents)) {

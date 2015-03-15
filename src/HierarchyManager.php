@@ -72,6 +72,9 @@ class HierarchyManager implements HierarchyManagerInterface {
     $this->hierarchyOutlineStorage = $hierarchy_outline_storage;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function addHierarchyFormElement(array $form, FormStateInterface $form_state, NodeInterface $node, AccountInterface $account, $collapsed = TRUE) {
     $access = $account->hasPermission('administer hierarchy');
     $form['hierarchy'] =
@@ -92,6 +95,7 @@ class HierarchyManager implements HierarchyManagerInterface {
       \Drupal::moduleHandler()->alter('nodehierarchy_node_parent_form_items', $form['hierarchy']['nodehierarchy_parents'][$key], $node, $parent);
     }
     \Drupal::moduleHandler()->alter('nodehierarchy_node_parent_form_items_wrapper', $form['hierarchy'], $form_state, $node);
+
     return $form;
   }
 
@@ -112,12 +116,61 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
-   * Get the parent and menu setting for items for a given parent menu_link.
-   *
    * {@inheritdoc}
+   */
+  public function hierarchyGetAllowedParentTypes($child_type = NULL) {
+    // Static cache the results because this may be called many times for the same type on the menu overview screen.
+    static $allowed_types = array();
+    $config =  \Drupal::config('nodehierarchy.settings');
+
+    if (!isset($allowed_types[$child_type])) {
+      $parent_types = array();
+      $types = \Drupal\node\Entity\NodeType::loadMultiple();
+      foreach ($types as $type => $info) {
+        $allowed_children = array_filter($config->get('nh_allowchild_' . $type, array()));
+        if ((empty($child_type) && !empty($allowed_children)) || (in_array($child_type, (array) $allowed_children, TRUE))) {
+          $parent_types[] = $type;
+        }
+      }
+      $allowed_types[$child_type] = array_unique($parent_types);
+    }
+
+    return $allowed_types[$child_type];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hierarchyGetAllowedChildTypes($parent_type) {
+    $config =  \Drupal::config('nodehierarchy.settings');
+    $child_types = array_filter($config->get('nh_allowchild_'.$parent_type));
+    return array_unique($child_types);
+  }
+
+  /**
+   * Build the parent form item for a given parent node object. This function is
+   * called iteratively in addHierarchyFormElement method to build a dropdown
+   * list of parents. We add a visible title (node title), the hierarchy id
+   * (hid), a parent node id (pid), a child weight (cweight), a parent weight
+   * (pweight), and a delete flag to each dropdown item.
+   *
+   * The dropdown element  to select the desired title is added by the method
+   * hierarchyGetParentSelector.
+   *
+   * @param \Drupal\node\NodeInterface $node
+   *   The node being built or being edited
+   * @param $parent
+   *   The parent object
+   * @return array
+   *   The array containg all the important information associated with the
+   *   given dropdown item.
+   *
+   * @see addHierarchyFormElement
+   * @see hierarchyGetParentSelector
    */
   private function hierarchyNodeParentFormItems(NodeInterface $node, $parent) {
     // Wrap the item in a div for js purposes
+    // Todo: change the dropdown selector to an autocomplete if it makes sense.
     $item = array(
       '#type' => 'fieldset',
       '#title' => t('Parent'),
@@ -126,7 +179,9 @@ class HierarchyManager implements HierarchyManagerInterface {
       '#suffix' => '</div>',
     );
 
+    // The parent node ID
     $pnid = $parent->pnid;
+    // The node ID of the node being created or edited
     $nid = $node->id();
 
     // If a node can be a child of another add a selector to pick the parent. Otherwise set the parent to 0.
@@ -166,42 +221,26 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
-   * Get the allowed parent types for the given child type.
+   * Build a list of parent tiles to be displayed as part of a dropdown selector
+   * in hierarchyNodeParentFormItems. First we grab a list of allowed parenta
+   * using the hierarchyParentOptions method. Then we format each title by
+   * iteratively calling hierarchyParentOptionTitle. Finally we build the actual
+   * form element to be supplied to hierarchyNodeParentFormItems.
+   *
+   * @param $child_type
+   *   The child node type.
+   * @param $parent
+   *   The parent item being set on the form.
+   * @param object/null $exclude
+   *   Determines if the parent should be excluded from the list.
+   * @return array
+   *   The form array to be consumed by hierarchyNodeParentFormItems
+   *
+   * @see hierarchyNodeParentFormItems
+   * @see hierarchyParentOptions
+   * @see hierarchyParentOptionTitle
    */
-  public function hierarchyGetAllowedParentTypes($child_type = NULL) {
-    // Static cache the results because this may be called many times for the same type on the menu overview screen.
-    static $allowed_types = array();
-    $config =  \Drupal::config('nodehierarchy.settings');
-
-    if (!isset($allowed_types[$child_type])) {
-      $parent_types = array();
-      $types = \Drupal\node\Entity\NodeType::loadMultiple();
-      foreach ($types as $type => $info) {
-
-        $allowed_children = array_filter($config->get('nh_allowchild_' . $type, array()));
-        if ((empty($child_type) && !empty($allowed_children)) || (in_array($child_type, (array) $allowed_children, TRUE))) {
-          $parent_types[] = $type;
-        }
-      }
-      $allowed_types[$child_type] = array_unique($parent_types);
-    }
-    return $allowed_types[$child_type];
-  }
-
-  /**
-   * Get the allowed child types for the given parent.
-   */
-  public function hierarchyGetAllowedChildTypes($parent_type) {
-    // TODO: is this function still required? Any reason to think we may need array_filter($config->get...)?
-    $config =  \Drupal::config('nodehierarchy.settings');
-    $child_types = array_filter($config->get('nh_allowchild_'.$parent_type));
-    return array_unique($child_types);
-  }
-
-  /**
-   * Get the parent selector pulldown.
-   */
-  public function hierarchyGetParentSelector($child_type, $parent, $exclude = NULL) {
+  private function hierarchyGetParentSelector($child_type, $parent, $exclude = NULL) {
     // Allow other modules to create the pulldown first.
     // Modules implementing this hook, should return the form element inside an array with a numeric index.
     // This prevents module_invoke_all from merging the outputs to make an invalid form array.
