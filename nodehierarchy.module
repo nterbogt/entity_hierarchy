@@ -33,7 +33,7 @@ function nodehierarchy_help($route_name, RouteMatchInterface $route_match) {
  * presenting the form using the HierarchyManager class. We then use an
  * #entity_builders callback function to save the form data to the node object.
  *
- * @see HierarchyManager::addHierarchyFormElement
+ * @see HierarchyManagerInterface::addHierarchyFormElement
  * @see nodehierarchy_node_builder
  */
 function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) {
@@ -152,7 +152,7 @@ function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_
  * such as setting which content types should support one or more child content
  * types.
  *
- * @see HierarchyManager::hierarchyGetNodeTypeSettingsForm
+ * @see HierarchyManagerInterface::hierarchyGetNodeTypeSettingsForm
  */
 function nodehierarchy_form_node_type_edit_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
@@ -181,7 +181,7 @@ function nodehierarchy_form_node_type_edit_form_alter(&$form, FormStateInterface
  * the hierarchy information to the database if a parent is set on the node
  * add form.
  *
- * @see HierarchyManager::hierarchySaveNode
+ * @see HierarchyManagerInterface::hierarchySaveNode
  */
 function nodehierarchy_node_insert(NodeInterface $node) {
   /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
@@ -202,7 +202,7 @@ function nodehierarchy_node_insert(NodeInterface $node) {
  * the hierarchy information to the database if a parent is set on the node
  * edit form or delete the parent if a checkbox is selected.
  *
- * @see HierarchyManager::hierarchySaveNode
+ * @see HierarchyManagerInterface::hierarchySaveNode
  */
 function nodehierarchy_node_update(EntityInterface $node) {
   $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
@@ -214,11 +214,12 @@ function nodehierarchy_node_update(EntityInterface $node) {
  *
  * We are loading the hierarchy parents for a given node id, and adding it to
  * the node object for later processing in
- * HierarchyManager::addHierarchyFormElement, which is called in
+ * HierarchyManagerInterface::addHierarchyFormElement, which is called in
  * nodehierarchy_form_node_form_alter().
  *
  * @see nodehierarchy_form_node_form_alter
- * @see HierarchyManager::addHierarchyFormElement
+ * @see HierarchyManagerInterface::addHierarchyFormElement
+ * @see HierarchyManagerInterface::hierarchyDefaultRecord
  */
 function nodehierarchy_node_prepare_form(NodeInterface $node) {
   /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */

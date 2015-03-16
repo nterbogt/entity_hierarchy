@@ -102,6 +102,72 @@ class HierarchyManager implements HierarchyManagerInterface {
   /**
    * {@inheritdoc}
    */
+  public function hierarchyGetNodeTypeSettingsForm($key, $append_key = FALSE) {
+    $config =  \Drupal::config('nodehierarchy.settings');
+
+    $form['nh_allowchild'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Allowed child node types'),
+      '#options' => node_type_get_names(),
+      '#default_value' => $config->get('nh_allowchild_'.$key),
+      '#description' => t('Node types which can be created as child nodes of this node type.'),
+    );
+
+    //$form['nh_defaultparent'] = _nodehierarchy_get_parent_selector($key, $config->get('nh_defaultparent_'.$key));
+    // TODO: add default parent support later
+    //$form['nh_defaultparent']['#title'] = t('Default Parent');
+
+    // Todo: find out why this was removed in 7.x-4.x, and possibly remove from here and the Admin form.
+    $form['nh_createmenu'] = array(
+      '#type' => 'radios',
+      '#title' => t('Show item in menu'),
+      '#default_value' => $config->get('nh_createmenu_'.$key), //variable_get('nh_createmenu_' . $key, 'optional_no'),
+      '#options' => array(
+        'never' => t('Never'),
+        'optional_no' => t('Optional - default to no'),
+        'optional_yes' => t('Optional - default to yes'),
+        'always' => t('Always'),
+      ),
+      '#description' => t("Users must have the 'administer menu' or 'customize nodehierarchy menus' permission to override default options."),
+    );
+    $form['nh_multiple'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Allow multiple parents'),
+      '#default_value' => $config->get('nh_multiple_'.$key),
+      '#description' => t('Can nodes of this type have multiple parents?.'),
+    );
+
+    //$form += module_invoke_all('nodehierarchy_node_type_settings_form', $key);
+
+    // If we need to append the node type key to the form elements, we do so.
+    if ($append_key) {
+      // Appending the key does not work recursively, so fieldsets etc. are not supported.
+      $children = \Drupal\Core\Render\Element::children($form);
+      foreach ($children as $form_key) {
+        $form[$form_key . '_' . $key] = $form[$form_key];
+        unset($form[$form_key]);
+      }
+    }
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hierarchyDefaultRecord($cnid = NULL, $pnid = NULL) {
+    return (object)array(
+      'pnid' => $pnid,
+      // Todo: should this be cweight???
+      'weight' => 0,
+      'cnid' => $cnid,
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @see hierarchyGetAllowedParentTypes
+   */
   public function hierarchyCanBeChild(NodeInterface $node) {
     $type = is_object($node) ? $node->getType() : $node;
     return count($this->hierarchyGetAllowedParentTypes($type));
@@ -109,6 +175,8 @@ class HierarchyManager implements HierarchyManagerInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @see hierarchyGetAllowedChildTypes
    */
   public function hierarchyCanBeParent(NodeInterface $node) {
     $type = is_object($node) ? $node->getType() : $node;
@@ -116,9 +184,20 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
-   * {@inheritdoc}
+   * Get the allowed parent node types for the given child node type. This
+   * method uses configuration management to retrieve the hierarchy settings for
+   * allowed parent types based on the child node type.
+   *
+   * @param int/null $child_type
+   *   The child node type.
+   *
+   * @return array
+   *   An array of parent node types allowed for a given child node type.
+   *
+   * @see hierarchyCanBeChild
+   * @see hierarchyParentOptions
    */
-  public function hierarchyGetAllowedParentTypes($child_type = NULL) {
+  private function hierarchyGetAllowedParentTypes($child_type = NULL) {
     // Static cache the results because this may be called many times for the same type on the menu overview screen.
     static $allowed_types = array();
     $config =  \Drupal::config('nodehierarchy.settings');
@@ -227,12 +306,12 @@ class HierarchyManager implements HierarchyManagerInterface {
    * iteratively calling hierarchyParentOptionTitle. Finally we build the actual
    * form element to be supplied to hierarchyNodeParentFormItems.
    *
-   * @param $child_type
+   * @param string $child_type
    *   The child node type.
    * @param $parent
    *   The parent item being set on the form.
-   * @param object/null $exclude
-   *   Determines if the parent should be excluded from the list.
+   * @param int/null $exclude
+   *   Node ID of the parent that should be excluded from the list.
    * @return array
    *   The form array to be consumed by hierarchyNodeParentFormItems
    *
@@ -282,15 +361,41 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
-   * Get the title of the given item to display in a pulldown.
-   */
-  private function hierarchyParentOptionTitle($item) {
-    return str_repeat('--', $item->depth - 1) . ' ' . Unicode::truncate($item->title, 45, TRUE, FALSE);
-  }
-
-
-  /**
-   * Return a list of menu items that are valid possible parents for the given node.
+   * Return a list of valid possible hierarchy parents for the given child node
+   * type. This list is passed back to hierarchyGetParentSelector so it can be
+   * displayed as a dropdown selection list.
+   *
+   * The list is built with the following steps:
+   * 1) Get all allowed parent node types for all allowed node types using
+   *    hierarchyGetAllowedParentTypes
+   * 2) Get allowed parent node types for a given child node type using
+   *    hierarchyGetAllowedParentTypes
+   * 3) Build a tree of all possible parent nodes using hierarchyBuildTree and
+   *    HierarchyOutlineStorage::hierarchyNodesByType
+   * 4) Remove or disable parent titles that can't be parents using
+   *    hierarchyTreeDisableTypes
+   * 5) Remove items which the user does not have permission to access using
+   *    hierarchyTreeDisableNoAccess
+   * 6) Remove the option to set a child as its own parent using
+   *    hierarchyTreeRemoveNid
+   * 7) Convert the tree to a flattened list (with depth) using
+   *    hierarchyFlattenTree
+   *
+   * @param string $child_type
+   *   The node type of the child used to find valid potential parents
+   * @param int/null $exclude
+   *   Node ID of the parent that should be excluded from the list.
+   * @return array
+   *   The list of valid parents for a given node type.
+   *
+   * @see hierarchyGetParentSelector
+   * @see hierarchyGetAllowedParentTypes
+   * @see HierarchyOutlineStorage::hierarchyNodesByType
+   * @see hierarchyBuildTree
+   * @see hierarchyTreeDisableTypes
+   * @see hierarchyTreeDisableNoAccess
+   * @see hierarchyTreeRemoveNid
+   * @see hierarchyFlattenTree
    */
   private function hierarchyParentOptions($child_type, $exclude = NULL) {
     static $options = array();
@@ -302,48 +407,42 @@ class HierarchyManager implements HierarchyManagerInterface {
 
     $types = $this->hierarchyGetAllowedParentTypes();
     $parent_types = $this->hierarchyGetAllowedParentTypes($child_type);
-
-    // Build the whole tree.
     $parent_tree = $this->hierarchyOutlineStorage->hierarchyNodesByType($types);
     $parent_tree = $this->hierarchyBuildTree($parent_tree);
-
-    // Remove or disable items that can't be parents.
     $parent_tree = $this->hierarchyTreeDisableTypes($parent_tree, $parent_types);
-
-    // Remove items which the user does not have permission to.
-//    $parent_tree = $this->hierarchyTreeDisableNoaccess($parent_tree);
-
-    // Remove the excluded item(s). This prevents a child being assigned as it's own parent.
+//    $parent_tree = $this->hierarchyTreeDisableNoAccess($parent_tree);
     $out = $this->hierarchyTreeRemoveNid($parent_tree, $exclude);
-
-    // Convert the tree to a flattened list (with depth)
     $out = $this->hierarchyFlattenTree($out);
-
-    // Static caching to prevent these options being built more than once.
+    // Apply static caching to prevent these options being built more than once.
     $options[$child_type][$exclude] = $out;
 
     return $out;
   }
 
   /**
-   * Mark nodes which the user does not have edit access to as disabled.
+   * Format the title of a given item to display in a pulldown.
+   *
+   * @param object $item
+   *   The title to be formatted
+   * @return string
+   *   The formatted title
+   *
+   * @see hierarchyGetParentSelector
    */
-  private function hierarchyTreeDisableNoaccess(NodeInterface $nodes) {
-    $current_user = \Drupal::currentUser();
-    if (!$current_user->hasPermission('create child of any parent')) {
-      foreach ($nodes as $nid => $node) {
-        $nodes[$nid]->disabled = $nodes[$nid]->disabled || !$node->access('update');
-
-        if (!empty($node->children)) {
-          $nodes[$nid]->children = $this->hierarchyTreeDisableNoaccess($node->children);
-        }
-      }
-    }
-    return $nodes;
+  private function hierarchyParentOptionTitle($item) {
+    return str_repeat('--', $item->depth - 1) . ' ' . Unicode::truncate($item->title, 45, TRUE, FALSE);
   }
-
+  
   /**
-   * Get a tree of nodes of the given type.
+   *  Build a tree of all possible parent nodes. This method is only called for
+   *  a given node type.
+   *
+   * @param $nodes
+   *   The list of nodes to process
+   * @return object
+   *   The updated tree of nodes
+   *
+   * @see hierarchyParentOptions
    */
   private function hierarchyBuildTree($nodes) {
     foreach ($nodes as $node) {
@@ -365,9 +464,18 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
-   * Mark nodes that are not of the given types as disabled.
+   * Recursively mark nodes that are not of the given types as disabled.
+   *
+   * @param $nodes
+   *   The list of nodes to process and mark as disabled where applicable.
+   * @param array $allowed_types
+   *    The list of allowed child types
+   * @return object $nodes
+   *    The updated tree of nodes with appropriate nodes marked as disabled.
+   *
+   * @see hierarchyParentOptions
    */
-  function hierarchyTreeDisableTypes($nodes, $allowed_types) {
+  private function hierarchyTreeDisableTypes($nodes, $allowed_types) {
     foreach ($nodes as $nid => $node) {
       if (!in_array($node->type, $allowed_types)) {
         $nodes[$nid]->disabled = TRUE;
@@ -380,9 +488,44 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
-   * Mark nodes with the given node and it's decendents as disabled.
+   * Recursively mark as disabled nodes for which the user doesn't have edit
+   * access.
+   * 
+   * @param $nodes
+   *   The list of nodes to process for access permissions
+   * @return object
+   *   The updated list of nodes with no access nodes marked as disabled.
+   * 
+   * @see hierarchyParentOptions
    */
-  function hierarchyTreeRemoveNid($nodes, $exclude) {
+  private function hierarchyTreeDisableNoAccess(NodeInterface $nodes) {
+    // Todo: fix this function 
+    $current_user = \Drupal::currentUser();
+    if (!$current_user->hasPermission('create child of any parent')) {
+      foreach ($nodes as $nid => $node) {
+        $nodes[$nid]->disabled = $nodes[$nid]->disabled || !$node->access('update');
+        if (!empty($node->children)) {
+          $nodes[$nid]->children = $this->hierarchyTreeDisableNoAccess($node->children);
+        }
+      }
+    }
+    return $nodes;
+  }
+
+  /**
+   * Remove the option to set a child as its own parent. All decedents of the
+   * parent are also recursively removed.
+   *
+   * @param $nodes
+   *   The list of nodes to process
+   * @param $exclude
+   *   Node ID of the parent that should be excluded from the list.
+   * @return object
+   *   The updated tree
+   *
+   * @see hierarchyParentOptions
+   */
+  private function hierarchyTreeRemoveNid($nodes, $exclude) {
     foreach ($nodes as $nid => $node) {
       if ($nid == $exclude) {
         unset($nodes[$nid]);
@@ -395,9 +538,19 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
-   * Flatten the tree of nodes.
+   * Recursively convert the tree to a flattened list (with depth)
+   *
+   * @param $nodes
+   *   The list of nodes to process
+   * @param int $depth
+   *   The depth of the list
+   * @return array
+   *   The flattened list to be used in the dropdown selector of available
+   *   parent nodes.
+   *
+   * @see hierarchyParentOptions
    */
-  function hierarchyFlattenTree($nodes, $depth = 1) {
+  private function hierarchyFlattenTree($nodes, $depth = 1) {
     $out = $children = array();
     foreach ($nodes as $nid => $node) {
       $node->depth = $depth;
@@ -405,8 +558,7 @@ class HierarchyManager implements HierarchyManagerInterface {
       if (!empty($node->children)) {
         $children = $this->hierarchyFlattenTree($node->children, $depth + 1);
       }
-
-      // Only output this option if there are non-disabled chidren.
+      // Only output this option if there are non-disabled children.
       if (!$node->disabled || $children) {
         $out[$nid] = $node;
         $out += $children;
@@ -416,15 +568,12 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
-   * Do the actual insertion or update. No permissions checking is done here.
+   * {@inheritdoc}
    */
   public function hierarchySaveNode(&$node) {
     if (!isset($node->nodehierarchy_parents)) {
       return;
     }
-
-//    dsm($node->nodehierarchy_parents);
-
     foreach ($node->nodehierarchy_parents as $i => $item) {
       $node->nodehierarchy_parents[$i] = (object)$item;
       $node->nodehierarchy_parents[$i]->cnid = (int)$node->id();
@@ -436,10 +585,32 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
-   * Save a nodehierarchy record, resetting weights if applicable
+   * Prepare an individual item to be added/removed to the database.
+   *
+   * If the item already has a hierarchy id (hid) do the following:
+   * 1) If the item doesn't have a parent node id (pnid), it is deleted via
+   *    hierarchyDeleteRecord. Otherwise, load the current item from the
+   *    database using hierarchyGetRecord
+   * 2) Adjust the child weight (cweight) via hierarchyGetParentNextChildWeight.
+   * 3) Update the database with the new weight using updateHierarchy.
+   *
+   * If the item doesn't already have an hid:
+   * 1) Load the next available cweight using hierarchyGetParentNextChildWeight.
+   * 2) Insert a new hierarchy record into the database via insertHierarchy.
+   *
+   * @param object $item
+   *   The hierarchy object to be processed before adding the item to the
+   *   database, updating an existing item, or deleting the item from the
+   *   database.
+   *
+   * @see HierarchyManagerInterface::hierarchySaveNode
+   * @see hierarchyDeleteRecord
+   * @see hierarchyGetRecord
+   * @see hierarchyGetParentNextChildWeight
+   * @see insertHierarchy
+   * @see updateHierarchy
    */
   private function hierarchyRecordSave(&$item) {
-
     if (!empty($item->hid)) {
       // Remove the item if it's no longer needed.
       if (empty($item->pnid)) {
@@ -466,10 +637,25 @@ class HierarchyManager implements HierarchyManagerInterface {
     }
   }
 
-  public function insertHierarchy($item){
+  /**
+   * Add a new hierarchy record to the database using the
+   * HierarchyOutlineStorage class.
+   *
+   * @param object $item
+   *   The hierarchy object to be written to the database.
+   * @return mixed
+   *   Todo: figure out what's being returned
+   *
+   * @see HierarchyOutlineStorage::insert
+   * @see hierarchyRecordSave
+   */
+  private function insertHierarchy($item){
     return $this->hierarchyOutlineStorage->insert($item);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function updateHierarchy($item){
     unset($item->remove);
     // Here we typecast the $item object to an array, and PHP is smart enough to convert it.
@@ -477,87 +663,52 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
-   * Get the next child weight for a given pnid.
+   * Deletes an existing hierarchy item from the database using the
+   * HierarchyOutlineStorage class.
+   *
+   * @param int $hid
+   *   The hierarchy id to be deleted from the database.
+   * @return mixed
+   *   Todo: figure out what's being returned
+   *
+   * @see HierarchyOutlineStorage::hierarchyRecordDelete
+   * @see hierarchyRecordSave
    */
-  public function hierarchyGetParentNextChildWeight($pnid) {
-    return $this->hierarchyOutlineStorage->hierarchyLoadParentNextChildWeight($pnid);
-  }
-
-  public function hierarchyGetRecord($hid){
-    return $this->hierarchyOutlineStorage->hierarchyRecordLoad($hid);
-  }
-
-  /**
-   * Save a nodehierarchy record.
-   */
-  public function hierarchyDeleteRecord($hid) {
+  private function hierarchyDeleteRecord($hid) {
     return $this->hierarchyOutlineStorage->hierarchyRecordDelete($hid);
   }
 
   /**
-   * Get the nodehierarchy setting form for a particular node type.
+   * Loads a single hierarchy item from the database using the
+   * HierarchyOutlineStorage class.
+   *
+   * @param int $hid
+   *   The hierarchy id to be loaded from the database.
+   * @return mixed
+   *   Todo: figure out what's being returned
+   *
+   * @see HierarchyOutlineStorage::hierarchyRecordLoad
+   * @see hierarchyRecordSave
    */
-  function hierarchyGetNodeTypeSettingsForm($key, $append_key = FALSE) {
-    $config =  \Drupal::config('nodehierarchy.settings');
-
-    $form['nh_allowchild'] = array(
-      '#type' => 'checkboxes',
-      '#title' => t('Allowed child node types'),
-      '#options' => node_type_get_names(),
-      '#default_value' => $config->get('nh_allowchild_'.$key),
-      '#description' => t('Node types which can be created as child nodes of this node type.'),
-    );
-
-    //$form['nh_defaultparent'] = _nodehierarchy_get_parent_selector($key, $config->get('nh_defaultparent_'.$key));
-    // TODO: add default parent support later
-    //$form['nh_defaultparent']['#title'] = t('Default Parent');
-
-    $form['nh_createmenu'] = array(
-      '#type' => 'radios',
-      '#title' => t('Show item in menu'),
-      '#default_value' => $config->get('nh_createmenu_'.$key), //variable_get('nh_createmenu_' . $key, 'optional_no'),
-      '#options' => array(
-        'never' => t('Never'),
-        'optional_no' => t('Optional - default to no'),
-        'optional_yes' => t('Optional - default to yes'),
-        'always' => t('Always'),
-      ),
-      '#description' => t("Users must have the 'administer menu' or 'customize nodehierarchy menus' permission to override default options."),
-    );
-    $form['nh_multiple'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Allow multiple parents'),
-      '#default_value' => $config->get('nh_multiple_'.$key),
-      '#description' => t('Can nodes of this type have multiple parents?.'),
-    );
-
-    //$form += module_invoke_all('nodehierarchy_node_type_settings_form', $key);
-
-    // If we need to append the node type key to the form elements, we do so.
-    if ($append_key) {
-      // Appending the key does not work recursively, so fieldsets etc. are not supported.
-      $children = \Drupal\Core\Render\Element::children($form);
-      foreach ($children as $form_key) {
-        $form[$form_key . '_' . $key] = $form[$form_key];
-        unset($form[$form_key]);
-      }
-    }
-    return $form;
+  private function hierarchyGetRecord($hid){
+    return $this->hierarchyOutlineStorage->hierarchyRecordLoad($hid);
   }
 
   /**
-   * Get the default menu link values for a new nodehierarchy menu link.
+   * Query the database to find the next available child weight for the given
+   * parent using the HierarchyOutlineStorage class.
+   *
+   * @param int $pnid
+   *   The parent id used to query the database to find the next available child
+   *   weight where applicable.
+   * @return mixed
+   *   Todo: figure out what's being returned
+   *
+   * @see HierarchyOutlineStorage::hierarchyLoadParentNextChildWeight
+   * @see hierarchyRecordSave
    */
-  public function hierarchyDefaultRecord($cnid = NULL, $npid = NULL) {
-    return (object)array(
-      'pnid' => $npid,
-      'weight' => 0,
-      'cnid' => $cnid,
-    );
-  }
-
-  public function loadHierarchy($nids) {
-    return $this->hierarchyOutlineStorage->loadHierarchies($nids);
+  private function hierarchyGetParentNextChildWeight($pnid) {
+    return $this->hierarchyOutlineStorage->hierarchyLoadParentNextChildWeight($pnid);
   }
 
 }

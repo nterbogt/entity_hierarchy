@@ -146,7 +146,6 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
     if ($current_user->hasPermission('create child nodes') && ($current_user->hasPermission('create child of any parent')
         || $node->access('update'))) {
 
-      // Todo: question: are we getting the correct values back from hierarchyGetAllowedChildTypes? Doesn't seem so...
       $url = Url::fromRoute('<current>');
       $curr_path = $url->toString();
       $path = explode('/', $curr_path);

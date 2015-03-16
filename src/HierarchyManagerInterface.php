@@ -33,8 +33,55 @@ interface HierarchyManagerInterface {
    *
    * @return array
    *   The form structure, with the hierarchy elements added.
+   *
+   * @see nodehierarchy_form_node_form_alter
    */
   public function addHierarchyFormElement(array $form, FormStateInterface $form_state, NodeInterface $node, AccountInterface $account, $collapsed = TRUE);
+
+  /**
+   * Create the hierarchy type settings form, and load any default values using
+   * the configuration management settings.
+   *
+   * @param string $key
+   *   The name of the node type for which the form is being built.
+   * @param bool $append_key
+   *   Append a node type where appropriate (almost always)
+   * @return array
+   *   The form array for the given hierarchy type.
+   *
+   * @see nodehierarchy_form_node_type_edit_form_alter
+   */
+  public function hierarchyGetNodeTypeSettingsForm($key, $append_key = FALSE);
+
+  /**
+   * Get the allowed child node types for the given parent node type. This
+   * method uses configuration management to retrieve the hierarchy settings for
+   * allowed child types based on the parent node type.
+   *
+   * @param int/null $parent_type
+   *   The parent node type.
+   *
+   * @return array
+   *   An array of child node types allowed for a given parent node type.
+   *
+   * @see hierarchyCanBeParent
+   * @see NodehierarchyChildrenForm::form
+   */
+  public function hierarchyGetAllowedChildTypes($parent_type);
+
+  /**
+   * Create a default object for a new hierarchy item.
+   *
+   * @param int/null $cnid
+   *   The child node id.
+   * @param int/null $pnid
+   *   The parent node id.
+   * @return object
+   *   The new hierarchy item.
+   *
+   * @see nodehierarchy_node_prepare_form
+   */
+  public function hierarchyDefaultRecord($cnid = NULL, $pnid = NULL);
 
   /**
    * Determines if a given node type is allowed to be a child node.
@@ -58,52 +105,35 @@ interface HierarchyManagerInterface {
    * @return integer
    *   The number of allowed parent types for a given node type.
    *
-   * @see \Drupal\nodehierarchy\HierarchyManagerInterface::hierarchyGetAllowedChildTypes
+   * @see HierarchyManager::hierarchyGetAllowedChildTypes
+   * @see nodehierarchy_form_node_form_alter
    */
   public function hierarchyCanBeParent(NodeInterface $node);
 
   /**
-   * Get the allowed parent node types for the given child node type. This
-   * method uses configuration management to retrieve the hierarchy settings for
-   * allowed parent types based on the child node type.
+   * Process a list of nodehierarchy parents in preparation for writing to the
+   * database. No permission checking is done here. Each parent is written
+   * individually using HierarchyManager::hierarchyRecordSave.
    *
-   * @param int/null $child_type
-   *   The child node type.
+   * @param \Drupal\node\NodeInterface $node
+   *   The node object containing the list of parents to process.
    *
-   * @return array
-   *   An array of parent node types allowed for a given child node type.
+   * @see HierarchyManager::hierarchyRecordSave
    */
-  public function hierarchyGetAllowedParentTypes($child_type = NULL);
+  public function hierarchySaveNode(&$node);
 
   /**
-   * Get the allowed child node types for the given parent node type. This
-   * method uses configuration management to retrieve the hierarchy settings for
-   * allowed child types based on the parent node type.
+   * Updates an existing hierarchy record in the database using the
+   * HierarchyOutlineStorage class.
    *
-   * @param int/null $parent_type
-   *   The parent node type.
+   * @param object $item
+   *   The hierarchy object to be updated in the database.
+   * @return mixed
+   *   Todo: figure out what's being returned
    *
-   * @return array
-   *   An array of child node types allowed for a given parent node type.
+   * @see HierarchyOutlineStorage::update
+   * @see hierarchyRecordSave
+   * @see NodehierarchyChildrenForm::save
    */
-  public function hierarchyGetAllowedChildTypes($parent_type);
-
-  /**
-   * Loads multiple hierarchy entries.
-   *
-   * The entries of a hierarchy entry is documented in
-   * \Drupal\nodehierarchy\HierarchyOutlineStorageInterface::loadHierarchies.
-   *
-   * @param int[] $nids
-   *   An array of nids to load.
-   *
-   * @return array[]
-   *   The parent ID(s)
-   *
-   * @see \Drupal\nodehierarchy\HierarchyOutlineStorageInterface::loadHierarchies
-   */
-  public function loadHierarchy($nids);
-
   public function updateHierarchy($item);
-
 }
