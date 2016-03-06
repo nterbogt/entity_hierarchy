@@ -11,11 +11,10 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Render\Element;
-use Drupal\Component\Utility\String;
 use Drupal\Core\Entity\ContentEntityForm;
-use Drupal\Core\Entity\EntityManagerInterface;
-use Drupal\nodehierarchy\HierarchyManagerInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Component\Utility\SafeMarkup;
+
 
 /**
  * Defines a form for Node Hierarchy Admin settings.
@@ -39,15 +38,12 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
   /**
    * Constructs a NodehierarchyChildrenForm object.
    *
-   * @param \Drupal\nodehierarchy\HierarchyManagerInterface $hierarchy_manager
-   *   The HierarchyManager service.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface   $entity_manager
+   *   The entity manager.
    *
-   * Todo: this constructor is not currently needed, but should fix the save()
-   * method to use it instead of calling the HierarchyManager service directly.
    */
-  public function __construct(EntityManagerInterface $entity_manager, HierarchyManagerInterface $hierarchy_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_manager) {
     parent::__construct($entity_manager);
-    $this->hierarchyManager = $hierarchy_manager;
   }
 
   /**
@@ -99,10 +95,10 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
         $form['children'][$child->hid]['#attributes']['class'][] = 'draggable';
         $form['children'][$child->hid]['#weight'] = $child->cweight;
         $form['children'][$child->hid]['title'] = array(
-          '#markup' => $this->l(String::checkPlain($node->getTitle()), $url),
+          '#markup' => $this->l(SafeMarkup::checkPlain($node->getTitle()), $url),
         );
         $form['children'][$child->hid]['type'] = array(
-          '#markup' => String::checkPlain($type_names[$node->getType()]),
+          '#markup' => SafeMarkup::checkPlain($type_names[$node->getType()]),
         );
         //
         $form['children'][$child->hid]['weight'] = array(
