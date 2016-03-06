@@ -64,6 +64,15 @@ class HierarchyManager implements HierarchyManagerInterface {
 
   /**
    * Constructs a HierarchyManager object.
+   *
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_manager
+   *   Provides an interface for entity type managers.
+   * @param \Drupal\Core\StringTranslation\TranslationInterface $translation
+   *   Interface for the translation.manager translation service.
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   Defines the interface for a configuration object factory.
+   * @param \Drupal\nodehierarchy\HierarchyOutlineStorageInterface $hierarchy_outline_storage
+   *   The entity hierarchy storage object
    */
   public function __construct(EntityTypeManagerInterface $entity_manager, TranslationInterface $translation, ConfigFactoryInterface $config_factory, HierarchyOutlineStorageInterface $hierarchy_outline_storage) {
     $this->entityManager = $entity_manager;
