@@ -8,7 +8,7 @@
 namespace Drupal\nodehierarchy;
 
 use Drupal\Component\Utility\Unicode;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslationInterface;
@@ -30,7 +30,7 @@ class HierarchyManager implements HierarchyManagerInterface {
   /**
    * Entity manager Service Object.
    *
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityManager;
 
@@ -65,7 +65,7 @@ class HierarchyManager implements HierarchyManagerInterface {
   /**
    * Constructs a HierarchyManager object.
    */
-  public function __construct(EntityManagerInterface $entity_manager, TranslationInterface $translation, ConfigFactoryInterface $config_factory, HierarchyOutlineStorageInterface $hierarchy_outline_storage) {
+  public function __construct(EntityTypeManagerInterface $entity_manager, TranslationInterface $translation, ConfigFactoryInterface $config_factory, HierarchyOutlineStorageInterface $hierarchy_outline_storage) {
     $this->entityManager = $entity_manager;
     $this->stringTranslation = $translation;
     $this->configFactory = $config_factory;
