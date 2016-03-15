@@ -11,6 +11,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Entity;
 use Drupal\Core\Render\Element;
 use Drupal\node\Entity\Node;
+use Drupal\node\NodeTypeInterface;
 use Drupal\node\NodeInterface;
 use Drupal\Core\Entity\EntityInterface;
 
@@ -154,7 +155,7 @@ function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_
  *
  * @see HierarchyManagerInterface::hierarchyGetNodeTypeSettingsForm
  */
-function nodehierarchy_form_node_type_edit_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+function nodehierarchy_form_node_type_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
   $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
   // TODO: check if there's any reason we're not including the base $form
@@ -172,6 +173,20 @@ function nodehierarchy_form_node_type_edit_form_alter(&$form, FormStateInterface
   // $form['#attached']['library'][] = nodehierarchy/nodehierarchy.nodetypeform;
 
   $form['hierarchy'] += $hierarchy_manager->hierarchyGetNodeTypeSettingsForm($type);
+  $form['#entity_builders'][] = 'nodehierarchy_form_node_type_form_builder';
+}
+
+/**
+ * Entity form builder for the node type form to save the hierarchy settings
+ * using the configuration factory.
+ */
+function nodehierarchy_form_node_type_form_builder($entity_type, NodeTypeInterface $type, &$form, FormStateInterface $form_state) {
+  $node_type = $type->get('type');
+  $config = \Drupal::getContainer()->get('config.factory')->getEditable('nodehierarchy.settings');
+  $config->set('nh_allowchild_'.$node_type, $form_state->getValue('nh_allowchild'));
+  $config->set('nh_createmenu_'.$node_type, $form_state->getValue('nh_createmenu'));
+  $config->set('nh_multiple_'.$node_type, $form_state->getValue('nh_multiple'));
+  $config->save();
 }
 
 /**
