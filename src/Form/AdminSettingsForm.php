@@ -50,7 +50,6 @@ class AdminSettingsForm extends ConfigFormBase {
       '#type' => 'fieldset',
       '#title' => $this->t('Node Type Settings'),
       '#description' => $this->t('Settings for individual node types. These can also be individually set for each content type.'),
-      //array("!ct" => l(t("Content Types"), "admin/structure/types"))),
     );
     foreach ($this->node_types as $key => $type) {
       // Individual type settings.
@@ -71,14 +70,14 @@ class AdminSettingsForm extends ConfigFormBase {
       '#type' => 'select',
       '#title' => t('Default parent menu'),
       '#options' => array_keys(entity_load_multiple('menu')),
-      '#default_value' => $config->get('nodehierarchy_default_menu_name'), //variable_get('nodehierarchy_default_menu_name', 'navigation'),
+      '#default_value' => $config->get('nodehierarchy_default_menu_name'),
       '#description' => t('If a menu is created for a node with no parent the new menu item will appear in this menu.'),
     );
 
     $form['nodehierarchy_menu']['nodehierarchy_menu_module_edit'] = array(
       '#type' => 'checkbox',
       '#title' => t('Always show hidden Node Hierarchy menu items on the menu overview forms.'),
-      '#default_value' => $config->get('nodehierarchy_menu_module_edit'), //variable_get('nodehierarchy_menu_module_edit', FALSE),
+      '#default_value' => $config->get('nodehierarchy_menu_module_edit'),
       '#description' => t('Allow disabled nodehierarchy menu items to be edited with regular menu items in the menu overview screen. Turn this off if large Node Hierarchy menus are causing memory errors on menu edit screens.'),
     );
 
