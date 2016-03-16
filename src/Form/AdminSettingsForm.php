@@ -89,8 +89,6 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
-    // dpm($values);
-    // dpm($values['nh_defaultparent_'.$key]);
     $config = $this->config('nodehierarchy.settings');
     foreach ($this->node_types as $key => $type){
       $config->set('nh_allowchild_'.$key, $values['nh_allowchild_'.$key]);
@@ -101,7 +99,6 @@ class AdminSettingsForm extends ConfigFormBase {
       $config->set('nodehierarchy_menu_module_edit', $values['nodehierarchy_menu_module_edit']);
     }
     $config->save();
-
     parent::submitForm($form, $form_state);
   }
 

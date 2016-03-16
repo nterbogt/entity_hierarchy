@@ -146,6 +146,9 @@ class HierarchyManager implements HierarchyManagerInterface {
       '#description' => t('Can nodes of this type have multiple parents?.'),
     );
 
+    $form['nh_defaultparent'] = $this->hierarchyGetParentSelector($key, $config->get('nh_defaultparent_' .$key, 0));
+    $form['nh_defaultparent']['#title'] = t('Default Parent');
+
     //$form += module_invoke_all('nodehierarchy_node_type_settings_form', $key);
 
     // If we need to append the node type key to the form elements, we do so.

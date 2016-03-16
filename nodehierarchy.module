@@ -186,6 +186,7 @@ function nodehierarchy_form_node_type_form_builder($entity_type, NodeTypeInterfa
   $config->set('nh_allowchild_'.$node_type, $form_state->getValue('nh_allowchild'));
   $config->set('nh_createmenu_'.$node_type, $form_state->getValue('nh_createmenu'));
   $config->set('nh_multiple_'.$node_type, $form_state->getValue('nh_multiple'));
+  $config->set('nh_defaultparent_'.$node_type, $form_state->getValue('nh_defaultparent'));
   $config->save();
 }
 
