@@ -309,6 +309,7 @@ function nodehierarchy_node_load($nodes) {
   $pids = $hierarchy_storage->loadHierarchies($nids);
   foreach ($pids as $pid) {
     $title = Node::load($pid)->getTitle();
+    dpm($nodes[$pid]);
     $nodes[$pid['nid']]->nodehierarchy_parents = $pid;
   }
 }
