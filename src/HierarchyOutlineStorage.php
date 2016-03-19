@@ -67,6 +67,21 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
   }
 
   /**
+   * Get the immediate parent for the given node.
+   */
+  public function hierarchyGetParent($cnid) {
+
+    $query = db_select('nodehierarchy', 'nh')
+      ->fields('nh')
+      ->where('cnid = :cnid', array(':cnid' => $cnid))
+      ->orderBy('pweight', 'ASC');
+
+    $result = $query->execute()->fetch();
+    return $result;
+  }
+
+
+  /**
    * {@inheritdoc}
    */
   public function delete($nid) {

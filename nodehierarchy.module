@@ -297,21 +297,24 @@ function nodehierarchy_page_attachments(&$page) {
 /**
  * Implements @see hook_ENTITY_TYPE_load() for node entities.
  *
- * Don't think this function is being used right now, so will investigate and
- * either delete or improve docs.
+ * Here we're adding the parent's nid to the node object.
  */
 function nodehierarchy_node_load($nodes) {
-// TODO: Should we be loading the parent selection here instead using the code below?
-
-  $nids = array_keys($nodes);
-  /** @var \Drupal\nodehierarchy\HierarchyOutlineStorage $hierarchy_storage */
-  $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
-  $pids = $hierarchy_storage->loadHierarchies($nids);
-  foreach ($pids as $pid) {
-    $title = Node::load($pid)->getTitle();
-    dpm($nodes[$pid]);
-    $nodes[$pid['nid']]->nodehierarchy_parents = $pid;
-  }
+//  $node = \Drupal::routeMatch()->getParameter('node');
+//  $current_nid = null;
+//  if ($node) {
+//    $current_nid = $node->id();
+//    dpm($current_nid);
+//  }
+////   For now, we'll only deal with the current node's parent with the above code
+////  foreach($nodes as $node) {
+////    dpm($node->id());
+////  }
+//  /** @var \Drupal\nodehierarchy\HierarchyOutlineStorage $hierarchy_storage */
+//  $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
+//  $parent = $hierarchy_storage->hierarchyGetParent($current_nid);
+//  $nodes[$current_nid['nid']]->hierarchy_parent = $parent;
+//  dpm($nodes);
 }
 
 /**

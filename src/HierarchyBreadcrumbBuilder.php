@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\book\HierarchyBreadcrumbBuilder.
+ * Contains \Drupal\nodehierarchy\HierarchyBreadcrumbBuilder.
  */
 
 namespace Drupal\nodehierarchy;
@@ -57,9 +57,9 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
    *   The current user account.
    */
   public function __construct(EntityManagerInterface $entity_manager, AccessManagerInterface $access_manager, AccountInterface $account) {
-    $this->nodeStorage = $entity_manager->getStorage('node');
-    $this->accessManager = $access_manager;
-    $this->account = $account;
+//    $this->nodeStorage = $entity_manager->getStorage('node');
+//    $this->accessManager = $access_manager;
+//    $this->account = $account;
   }
 
   /**
@@ -67,7 +67,11 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
    */
   public function applies(RouteMatchInterface $route_match) {
     $node = $route_match->getParameter('node');
-    return $node instanceof NodeInterface && !empty($node->book);
+    $current_nid = $node->id();
+    $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
+    $parent = null;
+    $parent = $hierarchy_storage->hierarchyGetParent($current_nid);
+    return !empty($parent) ? true : false;
   }
 
   /**
@@ -76,56 +80,17 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
   public function build(RouteMatchInterface $route_match) {
 
     $breadcrumb = new Breadcrumb();
-    $links = array(Link::createFromRoute($this->t('Home'), '<front>'));
+    $links = [Link::createFromRoute($this->t('Home'), '<front>')];
 
     // Get all the possible breadcrumbs for the node.
-    $node = \Drupal::routeMatch()->getParameter('node');
+    $node = $route_match->getParameter('node');
     $nid = $node->nid->value;
     $links = $this->hierarchyGetBreadcrumb($nid, $links);
-
-    // Remove the node itself if it's not needed (we would want it for the children tab for example).
-    // Need to figure out what's going on here and fix the following
-    $add_node=false;
-    if ($add_node) {
-//      $uri = Url::fromUri('node', $node);
-      $options = array();
-      $links[] = $node->link($node->getTitle(), 'canonical', $options)->getGeneratedLink();
-//      $links[] = array(Link::createFromRoute($node->title, $uri['path'], $uri['options']));
-    }
-
-    // Stick the home link on the top of the breadcrumb.
-//    array_unshift($breadcrumb, Link::createFromRoute(t('Home'), '<front>'));
-
-//    drupal_set_breadcrumb($breadcrumb);
-
-
-
-//    $links = array(Link::createFromRoute($this->t('Home'), '<front>'));
-//    $hierarchy = $route_match->getParameter('node')->book;
-//    $depth = 1;
-//    // We skip the current node.
-//    while (!empty($hierarchy['p' . ($depth + 1)])) {
-//      $hierarchy_nids[] = $hierarchy['p' . $depth];
-//      $depth++;
-//    }
-//    $parent_books = $this->nodeStorage->loadMultiple($hierarchy_nids);
-//    if (count($parent_books) > 0) {
-//      $depth = 1;
-//      while (!empty($hierarchy['p' . ($depth + 1)])) {
-//        if (!empty($parent_books[$hierarchy['p' . $depth]]) && ($parent_book = $parent_books[$hierarchy['p' . $depth]])) {
-//          $access = $parent_book->access('view', $this->account, TRUE);
-//          $breadcrumb->addCacheableDependency($access);
-//          if ($access->isAllowed()) {
-//            $breadcrumb->addCacheableDependency($parent_book);
-//            $links[] = Link::createFromRoute($parent_book->label(), 'entity.node.canonical', array('node' => $parent_book->id()));
-//          }
-//        }
-//        $depth++;
-//      }
-//    }
+    // TODO: Need to figure out the caching
+//    $breadcrumb->addCacheableDependency($access);
+//    $breadcrumb->addCacheContexts(['route.hierarchy_navigation']);
     dpm($links);
     $breadcrumb->setLinks($links);
-//    $breadcrumb->addCacheContexts(['route.hierarchy_navigation']);
     return $breadcrumb;
   }
 
@@ -139,10 +104,8 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
     // Retrieve the descendant list of menu links and convert them to a breadcrumb trail.
     $trail = $this->hierarchyGetNodePrimaryAncestorNodes($nid);
     foreach ($trail as $node) {
-//      $uri = entity_uri('node', $node);
-//      $breadcrumb[] = l($node->title, $uri['path'], $uri['options']);
       $options = array();
-      $links[] = $node->link($node->getTitle(), 'canonical', $options)->getGeneratedLink();
+      $links[] = $node->toLink($node->getTitle(), 'canonical', $options);
     }
     return $links;
   }

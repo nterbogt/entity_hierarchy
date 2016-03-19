@@ -6,9 +6,9 @@ services:
       - { name: event_subscriber }
   nodehierarchy.breadcrumb:
     class: Drupal\nodehierarchy\HierarchyBreadcrumbBuilder
-    arguments: ['@entity.manager', '@access_manager', '@current_user']
+    # arguments: ['@entity.manager', '@access_manager', '@current_user']
     tags:
-      - { name: breadcrumb_builder, priority: 200 }
+      - { name: breadcrumb_builder, priority: 700 }
   nodehierarchy.manager:
     class: Drupal\nodehierarchy\HierarchyManager
     arguments: ['@entity_type.manager', '@string_translation', '@config.factory', '@nodehierarchy.outline_storage']
