@@ -67,10 +67,12 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
    */
   public function applies(RouteMatchInterface $route_match) {
     $node = $route_match->getParameter('node');
-    $current_nid = $node->id();
-    $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
     $parent = null;
-    $parent = $hierarchy_storage->hierarchyGetParent($current_nid);
+    if ($node instanceof NodeInterface) {
+      $current_nid = $node->id();
+      $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
+      $parent = $hierarchy_storage->hierarchyGetParent($current_nid);
+    }
     return !empty($parent) ? true : false;
   }
 
