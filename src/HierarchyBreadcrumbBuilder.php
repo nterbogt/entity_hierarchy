@@ -89,7 +89,6 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
     // TODO: Need to figure out the caching
 //    $breadcrumb->addCacheableDependency($access);
 //    $breadcrumb->addCacheContexts(['route.hierarchy_navigation']);
-    dpm($links);
     $breadcrumb->setLinks($links);
     return $breadcrumb;
   }
