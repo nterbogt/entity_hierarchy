@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ * Contains nodehierarchy_views.module..
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function nodehierarchy_views_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the nodehierarchy_views module.
+    case 'help.page.nodehierarchy_views':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Provides views that may be embedded on hierarchy pages (e.g. to list all child pages by child weight).') . '</p>';
+      return $output;
+
+    default:
+  }
+}
