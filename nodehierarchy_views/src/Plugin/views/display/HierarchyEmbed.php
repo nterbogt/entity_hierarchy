@@ -5,11 +5,12 @@
  * Contains \Drupal\nodehierarchy\Plugin\views\display\HierarchyEmbed.
  */
 
-use Drupal\views\Plugin\Block;
+use Drupal\views\Plugin\views\display\Block;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\views\Plugin\Block\ViewsBlock;
-//use Symfony\Component\DependencyInjection\ContainerInterface;
+//use Drupal\views\Plugin\Block\ViewsBlock;
+use Drupal\views\Plugin\views\display\ResponseDisplayPluginInterface;
+
 
 namespace Drupal\nodehierarchy\Plugin\views\display;
 
@@ -33,7 +34,16 @@ namespace Drupal\nodehierarchy\Plugin\views\display;
  *   hierarchy_embed_display = TRUE
  * )
  */
-class HierarchyEmbed extends Block {
+class HierarchyEmbed extends Block implements ResponseDisplayPluginInterface {
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function defineOptions() {
+    $options = parent::defineOptions();
+    $options['displays'] = array('default' => array());
+    return $options;
+  }
 
   /**
    * Provide the summary for page options in the views UI.
