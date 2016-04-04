@@ -16,8 +16,6 @@ use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\node\NodeInterface;
-//use Drupal\Core\Entity\EntityInterface;
-//use Drupal\Core\Url;
 
 /**
  * Provides a breadcrumb builder for nodes in a book.
