@@ -5,14 +5,16 @@
  * Contains \Drupal\nodehierarchy\Plugin\views\display\HierarchyEmbed.
  */
 
-use Drupal\views\Plugin\views\display\Block;
+namespace Drupal\nodehierarchy\Plugin\views\display;
+
+//use Drupal\views\Plugin\views\display\Block;
+use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
-//use Drupal\views\Plugin\Block\ViewsBlock;
-use Drupal\views\Plugin\views\display\ResponseDisplayPluginInterface;
+use Drupal\views\Plugin\Block\ViewsBlock;
+use Drupal\views\Plugin\views\display\DisplayPluginInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
-
-namespace Drupal\nodehierarchy\Plugin\views\display;
 
 /**
  * The plugin that handles an HierarchyEmbed display.
@@ -34,9 +36,30 @@ namespace Drupal\nodehierarchy\Plugin\views\display;
  *   hierarchy_embed_display = TRUE
  * )
  */
-class HierarchyEmbed extends Block implements ResponseDisplayPluginInterface {
+class HierarchyEmbed extends DisplayPluginBase /*implements DisplayPluginInterface*/ {
 
   /**
+   * Whether the display allows attachments.
+   *
+   * @var bool
+   */
+  protected $usesAttachments = TRUE;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getType() {
+    return 'hierarchy_embed';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function newDisplay() {
+    parent::newDisplay();
+  }
+
+    /**
    * {@inheritdoc}
    */
   protected function defineOptions() {
@@ -65,8 +88,6 @@ class HierarchyEmbed extends Block implements ResponseDisplayPluginInterface {
     if (empty($name)) {
       $name = t('None');
     }
-//    $block_category = $this->getOption('block_category');
-
     $options['nodehierarchy_embed_admin_name'] = array(
       'category' => 'nodehierarchy_embed',
       'title' => t('Admin name'),
@@ -113,13 +134,13 @@ class HierarchyEmbed extends Block implements ResponseDisplayPluginInterface {
     // Prior to this being called, the $view should already be set to this
     // display, and arguments should be set on the view.
     parent::execute();
-    if (!isset($this->view->override_path)) {
-      $this->view->override_path = 'node';
-    }
+//    if (!isset($this->view->override_path)) {
+//      $this->view->override_path = 'node';
+//    }
 
     $data = $this->view->render();
-    if (!empty($this->view->result) || $this->get_option('empty') || !empty($this->view->style_plugin->definition['even empty'])) {
+//    if (!empty($this->view->result) || $this->get_option('empty') || !empty($this->view->style_plugin->definition['even empty'])) {
       return $data;
-    }
+//    }
   }
 }
