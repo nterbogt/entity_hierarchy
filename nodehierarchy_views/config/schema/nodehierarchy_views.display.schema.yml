@@ -1,5 +1,5 @@
-# Schema for the nodehierarchy_views display plugins.
+# Schema for the hierarchy_embed display plugins.
 
-nodehierarchy_views.display.hierarchy_embed:
+views.display.hierarchy_embed:
   type: views_display
   label: 'Hierarchy display options'

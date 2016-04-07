@@ -5,7 +5,7 @@
  * Contains \Drupal\nodehierarchy\Plugin\views\display\HierarchyEmbed.
  */
 
-namespace Drupal\nodehierarchy\Plugin\views\display;
+namespace Drupal\nodehierarchy_views\Plugin\views\display;
 
 //use Drupal\views\Plugin\views\display\Block;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
@@ -19,10 +19,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * The plugin that handles an HierarchyEmbed display.
  *
- * "hierarchy_embed_display" is a custom property, used with
- * \Drupal\views\Views::getApplicableViews() to retrieve all views with a
- * 'Hierarchy Embed' display.
- *
  * @ingroup views_display_plugins
  *
  * @ViewsDisplay(
@@ -31,9 +27,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   admin = @Translation("Hierarchy Embed Source"),
  *   help = @Translation("Provides displays that may be embedded on hierarchy pages."),
  *   theme = "views_view",
- *   register_theme = FALSE,
- *   uses_menu_links = FALSE,
- *   hierarchy_embed_display = TRUE
+ *   uses_menu_links = FALSE
  * )
  */
 class HierarchyEmbed extends DisplayPluginBase /*implements DisplayPluginInterface*/ {
@@ -55,18 +49,18 @@ class HierarchyEmbed extends DisplayPluginBase /*implements DisplayPluginInterfa
   /**
    * {@inheritdoc}
    */
-  public function newDisplay() {
-    parent::newDisplay();
-  }
+//  public function newDisplay() {
+//    parent::newDisplay();
+//  }
 
-    /**
+  /**
    * {@inheritdoc}
    */
-  protected function defineOptions() {
-    $options = parent::defineOptions();
-    $options['displays'] = array('default' => array());
-    return $options;
-  }
+//  protected function defineOptions() {
+//    $options = parent::defineOptions();
+////    $options['displays'] = array('default' => array());
+//    return $options;
+//  }
 
   /**
    * Provide the summary for page options in the views UI.
@@ -84,7 +78,7 @@ class HierarchyEmbed extends DisplayPluginBase /*implements DisplayPluginInterfa
       ),
     );
 
-    $name = strip_tags($this->get_option('nodehierarchy_embed_admin_name'));
+    $name = strip_tags($this->getOption('nodehierarchy_embed_admin_name'));
     if (empty($name)) {
       $name = t('None');
     }
@@ -107,7 +101,7 @@ class HierarchyEmbed extends DisplayPluginBase /*implements DisplayPluginInterfa
         $form['nodehierarchy_embed_admin_name'] = array(
           '#type' => 'textfield',
           '#description' => t('This will appear as the name of this embed in the node edit screen.'),
-          '#default_value' => $this->get_option('nodehierarchy_embed_admin_name'),
+          '#default_value' => $this->getOption('nodehierarchy_embed_admin_name'),
         );
         break;
     }
@@ -122,7 +116,7 @@ class HierarchyEmbed extends DisplayPluginBase /*implements DisplayPluginInterfa
     $section = $form_state->get('section');
     switch ($section) {
       case 'nodehierarchy_embed_admin_name':
-        $this->set_option('nodehierarchy_embed_admin_name', $form_state['values']['nodehierarchy_embed_admin_name']);
+        $this->setOption('nodehierarchy_embed_admin_name', $form_state['values']['nodehierarchy_embed_admin_name']);
         break;
     }
   }
@@ -134,13 +128,13 @@ class HierarchyEmbed extends DisplayPluginBase /*implements DisplayPluginInterfa
     // Prior to this being called, the $view should already be set to this
     // display, and arguments should be set on the view.
     parent::execute();
-//    if (!isset($this->view->override_path)) {
-//      $this->view->override_path = 'node';
-//    }
+    if (!isset($this->view->override_path)) {
+      $this->view->override_path = 'node';
+    }
 
     $data = $this->view->render();
-//    if (!empty($this->view->result) || $this->get_option('empty') || !empty($this->view->style_plugin->definition['even empty'])) {
+    if (!empty($this->view->result) || $this->getOption('empty') || !empty($this->view->style_plugin->definition['even empty'])) {
       return $data;
-//    }
+    }
   }
 }
