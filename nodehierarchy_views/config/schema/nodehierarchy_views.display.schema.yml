@@ -1,5 +1,0 @@
-# Schema for the hierarchy_embed display plugins.
-
-views.display.hierarchy_embed:
-  type: views_display
-  label: 'Hierarchy display options'

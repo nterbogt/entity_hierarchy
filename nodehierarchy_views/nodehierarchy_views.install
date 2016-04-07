@@ -1,0 +1,50 @@
+<?php
+/**
+ * @file
+ *   Install file for nodehierarchy_views module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function nodehierarchy_views_install() {
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function nodehierarchy_views_uninstall() {
+}
+
+
+/**
+ * Implements hook_schema().
+ */
+function nodehierarchy_views_schema() {
+  $schema['nodehierarchy_views'] = array(
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The {node}.nid whose children are being embedded.',
+      ),
+      'nh_children_view' => array(
+        'type' => 'varchar',
+        'length' => '128',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => 'The {views_view}.name of the embedded view.',
+      ),
+      'nh_children_view_display' => array(
+        'type' => 'varchar',
+        'length' => '64',
+        'default' => 'default',
+        'not null' => TRUE,
+        'description' => 'The {views_display}.id of the embedded view.',
+      ),
+    ),
+    'primary key' => array('nid'),
+  );
+  return $schema;
+}

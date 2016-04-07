@@ -2,19 +2,13 @@
 
 /**
  * @file
- * Contains \Drupal\nodehierarchy\Plugin\views\display\HierarchyEmbed.
+ * Contains \Drupal\nodehierarchy_views\Plugin\views\display\HierarchyEmbed.
  */
 
 namespace Drupal\nodehierarchy_views\Plugin\views\display;
 
-//use Drupal\views\Plugin\views\display\Block;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
-use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\views\Plugin\Block\ViewsBlock;
-use Drupal\views\Plugin\views\display\DisplayPluginInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-
 
 /**
  * The plugin that handles an HierarchyEmbed display.
@@ -30,7 +24,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   uses_menu_links = FALSE
  * )
  */
-class HierarchyEmbed extends DisplayPluginBase /*implements DisplayPluginInterface*/ {
+class HierarchyEmbed extends DisplayPluginBase {
 
   /**
    * Whether the display allows attachments.
@@ -42,9 +36,10 @@ class HierarchyEmbed extends DisplayPluginBase /*implements DisplayPluginInterfa
   /**
    * {@inheritdoc}
    */
-  public function getType() {
-    return 'hierarchy_embed';
-  }
+  // Causing the styles to go missing for whatever reason
+//  public function getType() {
+//    return 'hierarchy_embed';
+//  }
 
   /**
    * {@inheritdoc}

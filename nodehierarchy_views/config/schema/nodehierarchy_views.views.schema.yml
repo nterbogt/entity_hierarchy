@@ -1,0 +1,9 @@
+# Schema for the hierarchy_embed views plugins.
+
+views.display.hierarchy_embed:
+  type: views_display
+  label: 'Hierarchy display options'
+
+views.sort.child_weight:
+  type: views_sort
+  label: 'Hierarchy sort by child weight'
