@@ -133,7 +133,7 @@ function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_
         $description = \Drupal::translation()->formatPlural($count,
           'This node has @count child. Check this box to delete it and all of its descendants as well.',
           'This node has @count children. Check this box to delete them and all of their descendants as well.' );
-        $description .= t('<p>These children and their decendants will be deleted:!list<p>', array('!list' => $list));
+        $description .= t('<p>These children and their descendants will be deleted:!list<p>', array('!list' => $list));
         $form['nodehierarchy_delete_children'] = array(
           '#type' => 'checkbox',
           '#title' => t('Delete descendants'),

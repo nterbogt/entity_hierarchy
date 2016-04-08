@@ -218,7 +218,10 @@ class HierarchyManager implements HierarchyManagerInterface {
       $parent_types = array();
       $types = \Drupal\node\Entity\NodeType::loadMultiple();
       foreach ($types as $type => $info) {
-        $allowed_children = array_filter($config->get('nh_allowchild_' . $type, array()));
+        $allowed_children_unfiltered = $config->get('nh_allowchild_' . $type);
+        if ($allowed_children_unfiltered) {
+          $allowed_children = array_filter($allowed_children_unfiltered);
+        }
         if ((empty($child_type) && !empty($allowed_children)) || (in_array($child_type, (array) $allowed_children, TRUE))) {
           $parent_types[] = $type;
         }
