@@ -2,24 +2,16 @@
 
 /**
  * @file
- * Contains \Drupal\nodehierarchy\Plugin\views\display\HierarchyEmbed.
+ * Contains \Drupal\nodehierarchy_views\Plugin\views\display\HierarchyEmbed.
  */
 
-use Drupal\views\Plugin\views\display\Block;
-use Drupal\Core\Entity\EntityManagerInterface;
+namespace Drupal\nodehierarchy_views\Plugin\views\display;
+
+use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\Core\Form\FormStateInterface;
-//use Drupal\views\Plugin\Block\ViewsBlock;
-use Drupal\views\Plugin\views\display\ResponseDisplayPluginInterface;
-
-
-namespace Drupal\nodehierarchy\Plugin\views\display;
 
 /**
  * The plugin that handles an HierarchyEmbed display.
- *
- * "hierarchy_embed_display" is a custom property, used with
- * \Drupal\views\Views::getApplicableViews() to retrieve all views with a
- * 'Hierarchy Embed' display.
  *
  * @ingroup views_display_plugins
  *
@@ -29,21 +21,41 @@ namespace Drupal\nodehierarchy\Plugin\views\display;
  *   admin = @Translation("Hierarchy Embed Source"),
  *   help = @Translation("Provides displays that may be embedded on hierarchy pages."),
  *   theme = "views_view",
- *   register_theme = FALSE,
- *   uses_menu_links = FALSE,
- *   hierarchy_embed_display = TRUE
+ *   uses_menu_links = FALSE
  * )
  */
-class HierarchyEmbed extends Block implements ResponseDisplayPluginInterface {
+class HierarchyEmbed extends DisplayPluginBase {
+
+  /**
+   * Whether the display allows attachments.
+   *
+   * @var bool
+   */
+  protected $usesAttachments = TRUE;
 
   /**
    * {@inheritdoc}
    */
-  protected function defineOptions() {
-    $options = parent::defineOptions();
-    $options['displays'] = array('default' => array());
-    return $options;
-  }
+  // Causing the styles to go missing for whatever reason
+//  public function getType() {
+//    return 'hierarchy_embed';
+//  }
+
+  /**
+   * {@inheritdoc}
+   */
+//  public function newDisplay() {
+//    parent::newDisplay();
+//  }
+
+  /**
+   * {@inheritdoc}
+   */
+//  protected function defineOptions() {
+//    $options = parent::defineOptions();
+////    $options['displays'] = array('default' => array());
+//    return $options;
+//  }
 
   /**
    * Provide the summary for page options in the views UI.
@@ -61,12 +73,10 @@ class HierarchyEmbed extends Block implements ResponseDisplayPluginInterface {
       ),
     );
 
-    $name = strip_tags($this->get_option('nodehierarchy_embed_admin_name'));
+    $name = strip_tags($this->getOption('nodehierarchy_embed_admin_name'));
     if (empty($name)) {
       $name = t('None');
     }
-//    $block_category = $this->getOption('block_category');
-
     $options['nodehierarchy_embed_admin_name'] = array(
       'category' => 'nodehierarchy_embed',
       'title' => t('Admin name'),
@@ -86,7 +96,7 @@ class HierarchyEmbed extends Block implements ResponseDisplayPluginInterface {
         $form['nodehierarchy_embed_admin_name'] = array(
           '#type' => 'textfield',
           '#description' => t('This will appear as the name of this embed in the node edit screen.'),
-          '#default_value' => $this->get_option('nodehierarchy_embed_admin_name'),
+          '#default_value' => $this->getOption('nodehierarchy_embed_admin_name'),
         );
         break;
     }
@@ -101,7 +111,7 @@ class HierarchyEmbed extends Block implements ResponseDisplayPluginInterface {
     $section = $form_state->get('section');
     switch ($section) {
       case 'nodehierarchy_embed_admin_name':
-        $this->set_option('nodehierarchy_embed_admin_name', $form_state['values']['nodehierarchy_embed_admin_name']);
+        $this->setOption('nodehierarchy_embed_admin_name', $form_state['values']['nodehierarchy_embed_admin_name']);
         break;
     }
   }
@@ -118,7 +128,7 @@ class HierarchyEmbed extends Block implements ResponseDisplayPluginInterface {
     }
 
     $data = $this->view->render();
-    if (!empty($this->view->result) || $this->get_option('empty') || !empty($this->view->style_plugin->definition['even empty'])) {
+    if (!empty($this->view->result) || $this->getOption('empty') || !empty($this->view->style_plugin->definition['even empty'])) {
       return $data;
     }
   }
