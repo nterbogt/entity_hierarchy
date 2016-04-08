@@ -19,7 +19,7 @@ use Drupal\views\Plugin\views\sort\SortPluginBase;
 class ChildWeight extends SortPluginBase {
   protected function defineOptions() {
     $options = parent::defineOptions();
-    kint($options);
+//    kint($options);
     return $options;
   }
   public function query() {

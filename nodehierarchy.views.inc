@@ -10,22 +10,9 @@
 function nodehierarchy_views_data() {
 
   $data = array();
-  $data['nodehierarchy'] = array();
-  $data['nodehierarchy']['table'] = array();
-
-  // Basic table information.
   $data['nodehierarchy']['table']['group']  = t('Hierarchy');
-//  $data['nodehierarchy']['table']['base'] = array(
-//    // Identifier (primary) field in this table for Views.
-//      'field' => 'nid',
-//    // Label in the UI.
-//      'title' => t('Hierarchy table'),
-//    // Longer description in the UI. Required.
-//      'help' => t('Hierarchy table contains the name of the views to be embedded'),
-//      'weight' => -10,
-//  );
   $data['nodehierarchy']['table']['join'] = array(
-    'node' => array(
+    'node_field_data' => array(
       'left_field' => 'nid',
       'field' => 'cnid',
     ),
@@ -35,11 +22,10 @@ function nodehierarchy_views_data() {
     'title' => t('Child Weight'),
     'help' => t('The sort order of the child node.'),
     'field' => array(
-      'id' => 'cweight',
-//      'click sortable' => TRUE,
+      'id' => 'numeric',
     ),
     'sort' => array(
-      'id' => 'child_weight',
+      'id' => 'standard',
     ),
   );
 
@@ -49,19 +35,16 @@ function nodehierarchy_views_data() {
     // Information for accepting a parent as an argument.
     'argument' => array(
       'field' => 'pnid',
-      'handler' => 'views_handler_argument_node_nid',
-      'click sortable' => TRUE,
+      'id' => 'numeric',
     ),
     'relationship' => array(
-      'base' => 'node',
+      'base' => 'node_field_data',
       'base field' => 'nid',
       'field' => 'pnid',
-      'handler' => 'views_handler_relationship',
+      'id' => 'standard',
       'label' => t('Parent Node'),
     ),
   );
-
-//  kint($data);
-
+  
   return $data;
 }
