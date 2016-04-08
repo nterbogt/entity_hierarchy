@@ -22,3 +22,24 @@ function nodehierarchy_views_help($route_name, RouteMatchInterface $route_match)
     default:
   }
 }
+
+/**
+ * Implements hook_nodehierarchy_node_type_settings_form().
+ */
+function nodehierarchy_views_nodehierarchy_node_type_settings_form($type) {
+//  module_load_include('inc', 'nodehierarchy', 'nodehierarchy.admin');
+  $form = array();
+//  if (nodehierarchy_node_can_be_parent($type)) {
+    $form['nh_default_children_view'] = array(
+        '#type' => 'select',
+        '#title' => t('Default Children View'),
+        '#multiple' => FALSE,
+//        '#options' => _nodehierarchy_views_view_options(),
+        '#required' => FALSE,
+//        '#default_value' => variable_get('nh_default_children_view_' . $type, NULL),
+        '#description' => t('Default for the embed children view feature.'),
+    );
+//  }
+  dpm($form);
+  return $form;
+}
