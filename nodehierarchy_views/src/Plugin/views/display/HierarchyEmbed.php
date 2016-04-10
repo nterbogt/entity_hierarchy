@@ -17,11 +17,12 @@ use Drupal\Core\Form\FormStateInterface;
  *
  * @ViewsDisplay(
  *   id = "hierarchy_embed",
- *   title = @Translation("Hierarchy Embed"),
+ *   title = @Translation("Hierarchy Embed Display"),
  *   admin = @Translation("Hierarchy Embed Source"),
  *   help = @Translation("Provides displays that may be embedded on hierarchy pages."),
  *   theme = "views_view",
- *   uses_menu_links = FALSE
+ *   uses_menu_links = FALSE,
+ *   hierarchy_embed_display = TRUE
  * )
  */
 class HierarchyEmbed extends DisplayPluginBase {

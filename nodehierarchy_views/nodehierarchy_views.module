@@ -6,6 +6,11 @@
  */
 
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\views\Views;
+use Drupal\views\ViewExecutable;
+use Drupal\nodehierarchy_views\Plugin\views\display\HierarchyEmbed;
+use Drupal\views\Plugin\views\display\DisplayPluginBase;
+
 
 /**
  * Implements hook_help().
@@ -28,18 +33,64 @@ function nodehierarchy_views_help($route_name, RouteMatchInterface $route_match)
  */
 function nodehierarchy_views_nodehierarchy_node_type_settings_form($type) {
 //  module_load_include('inc', 'nodehierarchy', 'nodehierarchy.admin');
+//  dpm($type);
   $form = array();
 //  if (nodehierarchy_node_can_be_parent($type)) {
     $form['nh_default_children_view'] = array(
         '#type' => 'select',
         '#title' => t('Default Children View'),
         '#multiple' => FALSE,
-//        '#options' => _nodehierarchy_views_view_options(),
+        '#options' => _nodehierarchy_views_view_options(),
         '#required' => FALSE,
 //        '#default_value' => variable_get('nh_default_children_view_' . $type, NULL),
         '#description' => t('Default for the embed children view feature.'),
     );
 //  }
-  dpm($form);
+//  dpm($form);
   return $form;
+}
+
+/**
+ * Prepare a list of views for selection.
+ */
+function _nodehierarchy_views_view_options() {
+  $options = array();
+
+  $options[0] = '-- ' . t('NONE') . ' --';
+  $views = _nodehierarchy_views_get_embed_views();
+  foreach ($views as $item) {
+    $options[$item['name'] . ':' . $item['display']] = $item['title'];
+  }
+
+  return $options;
+}
+
+/**
+ * Get a list of views that can be embedded.
+ */
+function _nodehierarchy_views_get_embed_views($reset = FALSE) {
+  $used_views = &drupal_static(__FUNCTION__);
+
+  if (!isset($used_views) || $reset) {
+      $views = Views::getApplicableViews('hierarchy_embed_display');
+      foreach ($views as $data) {
+        list($view_id, $display_id) = $data;
+//        dpm('view_id: '.$view_id);
+//        dpm('display_id: '.$display_id);
+        $view = Views::getView($view_id);
+        $view->setDisplay($display_id);
+        $display_object = $view->getDisplay();
+//        dpm($display_object);
+        $display_title = $display_object->getOption('title');
+//        dpm('title: '.$display_title);
+        $used_views[] = array(
+            'name' => $view->name,
+            'display' => $display_id,
+            'title' => $display_title,
+        );
+//        $view->destroy();
+      }
+  }
+
+  return isset($used_views) ? $used_views : array();
 }

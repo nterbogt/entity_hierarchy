@@ -149,7 +149,7 @@ class HierarchyManager implements HierarchyManagerInterface {
     $form['nh_defaultparent'] = $this->hierarchyGetParentSelector($key, $config->get('nh_defaultparent_' .$key, 0));
     $form['nh_defaultparent']['#title'] = t('Default Parent');
 
-    //$form += module_invoke_all('nodehierarchy_node_type_settings_form', $key);
+    $form += \Drupal::moduleHandler()->invokeAll('nodehierarchy_node_type_settings_form', array($key));
 
     // If we need to append the node type key to the form elements, we do so.
     if ($append_key) {
