@@ -35,30 +35,6 @@ class HierarchyEmbed extends DisplayPluginBase {
   protected $usesAttachments = TRUE;
 
   /**
-   * {@inheritdoc}
-   */
-  // Causing the styles to go missing for whatever reason
-//  public function getType() {
-//    return 'hierarchy_embed';
-//  }
-
-  /**
-   * {@inheritdoc}
-   */
-//  public function newDisplay() {
-//    parent::newDisplay();
-//  }
-
-  /**
-   * {@inheritdoc}
-   */
-//  protected function defineOptions() {
-//    $options = parent::defineOptions();
-////    $options['displays'] = array('default' => array());
-//    return $options;
-//  }
-
-  /**
    * Provide the summary for page options in the views UI.
    *
    * This output is returned as an array.

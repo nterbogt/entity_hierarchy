@@ -7,9 +7,9 @@
 
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\views\Views;
-use Drupal\views\ViewExecutable;
-use Drupal\nodehierarchy_views\Plugin\views\display\HierarchyEmbed;
-use Drupal\views\Plugin\views\display\DisplayPluginBase;
+use Drupal\nodehierarchy\HierarchyManager;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\node\NodeTypeInterface;
 
 
 /**
@@ -31,23 +31,32 @@ function nodehierarchy_views_help($route_name, RouteMatchInterface $route_match)
 /**
  * Implements hook_nodehierarchy_node_type_settings_form().
  */
-function nodehierarchy_views_nodehierarchy_node_type_settings_form($type) {
-//  module_load_include('inc', 'nodehierarchy', 'nodehierarchy.admin');
-//  dpm($type);
-  $form = array();
-//  if (nodehierarchy_node_can_be_parent($type)) {
-    $form['nh_default_children_view'] = array(
+function nodehierarchy_views_form_node_type_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
+  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+  $type = $form['type']['#default_value'];  // The content type
+//  $form = array();
+  $config =  \Drupal::config('nodehierarchy_views.settings');
+  if ($hierarchy_manager->hierarchyCanBeParent($type)) {
+    $form['hierarchy']['nh_default_children_view'] = array(
         '#type' => 'select',
         '#title' => t('Default Children View'),
         '#multiple' => FALSE,
         '#options' => _nodehierarchy_views_view_options(),
         '#required' => FALSE,
-//        '#default_value' => variable_get('nh_default_children_view_' . $type, NULL),
+        '#default_value' => $config->get('nh_default_children_view_' . $type),
         '#description' => t('Default for the embed children view feature.'),
     );
-//  }
-//  dpm($form);
+  }
+  $form['#entity_builders'][] = 'nodehierarchy_views_form_node_type_form_builder';
   return $form;
+}
+
+function nodehierarchy_views_form_node_type_form_builder ($entity_type, NodeTypeInterface $type, &$form, FormStateInterface $form_state) {
+  $node_type = $type->get('type');
+  $config = \Drupal::getContainer()->get('config.factory')->getEditable('nodehierarchy_views.settings');
+  $config->set('nh_default_children_view_'.$node_type, $form_state->getValue('nh_default_children_view'));
+  $config->save();
 }
 
 /**
@@ -75,20 +84,16 @@ function _nodehierarchy_views_get_embed_views($reset = FALSE) {
       $views = Views::getApplicableViews('hierarchy_embed_display');
       foreach ($views as $data) {
         list($view_id, $display_id) = $data;
-//        dpm('view_id: '.$view_id);
-//        dpm('display_id: '.$display_id);
         $view = Views::getView($view_id);
         $view->setDisplay($display_id);
         $display_object = $view->getDisplay();
-//        dpm($display_object);
         $display_title = $display_object->display['display_title'];
-        dpm('title: '.$display_title);
         $used_views[] = array(
-            'name' => $view->name,
+            'name' => $view_id,
             'display' => $display_id,
             'title' => $display_title,
         );
-//        $view->destroy();
+        $view->destroy();
       }
   }
 

@@ -99,16 +99,16 @@ interface HierarchyManagerInterface {
   /**
    * Determines if a given node type is allowed to be a parent node.
    *
-   * @param \Drupal\node\NodeInterface $node
+   * @param $node
    *   The node object contains the node type, and the type is used to determine
-   *   if this node can be a parent of any child.
+   *   if this node can be a parent of any child. May pass the node type directly.
    * @return integer
    *   The number of allowed parent types for a given node type.
    *
    * @see HierarchyManager::hierarchyGetAllowedChildTypes
    * @see nodehierarchy_form_node_form_alter
    */
-  public function hierarchyCanBeParent(NodeInterface $node);
+  public function hierarchyCanBeParent($node);
 
   /**
    * Process a list of nodehierarchy parents in preparation for writing to the

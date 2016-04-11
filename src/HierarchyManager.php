@@ -149,6 +149,20 @@ class HierarchyManager implements HierarchyManagerInterface {
     $form['nh_defaultparent'] = $this->hierarchyGetParentSelector($key, $config->get('nh_defaultparent_' .$key, 0));
     $form['nh_defaultparent']['#title'] = t('Default Parent');
 
+    // Would have preferred to handle this in the nodehierarchy_views module, but not sure how
+    if (\Drupal::moduleHandler()->moduleExists('nodehierarchy_views')) {
+      $config =  \Drupal::config('nodehierarchy_views.settings');
+      $form['nh_default_children_view'] = array(
+          '#type' => 'select',
+          '#title' => t('Default Children View'),
+          '#multiple' => FALSE,
+          '#options' => _nodehierarchy_views_view_options(),
+          '#required' => FALSE,
+          '#default_value' => $config->get('nh_default_children_view_' . $key),
+          '#description' => t('Default for the embed children view feature.'),
+      );
+    }
+
     $form += \Drupal::moduleHandler()->invokeAll('nodehierarchy_node_type_settings_form', array($key));
 
     // If we need to append the node type key to the form elements, we do so.
@@ -190,7 +204,7 @@ class HierarchyManager implements HierarchyManagerInterface {
    *
    * @see hierarchyGetAllowedChildTypes
    */
-  public function hierarchyCanBeParent(NodeInterface $node) {
+  public function hierarchyCanBeParent($node) {
     $type = is_object($node) ? $node->getType() : $node;
     return count($this->hierarchyGetAllowedChildTypes($type));
   }

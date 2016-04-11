@@ -99,6 +99,17 @@ class AdminSettingsForm extends ConfigFormBase {
       $config->set('nodehierarchy_menu_module_edit', $values['nodehierarchy_menu_module_edit']);
     }
     $config->save();
+
+    // Would have preferred to handle this in the nodehierarchy_views module, but not sure how
+    // Note: this doesn't work, so need to figure out a different method. 
+    if (\Drupal::moduleHandler()->moduleExists('nodehierarchy_views')) {
+      $views_config = $this->config('nodehierarchy_views.settings');
+      foreach ($this->node_types as $key => $type) {
+        $views_config->set('nh_default_children_view_'.$key, $values['nh_default_children_view']);
+      }
+      $views_config->save();
+    }
+
     parent::submitForm($form, $form_state);
   }
 
