@@ -81,8 +81,8 @@ function _nodehierarchy_views_get_embed_views($reset = FALSE) {
         $view->setDisplay($display_id);
         $display_object = $view->getDisplay();
 //        dpm($display_object);
-        $display_title = $display_object->getOption('title');
-//        dpm('title: '.$display_title);
+        $display_title = $display_object->display['display_title'];
+        dpm('title: '.$display_title);
         $used_views[] = array(
             'name' => $view->name,
             'display' => $display_id,
