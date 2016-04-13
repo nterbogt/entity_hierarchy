@@ -6,4 +6,4 @@ package: Node Hierarchy
 dependencies:
   - views
   - nodehierarchy
-configure: nodehierarchy_views.settings
+configure: nodehierarchy.settings

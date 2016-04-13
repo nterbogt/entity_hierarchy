@@ -36,7 +36,7 @@ function nodehierarchy_views_form_node_type_form_alter(&$form, FormStateInterfac
   $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
   $type = $form['type']['#default_value'];  // The content type
 //  $form = array();
-  $config =  \Drupal::config('nodehierarchy_views.settings');
+  $config =  \Drupal::config('nodehierarchy.settings');
   if ($hierarchy_manager->hierarchyCanBeParent($type)) {
     $form['hierarchy']['nh_default_children_view'] = array(
         '#type' => 'select',
@@ -54,7 +54,7 @@ function nodehierarchy_views_form_node_type_form_alter(&$form, FormStateInterfac
 
 function nodehierarchy_views_form_node_type_form_builder ($entity_type, NodeTypeInterface $type, &$form, FormStateInterface $form_state) {
   $node_type = $type->get('type');
-  $config = \Drupal::getContainer()->get('config.factory')->getEditable('nodehierarchy_views.settings');
+  $config = \Drupal::getContainer()->get('config.factory')->getEditable('nodehierarchy.settings');
   $config->set('nh_default_children_view_'.$node_type, $form_state->getValue('nh_default_children_view'));
   $config->save();
 }

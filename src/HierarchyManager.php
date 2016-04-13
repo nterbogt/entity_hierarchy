@@ -151,7 +151,7 @@ class HierarchyManager implements HierarchyManagerInterface {
 
     // Would have preferred to handle this in the nodehierarchy_views module, but not sure how
     if (\Drupal::moduleHandler()->moduleExists('nodehierarchy_views')) {
-      $config =  \Drupal::config('nodehierarchy_views.settings');
+      $config =  \Drupal::config('nodehierarchy.settings');
       $form['nh_default_children_view'] = array(
           '#type' => 'select',
           '#title' => t('Default Children View'),
@@ -163,7 +163,7 @@ class HierarchyManager implements HierarchyManagerInterface {
       );
     }
 
-    $form += \Drupal::moduleHandler()->invokeAll('nodehierarchy_node_type_settings_form', array($key));
+//    $form += \Drupal::moduleHandler()->invokeAll('nodehierarchy_node_type_settings_form', array($key));
 
     // If we need to append the node type key to the form elements, we do so.
     if ($append_key) {
