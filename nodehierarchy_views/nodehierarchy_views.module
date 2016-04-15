@@ -29,6 +29,13 @@ function nodehierarchy_views_help($route_name, RouteMatchInterface $route_match)
 }
 
 /**
+ * Implements hook_form_alter().
+ */
+function nodehierarchy_views_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  dpm($form_id);
+}
+
+/**
  * Implements hook_nodehierarchy_node_type_settings_form().
  */
 function nodehierarchy_views_form_node_type_form_alter(&$form, FormStateInterface $form_state, $form_id) {
@@ -98,4 +105,37 @@ function _nodehierarchy_views_get_embed_views($reset = FALSE) {
   }
 
   return isset($used_views) ? $used_views : array();
+}
+
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
+function nodehierarchy_views_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+//  $form = array();
+  $node = $form_state->getFormObject()->getEntity();
+  /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
+  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+  $type = $node->getType();
+  dpm($node);
+  dpm($node->nh_children_view);
+
+  $default_value = NULL;
+  if (!empty($node->nh_children_view)) {
+    $display = !empty($node->nh_children_view_display) ? $node->nh_children_view_display : 'default';
+    $default_value = $node->nh_children_view . ':' . $display;
+  }
+
+  if ($node && $hierarchy_manager->hierarchyCanBeParent($type)) {
+    $form['hierarchy']['nh_children_view'] = array(
+      '#type' => \Drupal::currentUser()->hasPermission('edit embedded child view') ? 'select' : 'value',
+      '#title' => t('Embed Children View'),
+      '#multiple' => FALSE,
+      '#options' => _nodehierarchy_views_view_options(),
+      '#required' => FALSE,
+      '#default_value' => $default_value,
+      '#description' => t("Embed a view containing this node's children into the node's page view"),
+    );
+  }
+  return $form;
 }

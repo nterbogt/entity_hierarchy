@@ -330,7 +330,7 @@ class HierarchyManager implements HierarchyManagerInterface {
 
   /**
    * Build a list of parent tiles to be displayed as part of a dropdown selector
-   * in hierarchyNodeParentFormItems. First we grab a list of allowed parenta
+   * in hierarchyNodeParentFormItems. First we grab a list of allowed parents
    * using the hierarchyParentOptions method. Then we format each title by
    * iteratively calling hierarchyParentOptionTitle. Finally we build the actual
    * form element to be supplied to hierarchyNodeParentFormItems.

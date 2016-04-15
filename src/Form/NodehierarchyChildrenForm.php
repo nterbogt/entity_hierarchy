@@ -17,7 +17,7 @@ use Drupal\Component\Utility\SafeMarkup;
 
 
 /**
- * Defines a form for Node Hierarchy Admin settings.
+ * Defines a form that is displayed when visiting /node/{node}/children
  */
 class NodeHierarchyChildrenForm extends ContentEntityForm {
 
