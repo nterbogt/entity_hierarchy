@@ -245,3 +245,12 @@ function nodehierarchy_views_update($node) {
     }
   }
 }
+
+/**
+ * Delete the node_hierarchy_views row when a node is deleted.
+ *
+ * Implements hook_ENTITY_TYPE_delete().
+ */
+function nodehierarchy_views_node_delete(EntityInterface $node) {
+  db_delete('nodehierarchy_views')->condition('nid', $node->id())->execute();
+}

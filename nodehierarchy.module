@@ -108,42 +108,45 @@ function nodehierarchy_entity_type_build(array &$entity_types) {
 /**
  * Implements @see hook_form_alter().
  *
- * Right now, we're defining functionality for the node delete form. Most likely
- * this functionality will all me moved in the near future.
+ * Previously, the nodehierarchy module allowed someone to delete children when deleting a parent.
+ * For now, we only support deleting the information in the nodehierarchy table directly related to
+ * the node being deleted.
+ *
+ * Todo: implement functionality to delete children of a parent.
  */
 function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 
   // Does the form ID end with '_node_delete_form' ?
-  endsWith($form_id,"_node_delete_form") ? $node_delete_type = $form_id : $node_delete_type = '';
+//  endsWith($form_id,"_node_delete_form") ? $node_delete_type = $form_id : $node_delete_type = '';
   // Todo: fix (we set the value incorrectly on purpose so this id is never called.
-  $node_delete_type = 'abcdefg';
+//  $node_delete_type = 'abcdefg';
 
-  switch ($form_id) {
-    case $node_delete_type:
-      // TODO: Fix the descendant count code to deal with multiparent situations.
-      if ($count = _nodehierarchy_get_children_count($form['nid']['#value'])) {
-        $items = array();
-        foreach (_nodehierarchy_get_children_menu_links($form['nid']['#value'], 10) as $child) {
-          $items[] = /*check_plain*/($child['link_title']);
-        }
-        if ($count > 10) {
-          $items[] = $this->l(t('See all !count children', array('!count' => $count)), 'node/' . $form['nid']['#value'] . '/children');
-        }
-        $list = /*theme('item_list',*/ array('items' => $items)/*)*/;
-        $description = \Drupal::translation()->formatPlural($count,
-          'This node has @count child. Check this box to delete it and all of its descendants as well.',
-          'This node has @count children. Check this box to delete them and all of their descendants as well.' );
-        $description .= t('<p>These children and their descendants will be deleted:!list<p>', array('!list' => $list));
-        $form['nodehierarchy_delete_children'] = array(
-          '#type' => 'checkbox',
-          '#title' => t('Delete descendants'),
-          '#description' => $description,
-        );
-        array_unshift($form['#submit'], 'nodehierarchy_node_delete_submit');
-        $form['actions']['#weight'] = 1;
-      }
-      break;
-  }
+//  switch ($form_id) {
+//    case $node_delete_type:
+//      // TODO: Fix the descendant count code to deal with multiparent situations.
+//      if ($count = _nodehierarchy_get_children_count($form['nid']['#value'])) {
+//        $items = array();
+//        foreach (_nodehierarchy_get_children_menu_links($form['nid']['#value'], 10) as $child) {
+//          $items[] = /*check_plain*/($child['link_title']);
+//        }
+//        if ($count > 10) {
+//          $items[] = $this->l(t('See all !count children', array('!count' => $count)), 'node/' . $form['nid']['#value'] . '/children');
+//        }
+//        $list = /*theme('item_list',*/ array('items' => $items)/*)*/;
+//        $description = \Drupal::translation()->formatPlural($count,
+//          'This node has @count child. Check this box to delete it and all of its descendants as well.',
+//          'This node has @count children. Check this box to delete them and all of their descendants as well.' );
+//        $description .= t('<p>These children and their descendants will be deleted:!list<p>', array('!list' => $list));
+//        $form['nodehierarchy_delete_children'] = array(
+//          '#type' => 'checkbox',
+//          '#title' => t('Delete descendants'),
+//          '#description' => $description,
+//        );
+//        array_unshift($form['#submit'], 'nodehierarchy_node_delete_submit');
+//        $form['actions']['#weight'] = 1;
+//      }
+//      break;
+//  }
 }
 
 /**
@@ -209,6 +212,13 @@ function nodehierarchy_node_insert(NodeInterface $node) {
   if ($user->hasPermission('edit all node parents') || ($node_uid == $uid && $user->hasPermission('edit own node parents'))) {
     $hierarchy_manager->hierarchySaveNode($node);
   }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_delete().
+ */
+function nodehierarchy_node_delete(EntityInterface $node) {
+  db_delete('nodehierarchy')->condition('hid', $node->id())->execute();
 }
 
 /**
