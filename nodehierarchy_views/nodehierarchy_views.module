@@ -12,6 +12,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\node\NodeTypeInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\node\NodeInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 
 /**
  * Implements hook_help().
@@ -253,4 +254,30 @@ function nodehierarchy_views_update($node) {
  */
 function nodehierarchy_views_node_delete(EntityInterface $node) {
   db_delete('nodehierarchy_views')->condition('nid', $node->id())->execute();
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ *
+ * Add the embedded children view to the node body if appropriate.
+ */
+function nodehierarchy_views_node_view(array &$build, EntityInterface $node, EntityViewDisplayInterface $display, $view_mode){
+  if ($view_mode == 'full' && \Drupal::currentUser()->hasPermission('access embedded child view')) {
+    static $depth = 0;
+    // Make sure we don't go through more than 3 iterations to prevent memory or call stack errors.
+    if ($depth++ < 3) {
+      // Get the arguments to send to the view. This should allow other view arguments to work.
+      $current_path = \Drupal::service('path.current')->getPath();
+      $arguments = explode('/', $current_path);
+      // First arg will be 'node', the second will be the node id, so remove them.
+      array_shift($arguments);
+      array_shift($arguments);
+      if ($view = Views::getView($node->nh_children_view)) {
+        $title = $view->getTitle();
+        $display = @$node->nh_children_view_display ? @$node->nh_children_view_display : 'default';
+        $build['nodehierarchy_children_embed'] = $view->buildRenderable($display,$arguments);
+        $build['nodehierarchy_children_embed']['#prefix'] = '<h2 id="hierarchy-title" class ="views-title">'.$title.'</h2>';
+      }
+    }
+  }
 }
