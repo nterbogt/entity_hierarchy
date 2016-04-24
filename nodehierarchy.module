@@ -14,6 +14,7 @@ use Drupal\node\Entity\Node;
 use Drupal\node\NodeTypeInterface;
 use Drupal\node\NodeInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 
 /**
  * Implements @see hook_help().
@@ -302,6 +303,65 @@ function nodehierarchy_page_attachments(&$page) {
     // Load nodehierarchy.js on admin pages
     $page['#attached']['library'][] = 'nodehierarchy/nodehierarchy.nodetypeform';
   }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function nodehierarchy_node_view(array &$build, EntityInterface $node, EntityViewDisplayInterface $display, $view_mode) {
+  if ($view_mode == 'full') {
+    $create_links = array();
+    $current_user = \Drupal::currentUser();
+    /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
+    $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+    if ($current_user->hasPermission('create child nodes') && ($current_user->hasPermission(('create child of any parent') || $current_user->hasPermission('update')))) {
+      foreach ($hierarchy_manager->hierarchyGetAllowedChildTypes($node->getType()) as $key) {
+        if ($node->access()) {
+          $destination = (array)drupal_get_destination() + array('parent' => $node->id());
+          //d7: $key = str_replace('_', '-', $key);
+          $url = \Drupal\Core\Url::fromRoute('node.add', array('node_type' => $key), array('query' => $destination));
+          $create_links[] = \Drupal::l($key, $url);
+        }
+      }
+      if ($create_links) {
+        $build['nodehierarchy_new_child_links'] = array(
+          // @todo: handle this with hook_theme and template_preprocess (see below) and use #theme over #markup
+          // @see function template_preprocess_book_navigation
+          // '#theme' => 'nodehierarchy_new_child_links',
+          '#markup' => '<div class="newchild">' . t("Create new child !s", array('!s' => implode(" | ", $create_links))) . '</div>',
+        );
+      }
+
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * Todo: implement this
+ */
+function nodehierarchy_theme($existing, $type, $theme, $path) {
+  return array(
+    'nodehierarchy_new_child_links' => array(
+      'variables' => array(),
+    ),
+  );
+}
+
+/**
+ * Prepares variables for hierarchy links to be added to pages.
+ *
+ * Default template: nodehierarchy-new-child-links.html.twig.
+ *
+ * @param array $variables
+ *
+ * Todo: define variables
+ */
+function template_preprocess_nodehierarchy_new_child_links(&$variables) {
+  $node = \Drupal::request()->attributes->get('node');
+//  dpm($node);
+//  dpm($variables);
 }
 
 /**
