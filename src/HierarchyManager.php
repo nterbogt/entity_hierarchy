@@ -127,24 +127,25 @@ class HierarchyManager implements HierarchyManagerInterface {
     //$form['nh_defaultparent']['#title'] = t('Default Parent');
 
     // Todo: find out why this was removed in 7.x-4.x, and possibly remove from here and the Admin form.
-    $form['nh_createmenu'] = array(
-      '#type' => 'radios',
-      '#title' => t('Show item in menu'),
-      '#default_value' => $config->get('nh_createmenu_'.$key), //variable_get('nh_createmenu_' . $key, 'optional_no'),
-      '#options' => array(
-        'never' => t('Never'),
-        'optional_no' => t('Optional - default to no'),
-        'optional_yes' => t('Optional - default to yes'),
-        'always' => t('Always'),
-      ),
-      '#description' => t("Users must have the 'administer menu' or 'customize nodehierarchy menus' permission to override default options."),
-    );
-    $form['nh_multiple'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Allow multiple parents'),
-      '#default_value' => $config->get('nh_multiple_'.$key),
-      '#description' => t('Can nodes of this type have multiple parents?.'),
-    );
+//    $form['nh_createmenu'] = array(
+//      '#type' => 'radios',
+//      '#title' => t('Show item in menu'),
+//      '#default_value' => $config->get('nh_createmenu_'.$key), //variable_get('nh_createmenu_' . $key, 'optional_no'),
+//      '#options' => array(
+//        'never' => t('Never'),
+//        'optional_no' => t('Optional - default to no'),
+//        'optional_yes' => t('Optional - default to yes'),
+//        'always' => t('Always'),
+//      ),
+//      '#description' => t("Users must have the 'administer menu' or 'customize nodehierarchy menus' permission to override default options."),
+//    );
+    // Todo: implement this later
+//    $form['nh_multiple'] = array(
+//      '#type' => 'checkbox',
+//      '#title' => t('Allow multiple parents'),
+//      '#default_value' => $config->get('nh_multiple_'.$key),
+//      '#description' => t('Can nodes of this type have multiple parents?.'),
+//    );
 
     $form['nh_defaultparent'] = $this->hierarchyGetParentSelector($key, $config->get('nh_defaultparent_' .$key, 0));
     $form['nh_defaultparent']['#title'] = t('Default Parent');

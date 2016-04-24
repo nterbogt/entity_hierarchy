@@ -14,6 +14,7 @@ use Drupal\Core\Render\Element;
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Core\Link;
 
 
 /**
@@ -155,11 +156,11 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
         if ($node->access('create')) {
           $destination = (array) drupal_get_destination() + array('parent' => $nid);
           $url = Url::fromRoute('node.add', array('node_type' => $type), array('query' => $destination));
-          $create_links[] = $this->l($type, $url);
+          $link = Link::fromTextAndUrl(t($type), $url);
+          $create_links[] = render(@$link->toRenderable());
         }
         if ($create_links) {
-          $out = '<div class="newchild">' .
-            t("Create new child !s", array('!s' => implode(" | ", $create_links))) . '</div>';
+          $out = '<div class="newchild">' . t('Create new child ') . implode(" | ", $create_links) . '</div>';
         }
         $form['newchild']['#suffix'] = $out;
       }
@@ -176,7 +177,7 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
     $actions['delete']['#value'] = $this->t('Remove all children');
 //    $actions['delete']['#access'] = $this->bookManager->checkNodeIsRemovable($this->entity);
     // Don't show the actions links if there are no children
-    if ($form['no_children']) {
+    if (isset($form['no_children'])) {
       unset ($actions['submit']);
       unset ($actions['delete']);
     }

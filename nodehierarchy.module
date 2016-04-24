@@ -107,48 +107,8 @@ function nodehierarchy_entity_type_build(array &$entity_types) {
 }
 
 /**
- * Implements @see hook_form_alter().
- *
- * Previously, the nodehierarchy module allowed someone to delete children when deleting a parent.
- * For now, we only support deleting the information in the nodehierarchy table directly related to
- * the node being deleted.
- *
- * Todo: implement functionality to delete children of a parent.
+ * Todo: implement functionality to delete children of a parent by altering the delete form.
  */
-function nodehierarchy_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-
-  // Does the form ID end with '_node_delete_form' ?
-//  endsWith($form_id,"_node_delete_form") ? $node_delete_type = $form_id : $node_delete_type = '';
-  // Todo: fix (we set the value incorrectly on purpose so this id is never called.
-//  $node_delete_type = 'abcdefg';
-
-//  switch ($form_id) {
-//    case $node_delete_type:
-//      // TODO: Fix the descendant count code to deal with multiparent situations.
-//      if ($count = _nodehierarchy_get_children_count($form['nid']['#value'])) {
-//        $items = array();
-//        foreach (_nodehierarchy_get_children_menu_links($form['nid']['#value'], 10) as $child) {
-//          $items[] = /*check_plain*/($child['link_title']);
-//        }
-//        if ($count > 10) {
-//          $items[] = $this->l(t('See all !count children', array('!count' => $count)), 'node/' . $form['nid']['#value'] . '/children');
-//        }
-//        $list = /*theme('item_list',*/ array('items' => $items)/*)*/;
-//        $description = \Drupal::translation()->formatPlural($count,
-//          'This node has @count child. Check this box to delete it and all of its descendants as well.',
-//          'This node has @count children. Check this box to delete them and all of their descendants as well.' );
-//        $description .= t('<p>These children and their descendants will be deleted:!list<p>', array('!list' => $list));
-//        $form['nodehierarchy_delete_children'] = array(
-//          '#type' => 'checkbox',
-//          '#title' => t('Delete descendants'),
-//          '#description' => $description,
-//        );
-//        array_unshift($form['#submit'], 'nodehierarchy_node_delete_submit');
-//        $form['actions']['#weight'] = 1;
-//      }
-//      break;
-//  }
-}
 
 /**
  * Implements @see hook_form_FORM_ID_alter().
@@ -188,8 +148,8 @@ function nodehierarchy_form_node_type_form_builder($entity_type, NodeTypeInterfa
   $node_type = $type->get('type');
   $config = \Drupal::getContainer()->get('config.factory')->getEditable('nodehierarchy.settings');
   $config->set('nh_allowchild_'.$node_type, $form_state->getValue('nh_allowchild'));
-  $config->set('nh_createmenu_'.$node_type, $form_state->getValue('nh_createmenu'));
-  $config->set('nh_multiple_'.$node_type, $form_state->getValue('nh_multiple'));
+//  $config->set('nh_createmenu_'.$node_type, $form_state->getValue('nh_createmenu'));
+//  $config->set('nh_multiple_'.$node_type, $form_state->getValue('nh_multiple'));
   $config->set('nh_defaultparent_'.$node_type, $form_state->getValue('nh_defaultparent'));
   $config->save();
 }
@@ -217,6 +177,8 @@ function nodehierarchy_node_insert(NodeInterface $node) {
 
 /**
  * Implements hook_ENTITY_TYPE_delete().
+ *
+ * Todo: move this to the services class.
  */
 function nodehierarchy_node_delete(EntityInterface $node) {
   db_delete('nodehierarchy')->condition('hid', $node->id())->execute();
@@ -274,7 +236,7 @@ function nodehierarchy_node_prepare_form(NodeInterface $node) {
       // Set the type default if there is one.
       if (empty($nid)) {
         $config = \Drupal::config('nodehierarchy.settings');
-//        $default = $config->get('nh_defaultparent_'.$node->getEntityType());//variable_get('nh_defaultparent_' . $node->type, 0);
+        $default = $config->get('nh_defaultparent_'.$node->getType());
         // Get the parent node id from passed in from the get params.
         $pnid = !empty($_GET['parent']) ? (int) $_GET['parent'] : $default;
         // Get the parent from the get string. User must have update perms for parent unless it is the default.
@@ -320,18 +282,18 @@ function nodehierarchy_node_view(array &$build, EntityInterface $node, EntityVie
           $destination = (array)drupal_get_destination() + array('parent' => $node->id());
           //d7: $key = str_replace('_', '-', $key);
           $url = \Drupal\Core\Url::fromRoute('node.add', array('node_type' => $key), array('query' => $destination));
-          $create_links[] = \Drupal::l($key, $url);
+          $link = \Drupal\Core\Link::fromTextAndUrl(t($key), $url);
+          $create_links[] = render(@$link->toRenderable());
+        }
+        if ($create_links) {
+          $build['nodehierarchy_new_child_links'] = array(
+            // @todo: handle this with hook_theme and template_preprocess (see below) and use #theme over #markup
+            // @see function template_preprocess_book_navigation
+            // '#theme' => 'nodehierarchy_new_child_links',
+            '#markup' => '<div class="newchild">' . t('Create new child ') . implode(" | ", $create_links) . '</div>',
+          );
         }
       }
-      if ($create_links) {
-        $build['nodehierarchy_new_child_links'] = array(
-          // @todo: handle this with hook_theme and template_preprocess (see below) and use #theme over #markup
-          // @see function template_preprocess_book_navigation
-          // '#theme' => 'nodehierarchy_new_child_links',
-          '#markup' => '<div class="newchild">' . t("Create new child !s", array('!s' => implode(" | ", $create_links))) . '</div>',
-        );
-      }
-
     }
   }
 }

@@ -277,6 +277,7 @@ function nodehierarchy_views_node_view(array &$build, EntityInterface $node, Ent
         $display = @$node->nh_children_view_display ? @$node->nh_children_view_display : 'default';
         $build['nodehierarchy_children_embed'] = $view->buildRenderable($display,$arguments);
         $build['nodehierarchy_children_embed']['#prefix'] = '<h2 id="hierarchy-title" class ="views-title">'.$title.'</h2>';
+        $build['nodehierarchy_children_embed']['#weight'] = 99;
       }
     }
   }
