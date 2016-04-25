@@ -262,6 +262,7 @@ function nodehierarchy_views_node_delete(EntityInterface $node) {
  * Add the embedded children view to the node body if appropriate.
  *
  * Todo: hide view if empty and user adds title.
+ * See https://www.drupal.org/node/1343430
  */
 function nodehierarchy_views_node_view(array &$build, EntityInterface $node, EntityViewDisplayInterface $display, $view_mode){
   if ($view_mode == 'full' && \Drupal::currentUser()->hasPermission('access embedded child view')) {
