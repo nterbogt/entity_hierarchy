@@ -42,7 +42,7 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $this->node_types = node_type_get_names();
-    $config = $this->config('nodehierarchy.settings');
+//    $config = $this->config('nodehierarchy.settings');
     $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
 
     // Individual type settings.
@@ -61,25 +61,25 @@ class AdminSettingsForm extends ConfigFormBase {
       $form['nodehierarchy_types'][$key] += $hierarchy_manager->hierarchyGetNodeTypeSettingsForm($key, TRUE);
     }
 
-    // Menu generation.
-    $form['nodehierarchy_menu'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Node Hierarchy Menu Generation'),
-    );
-    $form['nodehierarchy_menu']['nodehierarchy_default_menu_name'] = array(
-      '#type' => 'select',
-      '#title' => t('Default parent menu'),
-      '#options' => array_keys(entity_load_multiple('menu')),
-      '#default_value' => $config->get('nodehierarchy_default_menu_name'),
-      '#description' => t('If a menu is created for a node with no parent the new menu item will appear in this menu.'),
-    );
-
-    $form['nodehierarchy_menu']['nodehierarchy_menu_module_edit'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Always show hidden Node Hierarchy menu items on the menu overview forms.'),
-      '#default_value' => $config->get('nodehierarchy_menu_module_edit'),
-      '#description' => t('Allow disabled nodehierarchy menu items to be edited with regular menu items in the menu overview screen. Turn this off if large Node Hierarchy menus are causing memory errors on menu edit screens.'),
-    );
+    // Menu generation. Todo: implement later
+//    $form['nodehierarchy_menu'] = array(
+//      '#type' => 'fieldset',
+//      '#title' => t('Node Hierarchy Menu Generation'),
+//    );
+//    $form['nodehierarchy_menu']['nodehierarchy_default_menu_name'] = array(
+//      '#type' => 'select',
+//      '#title' => t('Default parent menu'),
+//      '#options' => array_keys(entity_load_multiple('menu')),
+//      '#default_value' => $config->get('nodehierarchy_default_menu_name'),
+//      '#description' => t('If a menu is created for a node with no parent the new menu item will appear in this menu.'),
+//    );
+//
+//    $form['nodehierarchy_menu']['nodehierarchy_menu_module_edit'] = array(
+//      '#type' => 'checkbox',
+//      '#title' => t('Always show hidden Node Hierarchy menu items on the menu overview forms.'),
+//      '#default_value' => $config->get('nodehierarchy_menu_module_edit'),
+//      '#description' => t('Allow disabled nodehierarchy menu items to be edited with regular menu items in the menu overview screen. Turn this off if large Node Hierarchy menus are causing memory errors on menu edit screens.'),
+//    );
 
     return parent::buildForm($form, $form_state);
   }
@@ -95,8 +95,8 @@ class AdminSettingsForm extends ConfigFormBase {
 //      $config->set('nh_createmenu_'.$key, $values['nh_createmenu_'.$key]);
 //      $config->set('nh_multiple_'.$key, $values['nh_multiple_'.$key]);
       $config->set('nh_defaultparent_'.$key, $values['nh_defaultparent_'.$key]);
-      $config->set('nodehierarchy_default_menu_name', $values['nodehierarchy_default_menu_name']);
-      $config->set('nodehierarchy_menu_module_edit', $values['nodehierarchy_menu_module_edit']);
+//      $config->set('nodehierarchy_default_menu_name', $values['nodehierarchy_default_menu_name']);
+//      $config->set('nodehierarchy_menu_module_edit', $values['nodehierarchy_menu_module_edit']);
     }
     $config->save();
 

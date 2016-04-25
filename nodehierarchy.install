@@ -50,3 +50,20 @@ function nodehierarchy_schema() {
 
   return $schema;
 }
+
+/**
+ * Implements hook_install().
+ *
+ * Set the default values for all content types in this hook. Since we don't
+ * know what content types are available prior to installation, this must be
+ * done dynamically instead of providing an nodehierarchy.settings.yml file.
+ * See https://www.drupal.org/node/2120571 for more information.
+ */
+function nodehierarchy_install() {
+  // Set default values for config which require dynamic values.
+  $config = \Drupal::configFactory()->getEditable('nodehierarchy.settings');
+  foreach (node_type_get_names() as $key => $type) {
+    $config->set('nh_allowchild_'.$key, 0);
+  }
+  $config->save();
+}

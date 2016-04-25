@@ -225,6 +225,7 @@ class HierarchyManager implements HierarchyManagerInterface {
    * @see hierarchyParentOptions
    */
   private function hierarchyGetAllowedParentTypes($child_type = NULL) {
+    $allowed_children = null;
     // Static cache the results because this may be called many times for the same type on the menu overview screen.
     static $allowed_types = array();
     $config =  \Drupal::config('nodehierarchy.settings');
