@@ -260,6 +260,8 @@ function nodehierarchy_views_node_delete(EntityInterface $node) {
  * Implements hook_ENTITY_TYPE_view().
  *
  * Add the embedded children view to the node body if appropriate.
+ *
+ * Todo: hide view if empty and user adds title.
  */
 function nodehierarchy_views_node_view(array &$build, EntityInterface $node, EntityViewDisplayInterface $display, $view_mode){
   if ($view_mode == 'full' && \Drupal::currentUser()->hasPermission('access embedded child view')) {
