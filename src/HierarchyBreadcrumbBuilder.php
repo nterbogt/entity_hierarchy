@@ -42,34 +42,26 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
    */
   public function build(RouteMatchInterface $route_match) {
 
-    $breadcrumb = new Breadcrumb();
-    $links = [Link::createFromRoute($this->t('Home'), '<front>')];
-
     // Get all the possible breadcrumbs for the node.
     $node = $route_match->getParameter('node');
     $nid = $node->nid->value;
-    $links = $this->hierarchyGetBreadcrumb($nid, $links);
-    // TODO: Need to figure out the caching
-//    $breadcrumb->addCacheableDependency($access);
-//    $breadcrumb->addCacheContexts(['route.hierarchy_navigation']);
-    $breadcrumb->setLinks($links);
-    return $breadcrumb;
-  }
-
-  /**
-   * Get the breadcrumbs for the given node.
-   *
-   * There could be multiple breadcrumbs because there could be multiple parents.
-   */
-  private function hierarchyGetBreadcrumb($nid, $links) {
-
-    // Retrieve the descendant list of menu links and convert them to a breadcrumb trail.
     $trail = $this->hierarchyGetNodePrimaryAncestorNodes($nid);
-    foreach ($trail as $node) {
-      $options = array();
-      $links[] = $node->toLink($node->getTitle(), 'canonical', $options);
+    if ($trail) {
+      $breadcrumb = new Breadcrumb();
+      $links = [Link::createFromRoute($this->t('Home'), '<front>')];
+      foreach ($trail as $node) {
+        $options = array();
+        $links[] = $node->toLink($node->getTitle(), 'canonical', $options);
+      }
+      $breadcrumb->addCacheableDependency($node);
+      $breadcrumb->setLinks($links);
+      $breadcrumb->addCacheContexts(['route']);
+      return $breadcrumb;
     }
-    return $links;
+    else {
+      return;
+    }
+
   }
 
   /**
