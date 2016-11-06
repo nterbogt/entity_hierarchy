@@ -264,7 +264,7 @@ function nodehierarchy_views_node_delete(EntityInterface $node) {
  * Todo: hide view if empty and user adds title.
  * See https://www.drupal.org/node/1343430
  */
-function nodehierarchy_views_node_view(array &$build, EntityInterface $node, EntityViewDisplayInterface $display, $view_mode){
+function nodehierarchy_views_node_view(array &$build, NodeInterface $node, EntityViewDisplayInterface $display, $view_mode){
   if ($view_mode == 'full' && \Drupal::currentUser()->hasPermission('access embedded child view')) {
     static $depth = 0;
     // Make sure we don't go through more than 3 iterations to prevent memory or call stack errors.
@@ -276,13 +276,15 @@ function nodehierarchy_views_node_view(array &$build, EntityInterface $node, Ent
       array_shift($arguments);
       array_shift($arguments);
       if ($view = Views::getView($node->nh_children_view)) {
-//        $title = $view->getTitle();
+        // If we want a title, add the following:
+        // $title = $view->getTitle();
+        // $view->setTitle('$title'); might work
+        // $build['nodehierarchy_views_embed']['#prefix'] = '<h2 id="hierarchy-title" class ="views-title">'.$title.'</h2>';
         $display = @$node->nh_children_view_display ? @$node->nh_children_view_display : 'default';
-        $build['nodehierarchy_children_embed'] = $view->buildRenderable($display,$arguments);
-//        $build['nodehierarchy_children_embed']['#prefix'] = '<h2 id="hierarchy-title" class ="views-title">'.$title.'</h2>';
-        // Here we append the view to the node body. There's got to be a better way to do this.
-        $body = $node->get('body')->value;
-        $node->set('body')->value = $body.render($build['nodehierarchy_children_embed']);
+        $view->setDisplay($display);
+        $view->setArguments($arguments);
+        $build['nodehierarchy_views_embed'] = $view->render();
+        $build['nodehierarchy_views_embed']['#weight'] = 1001;
       }
     }
   }
