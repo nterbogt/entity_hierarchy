@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Definition of Drupal\nodehierarchy\HierarchyOutlineStorage.
+ * Definition of Drupal\entity_hierarchy\HierarchyOutlineStorage.
  */
 
-namespace Drupal\nodehierarchy;
+namespace Drupal\entity_hierarchy;
 
 use Drupal\Core\Database\Connection;
 
@@ -29,7 +29,7 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
   }
 
   public function getHierarchies() {
-    return $this->connection->query("SELECT DISTINCT(hid) FROM {nodehierarchy}")->fetchCol();
+    return $this->connection->query("SELECT DISTINCT(hid) FROM {entity_hierarchy}")->fetchCol();
   }
 
 
@@ -41,15 +41,15 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
 
     // If a node object was passed, then the parents may already have been loaded.
     if (is_object($node)) {
-      if (isset($node->nodehierarchy_parents)) {
-        return $node->nodehierarchy_parents;
+      if (isset($node->entity_hierarchy_parents)) {
+        return $node->entity_hierarchy_parents;
       }
       $cnid = $node->nid;
     }
 
     $out = array();
 
-    $query = db_select('nodehierarchy', 'nh')
+    $query = db_select('entity_hierarchy', 'nh')
       ->fields('nh')
       ->where('cnid = :cnid', array(':cnid' => $cnid))
       ->orderBy('pweight', 'ASC');
@@ -71,7 +71,7 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
    */
   public function hierarchyGetParent($cnid) {
 
-    $query = db_select('nodehierarchy', 'nh')
+    $query = db_select('entity_hierarchy', 'nh')
       ->fields('nh')
       ->where('cnid = :cnid', array(':cnid' => $cnid))
       ->orderBy('pweight', 'ASC');
@@ -95,7 +95,7 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
    * Get the next child weight for a given pnid.
    */
   public function hierarchyLoadParentNextChildWeight($pnid) {
-    $out = db_query('SELECT MAX(cweight) FROM {nodehierarchy} WHERE pnid = :pnid', array(':pnid' => $pnid))->fetchField();
+    $out = db_query('SELECT MAX(cweight) FROM {entity_hierarchy} WHERE pnid = :pnid', array(':pnid' => $pnid))->fetchField();
     if ($out !== NULL) {
       $out += 1;
     }
@@ -106,27 +106,27 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
   }
 
   /**
-   * Save a nodehierarchy record.
+   * Save a entity_hierarchy record.
    */
   public function hierarchyRecordLoad($hid) {
-    $result = db_select('nodehierarchy', 'nh')
+    $result = db_select('entity_hierarchy', 'nh')
       ->fields('nh')
       ->where('hid = :hid', array(':hid' => $hid))->execute();
     return $result->fetch();
   }
 
   /**
-   * Save a nodehierarchy record.
+   * Save a entity_hierarchy record.
    */
   public function hierarchyRecordDelete($hid) {
-    db_delete('nodehierarchy')->condition('hid', $hid)->execute();
+    db_delete('entity_hierarchy')->condition('hid', $hid)->execute();
   }
 
   /**
    * {@inheritdoc}
    */
   public function insert($item) {
-    return $this->connection->insert('nodehierarchy')
+    return $this->connection->insert('entity_hierarchy')
       ->fields(array(
         'pnid' => $item->pnid,
         'cnid' => $item->cnid,
@@ -147,7 +147,7 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
       $pnid = $node->id();
     }
 
-    return (int)db_query("SELECT count(*) FROM {nodehierarchy} WHERE pnid = :pnid", array(':pnid' => $pnid))->fetchField();
+    return (int)db_query("SELECT count(*) FROM {entity_hierarchy} WHERE pnid = :pnid", array(':pnid' => $pnid))->fetchField();
   }
 
   /**
@@ -159,7 +159,7 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
       $pnid = $node->id();
     }
 
-    $query = db_select('nodehierarchy', 'nh')
+    $query = db_select('entity_hierarchy', 'nh')
       ->fields('nh')
       ->fields('nfd', array('title'))
       ->where('pnid = :pnid', array(':pnid' => $pnid))
@@ -193,7 +193,7 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
         ->fields('nfd', array('title', 'uid', 'status'))
         ->condition('n.type', $types, 'IN')
         ->orderBy('nh.cweight', 'ASC');
-      $query->leftJoin('nodehierarchy', 'nh', 'nh.cnid = n.nid');
+      $query->leftJoin('entity_hierarchy', 'nh', 'nh.cnid = n.nid');
       $query->leftJoin('node_field_data', 'nfd', 'nfd.nid = n.nid');
 
       $result = $query->execute();
@@ -210,14 +210,14 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
    */
   public function update($hid, $fields) {
     return $this->connection
-      ->update('nodehierarchy')
+      ->update('entity_hierarchy')
       ->fields($fields)
       ->condition('hid', $hid)
       ->execute();
   }
 
   public function loadHierarchies($nids) {
-    $results = db_select('nodehierarchy', 'h')
+    $results = db_select('entity_hierarchy', 'h')
       ->fields('h', array('pnid'))
       ->condition('h.cnid', $nids, 'IN')
       ->execute()

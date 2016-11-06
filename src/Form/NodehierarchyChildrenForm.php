@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\nodehierarchy\Form\NodehierarchyChildrenForm.
+ * Contains \Drupal\entity_hierarchy\Form\NodehierarchyChildrenForm.
  */
 
-namespace Drupal\nodehierarchy\Form;
+namespace Drupal\entity_hierarchy\Form;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
@@ -32,7 +32,7 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
   /**
    * HierarchyManager service.
    *
-   * @var \Drupal\nodehierarchy\HierarchyManagerInterface
+   * @var \Drupal\entity_hierarchy\HierarchyManagerInterface
    */
   protected $hierarchyManager;
 
@@ -59,8 +59,8 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
    * {@inheritdoc}
    */
   public function form(array $form, FormStateInterface $form_state) {
-    $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
-    $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+    $hierarchy_storage = \Drupal::service('entity_hierarchy.outline_storage');
+    $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
 
     $children = $this->entity;
     $id = $this->entity->id();
@@ -85,7 +85,7 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
       );
       // Add CSS to the form via .libraries.yml file
       $form['#attached'] = array(
-        'library' => array('nodehierarchy/nodehierarchy.children'),
+        'library' => array('entity_hierarchy/entity_hierarchy.children'),
       );
     }
     $type_names = node_type_get_names();
@@ -127,7 +127,7 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
         // The link to the child tab
         $form['children'][$child->hid]['operations']['#links']['children'] = array(
           'title' => t('Children'),
-          'url' => Url::fromRoute('entity.node.nodehierarchy_children_form', array('node'=>$node->id())),
+          'url' => Url::fromRoute('entity.node.entity_hierarchy_children_form', array('node'=>$node->id())),
         );
       }
     }
@@ -198,7 +198,7 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
    */
   public function save(array $form, FormStateInterface $form_state) {
     $children = $form_state->getValue('children');
-    $hierarchyManager = \Drupal::service('nodehierarchy.manager');
+    $hierarchyManager = \Drupal::service('entity_hierarchy.manager');
     foreach ($children as $hid => $child) {
       $item->hid = $hid;
       $item->cweight = $child['weight'];

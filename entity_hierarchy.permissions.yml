@@ -1,4 +1,4 @@
-# Permissions for Node Hierarchy
+# Permissions for Entity Hierarchy
 create child nodes:
   title: 'Create child nodes'
   description: 'Add a node as a child of another node'
@@ -10,9 +10,9 @@ edit own node parents:
   description: 'Edit the parent of own nodes'
 administer hierarchy:
   title: 'Administer hierarchy'
-  description: 'Change the site wide settings for Node Hierarchy'
-customize nodehierarchy menus:
-  title: 'Customize nodehierarchy menus'
+  description: 'Change the site wide settings for Entity Hierarchy'
+customize entity_hierarchy menus:
+  title: 'Customize entity_hierarchy menus'
   description: 'Change the menu settings for nodes'
 create child of any parent:
   title: 'Create child of any parent'

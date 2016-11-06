@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\nodehierarchy\HierarchyBreadcrumbBuilder.
+ * Contains \Drupal\entity_hierarchy\HierarchyBreadcrumbBuilder.
  */
 
-namespace Drupal\nodehierarchy;
+namespace Drupal\entity_hierarchy;
 
 use Drupal\Core\Access\AccessManagerInterface;
 use Drupal\Core\Breadcrumb\Breadcrumb;
@@ -31,7 +31,7 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
     $parent = null;
     if ($node instanceof NodeInterface) {
       $current_nid = $node->id();
-      $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
+      $hierarchy_storage = \Drupal::service('entity_hierarchy.outline_storage');
       $parent = $hierarchy_storage->hierarchyGetParent($current_nid);
     }
     return !empty($parent) ? true : false;
@@ -113,14 +113,14 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
     $cnid = $node;
     // If a node object was passed, then the parents may already have been loaded.
     if (is_object($node)) {
-      if (isset($node->nodehierarchy_parents)) {
-        return $node->nodehierarchy_parents;
+      if (isset($node->entity_hierarchy_parents)) {
+        return $node->entity_hierarchy_parents;
       }
       $cnid = $node->nid;
     }
     $out = array();
     $db = \Drupal::database();
-    $query = $db->select('nodehierarchy', 'nh')
+    $query = $db->select('entity_hierarchy', 'nh')
       ->fields('nh')
       ->where('cnid = :cnid', array(':cnid' => $cnid))
       ->orderBy('pweight', 'ASC');

@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\nodehierarchy\Controller\NodeHierarchyController.
+ * Contains \Drupal\entity_hierarchy\Controller\NodeHierarchyController.
  */
 
-namespace Drupal\nodehierarchy\Controller;
+namespace Drupal\entity_hierarchy\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\node\NodeInterface;

@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\nodehierarchy\HierarchyOutlineStorageInterface.
+ * Contains \Drupal\entity_hierarchy\HierarchyOutlineStorageInterface.
 */
 
-namespace Drupal\nodehierarchy;
+namespace Drupal\entity_hierarchy;
 
 /**
  * Defines a common interface for hierarchy outline storage classes.

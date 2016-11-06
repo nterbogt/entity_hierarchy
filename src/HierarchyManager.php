@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\nodehierarchy\HierarchyManager.
+ * Contains \Drupal\entity_hierarchy\HierarchyManager.
  */
 
-namespace Drupal\nodehierarchy;
+namespace Drupal\entity_hierarchy;
 
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -51,7 +51,7 @@ class HierarchyManager implements HierarchyManagerInterface {
   /**
    * Hierarchy outline storage.
    *
-   * @var \Drupal\nodehierarchy\HierarchyOutlineStorageInterface
+   * @var \Drupal\entity_hierarchy\HierarchyOutlineStorageInterface
    */
   protected $hierarchyOutlineStorage;
 
@@ -71,7 +71,7 @@ class HierarchyManager implements HierarchyManagerInterface {
    *   Interface for the translation.manager translation service.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   Defines the interface for a configuration object factory.
-   * @param \Drupal\nodehierarchy\HierarchyOutlineStorageInterface $hierarchy_outline_storage
+   * @param \Drupal\entity_hierarchy\HierarchyOutlineStorageInterface $hierarchy_outline_storage
    *   The entity hierarchy storage object
    */
   public function __construct(EntityTypeManagerInterface $entity_manager, TranslationInterface $translation, ConfigFactoryInterface $config_factory, HierarchyOutlineStorageInterface $hierarchy_outline_storage) {
@@ -91,19 +91,19 @@ class HierarchyManager implements HierarchyManagerInterface {
         '#type' => 'details',
         '#title' => t('Page Hierarchy'),
         '#group' => 'advanced',
-        '#open' => !$collapsed, //empty($form_state['nodehierarchy_expanded']) ? TRUE : FALSE,
+        '#open' => !$collapsed, //empty($form_state['entity_hierarchy_expanded']) ? TRUE : FALSE,
         '#weight' => 10,
         '#access' => $access,
         '#tree' => FALSE,
       );
-    $form['hierarchy']['nodehierarchy_parents'] = array('#tree' => TRUE);
+    $form['hierarchy']['entity_hierarchy_parents'] = array('#tree' => TRUE);
 
-    foreach ((array)$node->nodehierarchy_parents as $key => $parent) {
-      $form['hierarchy']['nodehierarchy_parents'][$key] = $this->hierarchyNodeParentFormItems($node, $parent, $key);
+    foreach ((array)$node->entity_hierarchy_parents as $key => $parent) {
+      $form['hierarchy']['entity_hierarchy_parents'][$key] = $this->hierarchyNodeParentFormItems($node, $parent, $key);
       // Todo: determine if still needed/functionality
-      \Drupal::moduleHandler()->alter('nodehierarchy_node_parent_form_items', $form['hierarchy']['nodehierarchy_parents'][$key], $node, $parent);
+      \Drupal::moduleHandler()->alter('entity_hierarchy_node_parent_form_items', $form['hierarchy']['entity_hierarchy_parents'][$key], $node, $parent);
     }
-    \Drupal::moduleHandler()->alter('nodehierarchy_node_parent_form_items_wrapper', $form['hierarchy'], $form_state, $node);
+    \Drupal::moduleHandler()->alter('entity_hierarchy_node_parent_form_items_wrapper', $form['hierarchy'], $form_state, $node);
 
     return $form;
   }
@@ -112,7 +112,7 @@ class HierarchyManager implements HierarchyManagerInterface {
    * {@inheritdoc}
    */
   public function hierarchyGetNodeTypeSettingsForm($key, $append_key = FALSE) {
-    $config =  \Drupal::config('nodehierarchy.settings');
+    $config =  \Drupal::config('entity_hierarchy.settings');
 
     $form['nh_allowchild'] = array(
       '#type' => 'checkboxes',
@@ -122,7 +122,7 @@ class HierarchyManager implements HierarchyManagerInterface {
       '#description' => t('Node types which can be created as child nodes of this node type.'),
     );
 
-    //$form['nh_defaultparent'] = _nodehierarchy_get_parent_selector($key, $config->get('nh_defaultparent_'.$key));
+    //$form['nh_defaultparent'] = _entity_hierarchy_get_parent_selector($key, $config->get('nh_defaultparent_'.$key));
     // TODO: add default parent support later
     //$form['nh_defaultparent']['#title'] = t('Default Parent');
 
@@ -137,7 +137,7 @@ class HierarchyManager implements HierarchyManagerInterface {
 //        'optional_yes' => t('Optional - default to yes'),
 //        'always' => t('Always'),
 //      ),
-//      '#description' => t("Users must have the 'administer menu' or 'customize nodehierarchy menus' permission to override default options."),
+//      '#description' => t("Users must have the 'administer menu' or 'customize entity_hierarchy menus' permission to override default options."),
 //    );
     // Todo: implement this later
 //    $form['nh_multiple'] = array(
@@ -150,21 +150,21 @@ class HierarchyManager implements HierarchyManagerInterface {
     $form['nh_defaultparent'] = $this->hierarchyGetParentSelector($key, $config->get('nh_defaultparent_' .$key, 0));
     $form['nh_defaultparent']['#title'] = t('Default Parent');
 
-    // Would have preferred to handle this in the nodehierarchy_views module, but not sure how
-    if (\Drupal::moduleHandler()->moduleExists('nodehierarchy_views')) {
-      $config =  \Drupal::config('nodehierarchy.settings');
+    // Would have preferred to handle this in the entity_hierarchy_views module, but not sure how
+    if (\Drupal::moduleHandler()->moduleExists('entity_hierarchy_views')) {
+      $config =  \Drupal::config('entity_hierarchy.settings');
       $form['nh_default_children_view'] = array(
           '#type' => 'select',
           '#title' => t('Default Children View'),
           '#multiple' => FALSE,
-          '#options' => _nodehierarchy_views_view_options(),
+          '#options' => _entity_hierarchy_views_view_options(),
           '#required' => FALSE,
           '#default_value' => $config->get('nh_default_children_view_' . $key),
           '#description' => t('Default for the embed children view feature.'),
       );
     }
 
-//    $form += \Drupal::moduleHandler()->invokeAll('nodehierarchy_node_type_settings_form', array($key));
+//    $form += \Drupal::moduleHandler()->invokeAll('entity_hierarchy_node_type_settings_form', array($key));
 
     // If we need to append the node type key to the form elements, we do so.
     if ($append_key) {
@@ -228,7 +228,7 @@ class HierarchyManager implements HierarchyManagerInterface {
     $allowed_children = null;
     // Static cache the results because this may be called many times for the same type on the menu overview screen.
     static $allowed_types = array();
-    $config =  \Drupal::config('nodehierarchy.settings');
+    $config =  \Drupal::config('entity_hierarchy.settings');
 
     if (!isset($allowed_types[$child_type])) {
       $parent_types = array();
@@ -252,7 +252,7 @@ class HierarchyManager implements HierarchyManagerInterface {
    * {@inheritdoc}
    */
   public function hierarchyGetAllowedChildTypes($parent_type) {
-    $config =  \Drupal::config('nodehierarchy.settings');
+    $config =  \Drupal::config('entity_hierarchy.settings');
     $child_types = array_filter($config->get('nh_allowchild_'.$parent_type));
     return array_unique($child_types);
   }
@@ -285,7 +285,7 @@ class HierarchyManager implements HierarchyManagerInterface {
       '#type' => 'fieldset',
       '#title' => t('Parent'),
       '#tree' => TRUE,
-      '#prefix' => '<div class="nodehierarchy-parent">',
+      '#prefix' => '<div class="entity_hierarchy-parent">',
       '#suffix' => '</div>',
     );
 
@@ -354,7 +354,7 @@ class HierarchyManager implements HierarchyManagerInterface {
     // Allow other modules to create the pulldown first.
     // Modules implementing this hook, should return the form element inside an array with a numeric index.
     // This prevents module_invoke_all from merging the outputs to make an invalid form array.
-    $out = \Drupal::moduleHandler()->invokeAll('nodehierarchy_get_parent_selector', array($child_type, $parent, $exclude));
+    $out = \Drupal::moduleHandler()->invokeAll('entity_hierarchy_get_parent_selector', array($child_type, $parent, $exclude));
 
     if ($out) {
       // Return the last element defined (any others are thrown away);
@@ -382,11 +382,11 @@ class HierarchyManager implements HierarchyManagerInterface {
       '#type' => 'select',
       '#title' => t('Parent Node'),
       '#default_value' => $default_value,
-      '#attributes' => array('class' => array('nodehierarchy-parent-selector')),
+      '#attributes' => array('class' => array('entity_hierarchy-parent-selector')),
       '#options' => $options,
       '#items' => $items,
-      //'#theme' => 'nodehierarchy_parent_selector',
-      //'#element_validate' => array('nodehierarchy_parent_selector_validate'),
+      //'#theme' => 'entity_hierarchy_parent_selector',
+      //'#element_validate' => array('entity_hierarchy_parent_selector_validate'),
     );
     return $out;
   }
@@ -602,16 +602,16 @@ class HierarchyManager implements HierarchyManagerInterface {
    * {@inheritdoc}
    */
   public function hierarchySaveNode(&$node) {
-    if (!isset($node->nodehierarchy_parents)) {
+    if (!isset($node->entity_hierarchy_parents)) {
       return;
     }
-    foreach ($node->nodehierarchy_parents as $i => $item) {
-      $node->nodehierarchy_parents[$i] = (object)$item;
-      $node->nodehierarchy_parents[$i]->cnid = (int)$node->id();
-      if (!empty($node->nodehierarchy_parents[$i]->remove)) {
-        $node->nodehierarchy_parents[$i]->pnid = NULL;
+    foreach ($node->entity_hierarchy_parents as $i => $item) {
+      $node->entity_hierarchy_parents[$i] = (object)$item;
+      $node->entity_hierarchy_parents[$i]->cnid = (int)$node->id();
+      if (!empty($node->entity_hierarchy_parents[$i]->remove)) {
+        $node->entity_hierarchy_parents[$i]->pnid = NULL;
       }
-      $this->hierarchyRecordSave($node->nodehierarchy_parents[$i]);
+      $this->hierarchyRecordSave($node->entity_hierarchy_parents[$i]);
     }
   }
 

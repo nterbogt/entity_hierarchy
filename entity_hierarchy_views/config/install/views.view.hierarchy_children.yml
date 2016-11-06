@@ -5,7 +5,7 @@ dependencies:
     - core.entity_view_mode.node.teaser
   module:
     - node
-    - nodehierarchy_views
+    - entity_hierarchy_views
     - user
 _core:
   default_config_hash: J_44_VDXIqlMrh0VdQnkfaRkLnrTm0AvF0BaM_xiDDA
@@ -145,7 +145,7 @@ display:
       sorts:
         child_weight:
           id: child_weight
-          table: nodehierarchy
+          table: entity_hierarchy
           field: cweight
           relationship: none
           group_type: group
@@ -162,7 +162,7 @@ display:
       arguments:
         pnid:
           id: pnid
-          table: nodehierarchy
+          table: entity_hierarchy
           field: pnid
           relationship: none
           group_type: group
@@ -216,7 +216,7 @@ display:
       arguments:
         pnid:
           id: pnid
-          table: nodehierarchy
+          table: entity_hierarchy
           field: pnid
           relationship: none
           group_type: group
@@ -288,7 +288,7 @@ display:
       arguments:
         pnid:
           id: pnid
-          table: nodehierarchy
+          table: entity_hierarchy
           field: pnid
           relationship: none
           group_type: group

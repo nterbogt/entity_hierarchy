@@ -1,14 +1,14 @@
-nodehierarchy.nodetypeform:
+entity_hierarchy.nodetypeform:
   version: VERSION
   js:
-    js/nodehierarchy.js: {}
+    js/entity_hierarchy.js: {}
   dependencies:
     - core/jquery
     - core/drupalSettings
     - core/drupal
     - core/drupal.form
 
-nodehierarchy.children:
+entity_hierarchy.children:
   version: VERSION
   css:
     theme:

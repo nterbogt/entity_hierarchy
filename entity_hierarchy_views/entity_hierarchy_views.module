@@ -2,12 +2,12 @@
 
 /**
  * @file
- * Contains nodehierarchy_views.module..
+ * Contains entity_hierarchy_views.module..
  */
 
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\views\Views;
-use Drupal\nodehierarchy\HierarchyManager;
+use Drupal\entity_hierarchy\HierarchyManager;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\node\NodeTypeInterface;
 use Drupal\Core\Entity\EntityInterface;
@@ -17,10 +17,10 @@ use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 /**
  * Implements hook_help().
  */
-function nodehierarchy_views_help($route_name, RouteMatchInterface $route_match) {
+function entity_hierarchy_views_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
-    // Main module help for the nodehierarchy_views module.
-    case 'help.page.nodehierarchy_views':
+    // Main module help for the entity_hierarchy_views module.
+    case 'help.page.entity_hierarchy_views':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
       $output .= '<p>' . t('Provides views that may be embedded on hierarchy pages (e.g. to list all child pages by child weight).') . '</p>';
@@ -33,37 +33,37 @@ function nodehierarchy_views_help($route_name, RouteMatchInterface $route_match)
 /**
  * Implements hook_form_alter().
  */
-function nodehierarchy_views_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+function entity_hierarchy_views_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
 //  dpm($form_id);
 }
 
 /**
- * Implements hook_nodehierarchy_node_type_settings_form().
+ * Implements hook_entity_hierarchy_node_type_settings_form().
  */
-function nodehierarchy_views_form_node_type_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
-  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+function entity_hierarchy_views_form_node_type_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  /** @var \Drupal\entity_hierarchy\HierarchyManager $hierarchy_manager */
+  $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
   $type = $form['type']['#default_value'];  // The content type
 //  $form = array();
-  $config =  \Drupal::config('nodehierarchy.settings');
+  $config =  \Drupal::config('entity_hierarchy.settings');
   if ($hierarchy_manager->hierarchyCanBeParent($type)) {
     $form['hierarchy']['nh_default_children_view'] = array(
         '#type' => 'select',
         '#title' => t('Default Children View'),
         '#multiple' => FALSE,
-        '#options' => _nodehierarchy_views_view_options(),
+        '#options' => _entity_hierarchy_views_view_options(),
         '#required' => FALSE,
         '#default_value' => $config->get('nh_default_children_view_' . $type),
         '#description' => t('Default for the embed children view feature.'),
     );
   }
-  $form['#entity_builders'][] = 'nodehierarchy_views_form_node_type_form_builder';
+  $form['#entity_builders'][] = 'entity_hierarchy_views_form_node_type_form_builder';
   return $form;
 }
 
-function nodehierarchy_views_form_node_type_form_builder ($entity_type, NodeTypeInterface $type, &$form, FormStateInterface $form_state) {
+function entity_hierarchy_views_form_node_type_form_builder ($entity_type, NodeTypeInterface $type, &$form, FormStateInterface $form_state) {
   $node_type = $type->get('type');
-  $config = \Drupal::getContainer()->get('config.factory')->getEditable('nodehierarchy.settings');
+  $config = \Drupal::getContainer()->get('config.factory')->getEditable('entity_hierarchy.settings');
   $config->set('nh_default_children_view_'.$node_type, $form_state->getValue('nh_default_children_view'));
   $config->save();
 }
@@ -71,11 +71,11 @@ function nodehierarchy_views_form_node_type_form_builder ($entity_type, NodeType
 /**
  * Prepare a list of views for selection.
  */
-function _nodehierarchy_views_view_options() {
+function _entity_hierarchy_views_view_options() {
   $options = array();
 
   $options[0] = '-- ' . t('NONE') . ' --';
-  $views = _nodehierarchy_views_get_embed_views();
+  $views = _entity_hierarchy_views_get_embed_views();
   foreach ($views as $item) {
     $options[$item['name'] . ':' . $item['display']] = $item['title'];
   }
@@ -86,7 +86,7 @@ function _nodehierarchy_views_view_options() {
 /**
  * Get a list of views that can be embedded.
  */
-function _nodehierarchy_views_get_embed_views($reset = FALSE) {
+function _entity_hierarchy_views_get_embed_views($reset = FALSE) {
   $used_views = &drupal_static(__FUNCTION__);
 
   if (!isset($used_views) || $reset) {
@@ -113,11 +113,11 @@ function _nodehierarchy_views_get_embed_views($reset = FALSE) {
  * @todo Please document this function.
  * @see http://drupal.org/node/1354
  */
-function nodehierarchy_views_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+function entity_hierarchy_views_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 //  $form = array();
   $node = $form_state->getFormObject()->getEntity();
-  /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
-  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+  /** @var \Drupal\entity_hierarchy\HierarchyManager $hierarchy_manager */
+  $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
   $type = $node->getType();
 //  dpm($node);
 //  dpm($node->nh_children_view);
@@ -133,12 +133,12 @@ function nodehierarchy_views_form_node_form_alter(&$form, FormStateInterface $fo
       '#type' => \Drupal::currentUser()->hasPermission('edit embedded child view') ? 'select' : 'value',
       '#title' => t('Embed Children View'),
       '#multiple' => FALSE,
-      '#options' => _nodehierarchy_views_view_options(),
+      '#options' => _entity_hierarchy_views_view_options(),
       '#required' => FALSE,
       '#default_value' => $default_value,
       '#description' => t("Embed a view containing this node's children into the node's page view"),
     );
-    $form['#entity_builders'][] = 'nodehierarchy_views_node_builder';
+    $form['#entity_builders'][] = 'entity_hierarchy_views_node_builder';
   }
 }
 
@@ -149,7 +149,7 @@ function nodehierarchy_views_form_node_form_alter(&$form, FormStateInterface $fo
  *
  * This function is called from the #entity_builders callback.
  *
- * @see nodehierarchy_views_form_node_form_alter
+ * @see entity_hierarchy_views_form_node_form_alter
  * @see EntityForm::buildEntity
  *
  * As per https://www.drupal.org/node/2420295, an entity field may be better
@@ -157,17 +157,17 @@ function nodehierarchy_views_form_node_form_alter(&$form, FormStateInterface $fo
  * @see \Drupal\Core\Entity\ContentEntityBase
  * @see core/lib/Drupal/Core/Entity/ContentEntityBase.php
  */
-function nodehierarchy_views_node_builder($entity_type, NodeInterface $node, &$form, FormStateInterface $form_state) {
+function entity_hierarchy_views_node_builder($entity_type, NodeInterface $node, &$form, FormStateInterface $form_state) {
   $node->nh_children_view = $form_state->getValue('nh_children_view');
 }
 
 /**
  * Implements hook_ENTITY_TYPE_load().
  */
-function nodehierarchy_views_node_load($nodes) {
+function entity_hierarchy_views_node_load($nodes) {
   foreach ($nodes as $node) {
     $nid = $node->id();
-    $results = db_query('SELECT nh_children_view, nh_children_view_display FROM {nodehierarchy_views} WHERE nid = :nid', array(':nid' => $nid))->fetchObject();
+    $results = db_query('SELECT nh_children_view, nh_children_view_display FROM {entity_hierarchy_views} WHERE nid = :nid', array(':nid' => $nid))->fetchObject();
 //    dpm($node);
 //    dpm($results);
     if ($results) {
@@ -182,8 +182,8 @@ function nodehierarchy_views_node_load($nodes) {
  *
  * Set a default embedded view.
  */
-function nodehierarchy_views_node_prepare_form(EntityInterface $node, $operation, FormStateInterface $form_state){
-  $config = \Drupal::getContainer()->get('config.factory')->getEditable('nodehierarchy.settings');
+function entity_hierarchy_views_node_prepare_form(EntityInterface $node, $operation, FormStateInterface $form_state){
+  $config = \Drupal::getContainer()->get('config.factory')->getEditable('entity_hierarchy.settings');
   // Set the default children view if there is one for this type and if the node has not been saved yet.
   if (empty($node->id()) && empty($node->nh_children_view) && $children_view = $config->get('nh_default_children_view_' . $node->getType())) {
     list($node->nh_children_view, $node->nh_children_view_display) = explode(':', $children_view);
@@ -193,16 +193,16 @@ function nodehierarchy_views_node_prepare_form(EntityInterface $node, $operation
 /**
  * Implements hook_ENTITY_TYPE_insert().
  */
-function nodehierarchy_views_node_insert(EntityInterface $node){
-  $config = \Drupal::getContainer()->get('config.factory')->getEditable('nodehierarchy.settings');
+function entity_hierarchy_views_node_insert(EntityInterface $node){
+  $config = \Drupal::getContainer()->get('config.factory')->getEditable('entity_hierarchy.settings');
 // If the user has access to edit the view, update as usual.
   if (\Drupal::currentUser()->hasPermission('edit embedded child view')) {
-    nodehierarchy_views_update($node);
+    entity_hierarchy_views_update($node);
   }
   // Otherwise set it to the default.
   elseif ($children_view = $config->get('nh_default_children_view_' . $node->getType())) {
     list($view, $display) = explode(':', $children_view);
-    $id = db_insert('nodehierarchy_views')
+    $id = db_insert('entity_hierarchy_views')
       ->fields(array(
         'nid' => $node->nid,
         'nh_children_view' => $view,
@@ -214,16 +214,16 @@ function nodehierarchy_views_node_insert(EntityInterface $node){
 /**
  * Implements hook_ENTITY_TYPE_update().
  */
-function nodehierarchy_views_node_update(EntityInterface $node){
-  return nodehierarchy_views_update($node);
+function entity_hierarchy_views_node_update(EntityInterface $node){
+  return entity_hierarchy_views_update($node);
 }
 
 /**
  * Update the given embedded view.
  */
-function nodehierarchy_views_update($node) {
+function entity_hierarchy_views_update($node) {
   if (\Drupal::currentUser()->hasPermission('edit embedded child view')) {
-    db_delete('nodehierarchy_views')->condition('nid', $node->id())->execute();
+    db_delete('entity_hierarchy_views')->condition('nid', $node->id())->execute();
     if (!empty($node->nh_children_view)) {
       $parts = explode(':', $node->nh_children_view);
       if (!empty($parts[0])) {
@@ -236,7 +236,7 @@ function nodehierarchy_views_update($node) {
         // If this update is not from a form submit then the display may be stored separately.
         $display = !empty($node->nh_children_view_display) ? $node->nh_children_view_display : 'default';
       }
-      $id = db_insert('nodehierarchy_views')
+      $id = db_insert('entity_hierarchy_views')
         ->fields(array(
           'nid' => $node->id(),
           'nh_children_view' => $view,
@@ -252,8 +252,8 @@ function nodehierarchy_views_update($node) {
  *
  * Implements hook_ENTITY_TYPE_delete().
  */
-function nodehierarchy_views_node_delete(EntityInterface $node) {
-  db_delete('nodehierarchy_views')->condition('nid', $node->id())->execute();
+function entity_hierarchy_views_node_delete(EntityInterface $node) {
+  db_delete('entity_hierarchy_views')->condition('nid', $node->id())->execute();
 }
 
 /**
@@ -264,7 +264,7 @@ function nodehierarchy_views_node_delete(EntityInterface $node) {
  * Todo: hide view if empty and user adds title.
  * See https://www.drupal.org/node/1343430
  */
-function nodehierarchy_views_node_view(array &$build, NodeInterface $node, EntityViewDisplayInterface $display, $view_mode){
+function entity_hierarchy_views_node_view(array &$build, NodeInterface $node, EntityViewDisplayInterface $display, $view_mode){
   if ($view_mode == 'full' && \Drupal::currentUser()->hasPermission('access embedded child view')) {
     static $depth = 0;
     // Make sure we don't go through more than 3 iterations to prevent memory or call stack errors.
@@ -279,12 +279,12 @@ function nodehierarchy_views_node_view(array &$build, NodeInterface $node, Entit
         // If we want a title, add the following:
         // $title = $view->getTitle();
         // $view->setTitle('$title'); might work
-        // $build['nodehierarchy_views_embed']['#prefix'] = '<h2 id="hierarchy-title" class ="views-title">'.$title.'</h2>';
+        // $build['entity_hierarchy_views_embed']['#prefix'] = '<h2 id="hierarchy-title" class ="views-title">'.$title.'</h2>';
         $display = @$node->nh_children_view_display ? @$node->nh_children_view_display : 'default';
         $view->setDisplay($display);
         $view->setArguments($arguments);
-        $build['nodehierarchy_views_embed'] = $view->render();
-        $build['nodehierarchy_views_embed']['#weight'] = 1001;
+        $build['entity_hierarchy_views_embed'] = $view->render();
+        $build['entity_hierarchy_views_embed']['#weight'] = 1001;
       }
     }
   }

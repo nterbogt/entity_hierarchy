@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\nodehierarchy\HierarchyManagerInterface.
+ * Contains \Drupal\entity_hierarchy\HierarchyManagerInterface.
  */
 
-namespace Drupal\nodehierarchy;
+namespace Drupal\entity_hierarchy;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -34,7 +34,7 @@ interface HierarchyManagerInterface {
    * @return array
    *   The form structure, with the hierarchy elements added.
    *
-   * @see nodehierarchy_form_node_form_alter
+   * @see entity_hierarchy_form_node_form_alter
    */
   public function addHierarchyFormElement(array $form, FormStateInterface $form_state, NodeInterface $node, AccountInterface $account, $collapsed = TRUE);
 
@@ -49,7 +49,7 @@ interface HierarchyManagerInterface {
    * @return array
    *   The form array for the given hierarchy type.
    *
-   * @see nodehierarchy_form_node_type_edit_form_alter
+   * @see entity_hierarchy_form_node_type_edit_form_alter
    */
   public function hierarchyGetNodeTypeSettingsForm($key, $append_key = FALSE);
 
@@ -79,7 +79,7 @@ interface HierarchyManagerInterface {
    * @return object
    *   The new hierarchy item.
    *
-   * @see nodehierarchy_node_prepare_form
+   * @see entity_hierarchy_node_prepare_form
    */
   public function hierarchyDefaultRecord($cnid = NULL, $pnid = NULL);
 
@@ -92,7 +92,7 @@ interface HierarchyManagerInterface {
    * @return integer
    *   The number of allowed child types for a given node type.
    *
-   * @see \Drupal\nodehierarchy\HierarchyManagerInterface::hierarchyGetAllowedParentTypes
+   * @see \Drupal\entity_hierarchy\HierarchyManagerInterface::hierarchyGetAllowedParentTypes
    */
   public function hierarchyCanBeChild(NodeInterface $node);
 
@@ -106,12 +106,12 @@ interface HierarchyManagerInterface {
    *   The number of allowed parent types for a given node type.
    *
    * @see HierarchyManager::hierarchyGetAllowedChildTypes
-   * @see nodehierarchy_form_node_form_alter
+   * @see entity_hierarchy_form_node_form_alter
    */
   public function hierarchyCanBeParent($node);
 
   /**
-   * Process a list of nodehierarchy parents in preparation for writing to the
+   * Process a list of entity_hierarchy parents in preparation for writing to the
    * database. No permission checking is done here. Each parent is written
    * individually using HierarchyManager::hierarchyRecordSave.
    *

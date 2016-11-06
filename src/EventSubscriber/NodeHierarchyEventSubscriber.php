@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\nodehierarchy\EventSubscriber\NodeHierarchyEventSubscriber.
+ * Contains \Drupal\entity_hierarchy\EventSubscriber\NodeHierarchyEventSubscriber.
  */
 
-namespace Drupal\nodehierarchy\EventSubscriber;
+namespace Drupal\entity_hierarchy\EventSubscriber;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Database;
@@ -37,16 +37,16 @@ class NodeHierarchyEventSubscriber implements EventSubscriberInterface {
   }
 
   /**
-   * Initializes Node Hierarchy module requirements.
+   * Initializes Entity Hierarchy module requirements.
    */
   public function onRequest(GetResponseEvent $event) {
     // Ensure we are not serving a cached page.
     if (function_exists('drupalSetContent')) {
       if ($this->moduleHandler->moduleExists('token')) {
-        include_once DRUPAL_ROOT . '/' . libraries_get_path('module', 'nodehierarchy') . '/includes/nodehierarchy_token.inc';
+        include_once DRUPAL_ROOT . '/' . libraries_get_path('module', 'entity_hierarchy') . '/includes/entity_hierarchy_token.inc';
       }
       if ($this->moduleHandler->moduleExists('workflow_ng')) {
-        include_once DRUPAL_ROOT . '/' . libraries_get_path('module', 'nodehierarchy') . '/includes/nodehierarchy_workflow_ng.inc';
+        include_once DRUPAL_ROOT . '/' . libraries_get_path('module', 'entity_hierarchy') . '/includes/entity_hierarchy_workflow_ng.inc';
       }
     }
   }

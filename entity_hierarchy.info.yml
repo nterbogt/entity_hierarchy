@@ -1,8 +1,8 @@
-name: Node Hierarchy
+name: Entity Hierarchy
 description: A module to make nodes hierarchical.
-package: "Node Hierarchy"
+package: "Entity Hierarchy"
 core: 8.x
 type: module
 dependencies:
   - node
-configure: nodehierarchy.admin
+configure: entity_hierarchy.admin

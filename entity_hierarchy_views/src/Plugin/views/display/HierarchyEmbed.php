@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\nodehierarchy_views\Plugin\views\display\HierarchyEmbed.
+ * Contains \Drupal\entity_hierarchy_views\Plugin\views\display\HierarchyEmbed.
  */
 
-namespace Drupal\nodehierarchy_views\Plugin\views\display;
+namespace Drupal\entity_hierarchy_views\Plugin\views\display;
 
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -42,7 +42,7 @@ class HierarchyEmbed extends DisplayPluginBase {
   public function optionsSummary(&$categories, &$options) {
     parent::optionsSummary($categories, $options);
 
-    $categories['nodehierarchy_embed'] = array(
+    $categories['entity_hierarchy_embed'] = array(
       'title' => t('Embed settings'),
       'column' => 'second',
       'build' => array(
@@ -50,12 +50,12 @@ class HierarchyEmbed extends DisplayPluginBase {
       ),
     );
 
-    $name = strip_tags($this->getOption('nodehierarchy_embed_admin_name'));
+    $name = strip_tags($this->getOption('entity_hierarchy_embed_admin_name'));
     if (empty($name)) {
       $name = t('None');
     }
-    $options['nodehierarchy_embed_admin_name'] = array(
-      'category' => 'nodehierarchy_embed',
+    $options['entity_hierarchy_embed_admin_name'] = array(
+      'category' => 'entity_hierarchy_embed',
       'title' => t('Admin name'),
       'value' => views_ui_truncate($name, 24),
     );
@@ -68,12 +68,12 @@ class HierarchyEmbed extends DisplayPluginBase {
     parent::buildOptionsForm($form, $form_state);
 
     switch ($form_state->get('section')) {
-      case 'nodehierarchy_embed_admin_name':
+      case 'entity_hierarchy_embed_admin_name':
         $form['#title'] .= t('Embed admin name');
-        $form['nodehierarchy_embed_admin_name'] = array(
+        $form['entity_hierarchy_embed_admin_name'] = array(
           '#type' => 'textfield',
           '#description' => t('This will appear as the name of this embed in the node edit screen.'),
-          '#default_value' => $this->getOption('nodehierarchy_embed_admin_name'),
+          '#default_value' => $this->getOption('entity_hierarchy_embed_admin_name'),
         );
         break;
     }
@@ -87,8 +87,8 @@ class HierarchyEmbed extends DisplayPluginBase {
     parent::submitOptionsForm($form, $form_state);
     $section = $form_state->get('section');
     switch ($section) {
-      case 'nodehierarchy_embed_admin_name':
-        $this->setOption('nodehierarchy_embed_admin_name', $form_state['values']['nodehierarchy_embed_admin_name']);
+      case 'entity_hierarchy_embed_admin_name':
+        $this->setOption('entity_hierarchy_embed_admin_name', $form_state['values']['entity_hierarchy_embed_admin_name']);
         break;
     }
   }

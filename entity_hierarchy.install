@@ -1,14 +1,14 @@
 <?php
 /**
  * @file
- * schema and uninstall functions for the nodehierarchy module.
+ * schema and uninstall functions for the entity_hierarchy module.
  */
 
 /**
  * Implements hook_schema().
  */
-function nodehierarchy_schema() {
-  $schema['nodehierarchy'] = array(
+function entity_hierarchy_schema() {
+  $schema['entity_hierarchy'] = array(
     'description' => 'The hierarchical structure of the nodes.',
     'fields' => array(
       'hid' => array(
@@ -56,12 +56,12 @@ function nodehierarchy_schema() {
  *
  * Set the default values for all content types in this hook. Since we don't
  * know what content types are available prior to installation, this must be
- * done dynamically instead of providing an nodehierarchy.settings.yml file.
+ * done dynamically instead of providing an entity_hierarchy.settings.yml file.
  * See https://www.drupal.org/node/2120571 for more information.
  */
-function nodehierarchy_install() {
+function entity_hierarchy_install() {
   // Set default values for config which require dynamic values.
-  $config = \Drupal::configFactory()->getEditable('nodehierarchy.settings');
+  $config = \Drupal::configFactory()->getEditable('entity_hierarchy.settings');
   foreach (node_type_get_names() as $key => $type) {
     $config->set('nh_allowchild_'.$key, 0);
   }

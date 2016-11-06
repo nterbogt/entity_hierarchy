@@ -1,0 +1,17 @@
+entity_hierarchy.admin:
+  path: '/admin/structure/entity_hierarchy'
+  defaults:
+    _form: '\Drupal\entity_hierarchy\Form\AdminSettingsForm'
+    _title: 'Entity Hierarchy'
+  requirements: 
+    _permission: 'administer hierarchy'
+entity.node.entity_hierarchy_children_form:
+  path: '/node/{node}/children'
+  defaults:
+    _title_callback: '\Drupal\entity_hierarchy\Controller\NodeHierarchyController::getTitle'
+    _entity_form: 'node.entity_hierarchy_children'
+    _title: 'Children'
+  requirements:
+    _permission: 'create child nodes'
+  options:
+    _node_operation_route: TRUE

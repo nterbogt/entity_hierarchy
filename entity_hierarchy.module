@@ -19,10 +19,10 @@ use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 /**
  * Implements @see hook_help().
  */
-function nodehierarchy_help($route_name, RouteMatchInterface $route_match) {
+function entity_hierarchy_help($route_name, RouteMatchInterface $route_match) {
   // TODO: improve help text
   switch ($route_name) {
-    case 'help.page.nodehierarchy':
+    case 'help.page.entity_hierarchy':
       return t('A module to make nodes hierarchical.');
   }
 }
@@ -36,16 +36,16 @@ function nodehierarchy_help($route_name, RouteMatchInterface $route_match) {
  * #entity_builders callback function to save the form data to the node object.
  *
  * @see HierarchyManagerInterface::addHierarchyFormElement
- * @see nodehierarchy_node_builder
+ * @see entity_hierarchy_node_builder
  */
-function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  // TODO: nodehierarchy_set_breadcrumbs($node, TRUE);
+function entity_hierarchy_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // TODO: entity_hierarchy_set_breadcrumbs($node, TRUE);
   // Load the node object associated with this form
   $node = $form_state->getFormObject()->getEntity();
   $account = \Drupal::currentUser();
 
-  /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
-  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+  /** @var \Drupal\entity_hierarchy\HierarchyManager $hierarchy_manager */
+  $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
 
   // If this node type can be a child.
   // TODO: Probably should be doing access checking using a class like
@@ -63,7 +63,7 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
       $collapsed = TRUE;  // Todo: fix (check if a parent is already set)
       $form = $hierarchy_manager->addHierarchyFormElement($form, $form_state, $node, $account, $collapsed);
       // Form API entity_builders callback; see https://www.drupal.org/node/2420295
-      $form['#entity_builders'][] = 'nodehierarchy_node_builder';
+      $form['#entity_builders'][] = 'entity_hierarchy_node_builder';
     }
   }
 }
@@ -75,7 +75,7 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
  *
  * This function is called from the #entity_builders callback.
  *
- * @see nodehierarchy_form_node_form_alter
+ * @see entity_hierarchy_form_node_form_alter
  * @see EntityForm::buildEntity
  *
  * As per https://www.drupal.org/node/2420295, an entity field may be better
@@ -83,8 +83,8 @@ function nodehierarchy_form_node_form_alter(&$form, FormStateInterface $form_sta
  * @see \Drupal\Core\Entity\ContentEntityBase
  * @see core/lib/Drupal/Core/Entity/ContentEntityBase.php
  */
-function nodehierarchy_node_builder($entity_type, NodeInterface $node, &$form, FormStateInterface $form_state) {
-  $node->nodehierarchy_parents = $form_state->getValue('nodehierarchy_parents');
+function entity_hierarchy_node_builder($entity_type, NodeInterface $node, &$form, FormStateInterface $form_state) {
+  $node->entity_hierarchy_parents = $form_state->getValue('entity_hierarchy_parents');
 }
 
 /**
@@ -97,13 +97,13 @@ function nodehierarchy_node_builder($entity_type, NodeInterface $node, &$form, F
  * This routing information for this tab is set in the .routing.yml file, and
  * the .links.task.yml file.
  *
- * @see \Drupal\nodehierarchy\Form\NodehierarchyChildrenForm
+ * @see \Drupal\entity_hierarchy\Form\NodehierarchyChildrenForm
  */
-function nodehierarchy_entity_type_build(array &$entity_types) {
+function entity_hierarchy_entity_type_build(array &$entity_types) {
   /** @type $entity_types \Drupal\Core\Entity\EntityTypeInterface[] */
   $entity_types['node']
-    ->setFormClass('nodehierarchy_children', 'Drupal\nodehierarchy\Form\NodehierarchyChildrenForm')
-    ->setLinkTemplate('nodehierarchy-children-form', '/node/{node}/children');
+    ->setFormClass('entity_hierarchy_children', 'Drupal\entity_hierarchy\Form\NodehierarchyChildrenForm')
+    ->setLinkTemplate('entity_hierarchy-children-form', '/node/{node}/children');
 }
 
 /**
@@ -119,9 +119,9 @@ function nodehierarchy_entity_type_build(array &$entity_types) {
  *
  * @see HierarchyManagerInterface::hierarchyGetNodeTypeSettingsForm
  */
-function nodehierarchy_form_node_type_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
-  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+function entity_hierarchy_form_node_type_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  /** @var \Drupal\entity_hierarchy\HierarchyManager $hierarchy_manager */
+  $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
   // TODO: check if there's any reason we're not including the base $form
   // declaration in the class method.
   $type = $form['type']['#default_value'];  // The content type
@@ -129,24 +129,24 @@ function nodehierarchy_form_node_type_form_alter(&$form, FormStateInterface $for
   $form['hierarchy'] = array(
     '#type' => 'details',
     '#group' => 'additional_settings',
-    '#title' => t('Node Hierarchy'),
+    '#title' => t('Entity Hierarchy'),
     '#weight' => 10,
   );
 
   // Right now, we add this js to all admin pages using hook_page_attachments; see below.
-  // $form['#attached']['library'][] = nodehierarchy/nodehierarchy.nodetypeform;
+  // $form['#attached']['library'][] = entity_hierarchy/entity_hierarchy.nodetypeform;
 
   $form['hierarchy'] += $hierarchy_manager->hierarchyGetNodeTypeSettingsForm($type);
-  $form['#entity_builders'][] = 'nodehierarchy_form_node_type_form_builder';
+  $form['#entity_builders'][] = 'entity_hierarchy_form_node_type_form_builder';
 }
 
 /**
  * Entity form builder for the node type form to save the hierarchy settings
  * using the configuration factory.
  */
-function nodehierarchy_form_node_type_form_builder($entity_type, NodeTypeInterface $type, &$form, FormStateInterface $form_state) {
+function entity_hierarchy_form_node_type_form_builder($entity_type, NodeTypeInterface $type, &$form, FormStateInterface $form_state) {
   $node_type = $type->get('type');
-  $config = \Drupal::getContainer()->get('config.factory')->getEditable('nodehierarchy.settings');
+  $config = \Drupal::getContainer()->get('config.factory')->getEditable('entity_hierarchy.settings');
   $config->set('nh_allowchild_'.$node_type, $form_state->getValue('nh_allowchild'));
 //  $config->set('nh_createmenu_'.$node_type, $form_state->getValue('nh_createmenu'));
 //  $config->set('nh_multiple_'.$node_type, $form_state->getValue('nh_multiple'));
@@ -163,9 +163,9 @@ function nodehierarchy_form_node_type_form_builder($entity_type, NodeTypeInterfa
  *
  * @see HierarchyManagerInterface::hierarchySaveNode
  */
-function nodehierarchy_node_insert(NodeInterface $node) {
-  /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
-  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+function entity_hierarchy_node_insert(NodeInterface $node) {
+  /** @var \Drupal\entity_hierarchy\HierarchyManager $hierarchy_manager */
+  $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
   // TODO: check if we really need a permission check here. (Don't even show the form if no permission.)
   $user = \Drupal::currentUser();
   $uid = $user->id();
@@ -180,8 +180,8 @@ function nodehierarchy_node_insert(NodeInterface $node) {
  *
  * Todo: move this to the services class.
  */
-function nodehierarchy_node_delete(EntityInterface $node) {
-  db_delete('nodehierarchy')->condition('hid', $node->id())->execute();
+function entity_hierarchy_node_delete(EntityInterface $node) {
+  db_delete('entity_hierarchy')->condition('hid', $node->id())->execute();
 }
 
 /**
@@ -193,8 +193,8 @@ function nodehierarchy_node_delete(EntityInterface $node) {
  *
  * @see HierarchyManagerInterface::hierarchySaveNode
  */
-function nodehierarchy_node_update(EntityInterface $node) {
-  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+function entity_hierarchy_node_update(EntityInterface $node) {
+  $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
   $hierarchy_manager->hierarchySaveNode($node);
 }
 
@@ -204,38 +204,38 @@ function nodehierarchy_node_update(EntityInterface $node) {
  * We are loading the hierarchy parents for a given node id, and adding it to
  * the node object for later processing in
  * HierarchyManagerInterface::addHierarchyFormElement, which is called in
- * nodehierarchy_form_node_form_alter().
+ * entity_hierarchy_form_node_form_alter().
  *
- * @see nodehierarchy_form_node_form_alter
+ * @see entity_hierarchy_form_node_form_alter
  * @see HierarchyManagerInterface::addHierarchyFormElement
  * @see HierarchyManagerInterface::hierarchyDefaultRecord
  */
-function nodehierarchy_node_prepare_form(NodeInterface $node) {
-  /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
-  $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
-  /** @var \Drupal\nodehierarchy\HierarchyOutlineStorage $hierarchy_storage */
-  $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
+function entity_hierarchy_node_prepare_form(NodeInterface $node) {
+  /** @var \Drupal\entity_hierarchy\HierarchyManager $hierarchy_manager */
+  $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
+  /** @var \Drupal\entity_hierarchy\HierarchyOutlineStorage $hierarchy_storage */
+  $hierarchy_storage = \Drupal::service('entity_hierarchy.outline_storage');
 
   // Load the parents if that hasn't been done before.
   $nid = $node->id();
-  if (!isset($node->nodehierarchy_parents) && !empty($nid)) {
-    $node->nodehierarchy_parents = $hierarchy_storage->hierarchyGetParents($node->id());
+  if (!isset($node->entity_hierarchy_parents) && !empty($nid)) {
+    $node->entity_hierarchy_parents = $hierarchy_storage->hierarchyGetParents($node->id());
   }
   // Cannot use module_invoke_all because it doesn't support references.
-  foreach (\Drupal::moduleHandler()->getImplementations('nodehierarchy_default_parents') as $module) {
-    $function = $module . '_nodehierarchy_default_parents';
+  foreach (\Drupal::moduleHandler()->getImplementations('entity_hierarchy_default_parents') as $module) {
+    $function = $module . '_entity_hierarchy_default_parents';
     $function($node);
   }
 
   if ( ($hierarchy_manager->hierarchyCanBeChild($node)) || ($hierarchy_manager->hierarchyCanBeParent($node)) ) {
-    if (!isset($node->nodehierarchy_parents) || empty($node->nodehierarchy_parents)) {
-      // Create a default nodehierarchy object.
+    if (!isset($node->entity_hierarchy_parents) || empty($node->entity_hierarchy_parents)) {
+      // Create a default entity_hierarchy object.
       $nid = empty($nid) ? null : $node->id();
       $parent = $hierarchy_manager->hierarchyDefaultRecord($nid, 0);
 
       // Set the type default if there is one.
       if (empty($nid)) {
-        $config = \Drupal::config('nodehierarchy.settings');
+        $config = \Drupal::config('entity_hierarchy.settings');
         $default = $config->get('nh_defaultparent_'.$node->getType());
         // Get the parent node id from passed in from the get params.
         $pnid = !empty($_GET['parent']) ? (int) $_GET['parent'] : $default;
@@ -248,7 +248,7 @@ function nodehierarchy_node_prepare_form(NodeInterface $node) {
           }
         }
       }
-      $node->nodehierarchy_parents[] = $parent;
+      $node->entity_hierarchy_parents[] = $parent;
     }
   }
 }
@@ -259,23 +259,23 @@ function nodehierarchy_node_prepare_form(NodeInterface $node) {
  * Right now, we're attaching an un-used jS file to all admin pages. Need to
  * re-visit this and only load on the appropriate pages and/or forms.
  */
-function nodehierarchy_page_attachments(&$page) {
+function entity_hierarchy_page_attachments(&$page) {
   // This returns TRUE for admin paths.
   if (\Drupal::service('router.admin_context')->isAdminRoute()) {
-    // Load nodehierarchy.js on admin pages
-    $page['#attached']['library'][] = 'nodehierarchy/nodehierarchy.nodetypeform';
+    // Load entity_hierarchy.js on admin pages
+    $page['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
   }
 }
 
 /**
  * Implements hook_ENTITY_TYPE_view().
  */
-function nodehierarchy_node_view(array &$build, EntityInterface $node, EntityViewDisplayInterface $display, $view_mode) {
+function entity_hierarchy_node_view(array &$build, EntityInterface $node, EntityViewDisplayInterface $display, $view_mode) {
   if ($view_mode == 'full') {
     $create_links = array();
     $current_user = \Drupal::currentUser();
-    /** @var \Drupal\nodehierarchy\HierarchyManager $hierarchy_manager */
-    $hierarchy_manager = \Drupal::service('nodehierarchy.manager');
+    /** @var \Drupal\entity_hierarchy\HierarchyManager $hierarchy_manager */
+    $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
     if ($current_user->hasPermission('create child nodes') && ($current_user->hasPermission(('create child of any parent') || $current_user->hasPermission('update')))) {
       foreach ($hierarchy_manager->hierarchyGetAllowedChildTypes($node->getType()) as $key) {
         if ($node->access()) {
@@ -286,10 +286,10 @@ function nodehierarchy_node_view(array &$build, EntityInterface $node, EntityVie
           $create_links[] = render(@$link->toRenderable());
         }
         if ($create_links) {
-          $build['nodehierarchy_new_child_links'] = array(
+          $build['entity_hierarchy_new_child_links'] = array(
             // @todo: handle this with hook_theme and template_preprocess (see below) and use #theme over #markup
             // @see function template_preprocess_book_navigation
-            // '#theme' => 'nodehierarchy_new_child_links',
+            // '#theme' => 'entity_hierarchy_new_child_links',
             // The Create new child link should probably come after the content, so make the weight high.
             '#weight' => 1000,
             '#markup' => '<div class="newchild">' . t('Create new child ') . implode(" | ", $create_links) . '</div>',
@@ -305,9 +305,9 @@ function nodehierarchy_node_view(array &$build, EntityInterface $node, EntityVie
  *
  * Todo: implement this
  */
-function nodehierarchy_theme($existing, $type, $theme, $path) {
+function entity_hierarchy_theme($existing, $type, $theme, $path) {
   return array(
-    'nodehierarchy_new_child_links' => array(
+    'entity_hierarchy_new_child_links' => array(
       'variables' => array(),
     ),
   );
@@ -316,13 +316,13 @@ function nodehierarchy_theme($existing, $type, $theme, $path) {
 /**
  * Prepares variables for hierarchy links to be added to pages.
  *
- * Default template: nodehierarchy-new-child-links.html.twig.
+ * Default template: entity_hierarchy-new-child-links.html.twig.
  *
  * @param array $variables
  *
  * Todo: define variables
  */
-function template_preprocess_nodehierarchy_new_child_links(&$variables) {
+function template_preprocess_entity_hierarchy_new_child_links(&$variables) {
   $node = \Drupal::request()->attributes->get('node');
 //  dpm($node);
 //  dpm($variables);
@@ -333,7 +333,7 @@ function template_preprocess_nodehierarchy_new_child_links(&$variables) {
  *
  * Here we're adding the parent's nid to the node object.
  */
-function nodehierarchy_node_load($nodes) {
+function entity_hierarchy_node_load($nodes) {
 //  $node = \Drupal::routeMatch()->getParameter('node');
 //  $current_nid = null;
 //  if ($node) {
@@ -344,8 +344,8 @@ function nodehierarchy_node_load($nodes) {
 ////  foreach($nodes as $node) {
 ////    dpm($node->id());
 ////  }
-//  /** @var \Drupal\nodehierarchy\HierarchyOutlineStorage $hierarchy_storage */
-//  $hierarchy_storage = \Drupal::service('nodehierarchy.outline_storage');
+//  /** @var \Drupal\entity_hierarchy\HierarchyOutlineStorage $hierarchy_storage */
+//  $hierarchy_storage = \Drupal::service('entity_hierarchy.outline_storage');
 //  $parent = $hierarchy_storage->hierarchyGetParent($current_nid);
 //  $nodes[$current_nid['nid']]->hierarchy_parent = $parent;
 //  dpm($nodes);

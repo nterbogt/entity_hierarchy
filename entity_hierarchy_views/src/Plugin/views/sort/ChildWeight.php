@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\nodehierarchy_views\Plugin\views\sort\ChildWeight.
+ * Contains \Drupal\entity_hierarchy_views\Plugin\views\sort\ChildWeight.
  */
 
-namespace Drupal\nodehierarchy_views\Plugin\views\sort;
+namespace Drupal\entity_hierarchy_views\Plugin\views\sort;
 
 use Drupal\views\Plugin\views\sort\SortPluginBase;
 
