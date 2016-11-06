@@ -290,6 +290,8 @@ function nodehierarchy_node_view(array &$build, EntityInterface $node, EntityVie
             // @todo: handle this with hook_theme and template_preprocess (see below) and use #theme over #markup
             // @see function template_preprocess_book_navigation
             // '#theme' => 'nodehierarchy_new_child_links',
+            // The Create new child link should probably come after the content, so make the weight high.
+            '#weight' => 1000,
             '#markup' => '<div class="newchild">' . t('Create new child ') . implode(" | ", $create_links) . '</div>',
           );
         }
