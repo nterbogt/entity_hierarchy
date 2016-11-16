@@ -51,6 +51,23 @@ class HierarchyBase implements HierarchyBaseInterface {
   private $can_have_children;
 
   /**
+   * The next child weight.
+   *
+   * @var int
+   */
+  private $next_child_weight;
+
+  /**
+   * Defines the minimum weight of a child (but has the highest priority).
+   */
+  const HIERARCHY_MIN_CHILD_WEIGHT = -50;
+
+  /**
+   * Defines the maximum weight of a child (but has the lowest priority).
+   */
+  const HIERARCHY_MAX_CHILD_WEIGHT = 50;
+
+  /**
    * HierarchyBase constructor.
    *
    * @param $hid
@@ -112,6 +129,7 @@ class HierarchyBase implements HierarchyBaseInterface {
   public function setChildren($children) {
     if ($this->can_have_children === TRUE) {
       $this->children = $children;
+      $this->setNextChildWeight();
     }
   }
   
@@ -125,18 +143,42 @@ class HierarchyBase implements HierarchyBaseInterface {
   /**
    * @inheritDoc
    */
-  public function addChild($cid, $weight){
+  public function addChild($cid){
+    $this->setNextChildWeight();
     if ($this->can_have_children === TRUE) {
-      $this->children[$weight] = $cid;
+      $this->children[$this->getNexChildWeight()] = $cid;
       $this->children = $this->sortChildren();
     }
   }
 
   /**
+   * Sets the next child weight.
+   *
+   * Sets the next child weight based on the minimum weight constant and the
+   * count of the children array.
+   *
+   * @throws \LogicException
+   */
+  private function setNextChildWeight() {
+    $this->next_child_weight = self::HIERARCHY_MIN_CHILD_WEIGHT + count($this->children);
+    if ($this->next_child_weight > self::HIERARCHY_MAX_CHILD_WEIGHT) {
+      throw new \LogicException("The maximum child weight cannot exceed ".self::HIERARCHY_MAX_CHILD_WEIGHT.".");
+    }
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public function getNexChildWeight() {
+    return $this->next_child_weight;
+  }
+
+  /**
    * @inheritDoc
    */
-  public function removeChildByWeight($weight=0) {
+  public function removeChildByWeight($weight) {
     unset($this->children[$weight]);
+    $this->setNextChildWeight();
   }
 
   /**
@@ -145,6 +187,7 @@ class HierarchyBase implements HierarchyBaseInterface {
   public function removeChildById($cid) {
     if(($weight = array_search($cid, $this->children)) !== false) {
       unset($this->children[$weight]);
+      $this->setNextChildWeight();
     }
   }
 
@@ -153,6 +196,7 @@ class HierarchyBase implements HierarchyBaseInterface {
    */
   public function deleteChildren() {
     unset($this->children);
+    $this->setNextChildWeight();
   }
 
   /**

@@ -68,11 +68,16 @@ interface HierarchyBaseInterface {
    *
    * @param int $cid
    *   The child ID of the new child.
-   *
-   * @param int $weight
-   *   The weight value to be set.
    */
-  public function addChild($weight, $cid);
+  public function addChild($cid);
+
+  /**
+   * Gets the next available child weight.
+   *
+   * @return int
+   *   The next available weight for a new child.
+   */
+  public function getNexChildWeight();
 
   /**
    * Sets the children array.
