@@ -59,6 +59,11 @@ interface HierarchyBaseInterface {
   public function getParent();
 
   /**
+   * Unsets the parent ID from the hierarchy object.
+   */
+  public function removeParent();
+
+  /**
    * Add a new child to the hierarchy.
    *
    * @param int $cid
@@ -70,6 +75,15 @@ interface HierarchyBaseInterface {
   public function addChild($weight, $cid);
 
   /**
+   * Sets the children array.
+   *
+   * @param array $children
+   *   The array of children with the key being the weight and the value being
+   *   the child ID.
+   */
+  public function setChildren($children);
+
+  /**
    * Get the children of the entity hierarchy object.
    *
    * @return array
@@ -78,26 +92,54 @@ interface HierarchyBaseInterface {
   public function getChildren();
 
   /**
-   * Given a child, is the object passed in allowed to be a parent.
+   * Removes one child from the children array by weight (key).
    *
-   * @param object $child
-   *   The child's ID.
-   *
-   * @return bool
-   *   True if the object is allowed to be a parent.
+   * @param int $weight
+   *   The weight of the child to be removed.
    */
-  public function canBeParent($child);
+  public function removeChildByWeight($weight);
 
   /**
-   * Given a parent, is the object passed in allowed to be a child.
+   * Removes one child from the children array by child ID (value).
    *
-   * @param object $parent
-   *   The parent object.
+   * @param int $cid
+   *   The child ID of the child to be removed.
+   */
+  public function removeChildById($cid);
+
+  /**
+   * Deletes the children array.
+   */
+  public function deleteChildren();
+
+  /**
+   * Sorts the children by weight (key).
+   */
+  public function sortChildren();
+
+
+  /**
+   * Set the boolean value for can have parent.
+   *
+   * @param bool $can_have_parent
+   *   If true, the entity object is allowed to define a parent.
+   */
+  public function setCanHaveParent($can_have_parent);
+
+  /**
+   * Gets the can have children boolean setting.
    *
    * @return bool
-   *   True if the object is allowed to be a child.
    */
-  public function canBeChild($parent);
+  public function getCanHaveChildren();
+
+  /**
+   * Set the boolean value for can have children.
+   *
+   * @param bool $can_have_parent
+   *   If true, the entity object is allowed to add children.
+   */
+  public function setCanHaveChildren($can_have_parent);
 
   /**
    * Given a parent object, does it have children?
@@ -114,17 +156,5 @@ interface HierarchyBaseInterface {
    *   True if the object has a parent.
    */
   public function hasParent();
-
-//  public function setInheritance();
-//
-//  public function getInheritance();
-
-//  public function canSetHierarchy();
-//
-//  public function canEditHierarchy();
-//
-//  public function canDeleteHierarchy();
-//
-//  public function canAdministerHierarchy();
 
 }

@@ -51,15 +51,22 @@ class HierarchyBase implements HierarchyBaseInterface {
   private $can_have_children;
 
   /**
-   * The maximum hierarchy depth
+   * HierarchyBase constructor.
    *
-   * @var int
+   * @param $hid
+   *   The hierarchy ID for this hierarchy object.
+   *
+   * @param bool $can_have_parent
+   *   Can have a parent flag.
+   *
+   * @param bool $can_have_children
+   *   Can have children flag.
    */
-  private $max_hierarchy_depth;
-
-  public function __construct($hid) {
+  public function __construct($hid, $can_have_parent = TRUE, $can_have_children = TRUE) {
     $this->hid = $hid;
     $this->children = array();
+    $this->can_have_parent = $can_have_parent;
+    $this->can_have_children = $can_have_children;
   }
 
   /**
@@ -80,7 +87,9 @@ class HierarchyBase implements HierarchyBaseInterface {
    * @inheritdoc
    */
   public function setParent($pid) {
-    $this->parent_id = $pid;
+    if ($this->can_have_parent === TRUE) {
+      $this->parent_id = $pid;
+    }
   }
 
   /**
@@ -90,6 +99,9 @@ class HierarchyBase implements HierarchyBaseInterface {
     return $this->parent_id;
   }
 
+  /**
+   * @inheritDoc
+   */
   public function removeParent() {
     unset($this->parent_id);
   }
@@ -98,7 +110,9 @@ class HierarchyBase implements HierarchyBaseInterface {
    * @inheritDoc
    */
   public function setChildren($children) {
-    $this->children = $children;
+    if ($this->can_have_children === TRUE) {
+      $this->children = $children;
+    }
   }
   
   /**
@@ -112,24 +126,38 @@ class HierarchyBase implements HierarchyBaseInterface {
    * @inheritDoc
    */
   public function addChild($cid, $weight){
-    $this->children[$weight] = $cid;
-    $this->children = $this->sortChildren();
+    if ($this->can_have_children === TRUE) {
+      $this->children[$weight] = $cid;
+      $this->children = $this->sortChildren();
+    }
   }
 
+  /**
+   * @inheritDoc
+   */
   public function removeChildByWeight($weight=0) {
     unset($this->children[$weight]);
   }
 
+  /**
+   * @inheritDoc
+   */
   public function removeChildById($cid) {
     if(($weight = array_search($cid, $this->children)) !== false) {
       unset($this->children[$weight]);
     }
   }
 
+  /**
+   * @inheritDoc
+   */
   public function deleteChildren() {
     unset($this->children);
   }
 
+  /**
+   * @inheritDoc
+   */
   public function sortChildren() {
     return(ksort($this->children));
   }
@@ -160,20 +188,6 @@ class HierarchyBase implements HierarchyBaseInterface {
    */
   public function getCanHaveChildren() {
     return($this->can_have_children);
-  }
-
-  /**
-   * @inheritdoc
-   */
-  public function setMaxHierarchyDepth($max_depth) {
-    $this->max_hierarchy_depth = $max_depth;
-  }
-
-  /**
-   * @inheritdoc
-   */
-  public function getMaxHierarchyDepth() {
-    return($this->max_hierarchy_depth);
   }
 
   /**
