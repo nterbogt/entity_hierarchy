@@ -19,7 +19,7 @@ use Drupal\node\NodeInterface;
 /**
  * Defines a hierarchy manager.
  */
-class HierarchyManager implements HierarchyManagerInterface {
+class HierarchyManager extends HierarchyBase implements HierarchyManagerInterface {
   use StringTranslationTrait;
 
   /**
@@ -42,7 +42,7 @@ class HierarchyManager implements HierarchyManagerInterface {
   protected $configFactory;
 
   /**
-   * Hierarchies Array.
+   * Hierarchies array for storing hierarchy objects.
    *
    * @var array
    */
@@ -79,6 +79,7 @@ class HierarchyManager implements HierarchyManagerInterface {
     $this->stringTranslation = $translation;
     $this->configFactory = $config_factory;
     $this->hierarchyOutlineStorage = $hierarchy_outline_storage;
+    $this->hierarchies = array();
   }
 
   /**
@@ -637,7 +638,7 @@ class HierarchyManager implements HierarchyManagerInterface {
    * @see HierarchyManagerInterface::hierarchySaveNode
    * @see hierarchyDeleteRecord
    * @see hierarchyGetRecord
-   * @see hierarchyGetParentNextChildWeight
+   * @see hierarchyGetNextChildWeight
    * @see insertHierarchy
    * @see updateHierarchy
    */
@@ -651,12 +652,12 @@ class HierarchyManager implements HierarchyManagerInterface {
         $existing_item = $this->hierarchyGetRecord($item->hid);
         // If the parent has been changed:
         if ($existing_item->pnid !== $item->pnid) {
-          $item->cweight = $this->hierarchyGetParentNextChildWeight($item->pnid);
+          $item->cweight = $this->getNexChildWeight();
         }
       }
     }
     else {
-      $item->cweight = $this->hierarchyGetParentNextChildWeight($item->pnid);
+      $item->cweight = $this->getNexChildWeight();
     }
     if ($item->pnid) {
       if (empty($item->hid)) {
@@ -726,20 +727,13 @@ class HierarchyManager implements HierarchyManagerInterface {
   }
 
   /**
-   * Query the database to find the next available child weight for the given
-   * parent using the HierarchyOutlineStorage class.
+   * Add a new hierarchy object.
    *
-   * @param int $pnid
-   *   The parent id used to query the database to find the next available child
-   *   weight where applicable.
-   * @return mixed
-   *   Todo: figure out what's being returned
-   *
-   * @see HierarchyOutlineStorage::hierarchyLoadParentNextChildWeight
-   * @see hierarchyRecordSave
+   * @param int $hid
+   *   The hierarchy ID is the main object ID.
    */
-  private function hierarchyGetParentNextChildWeight($pnid) {
-    return $this->hierarchyOutlineStorage->hierarchyLoadParentNextChildWeight($pnid);
+  public function hierarchyAddHierarchyObject($hid) {
+    $this->hierarchies[$hid] = new HierarchyBase($hid, TRUE, TRUE);
   }
 
 }
