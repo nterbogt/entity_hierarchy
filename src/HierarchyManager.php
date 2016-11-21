@@ -85,110 +85,8 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
   /**
    * {@inheritdoc}
    */
-  public function addHierarchyFormElement(array $form, FormStateInterface $form_state, NodeInterface $node, AccountInterface $account, $collapsed = TRUE) {
-    $access = $account->hasPermission('administer hierarchy');
-    $form['hierarchy'] =
-      array(
-        '#type' => 'details',
-        '#title' => t('Page Hierarchy'),
-        '#group' => 'advanced',
-        '#open' => !$collapsed, //empty($form_state['entity_hierarchy_expanded']) ? TRUE : FALSE,
-        '#weight' => 10,
-        '#access' => $access,
-        '#tree' => FALSE,
-      );
-    $form['hierarchy']['entity_hierarchy_parents'] = array('#tree' => TRUE);
-
-    foreach ((array)$node->entity_hierarchy_parents as $key => $parent) {
-      $form['hierarchy']['entity_hierarchy_parents'][$key] = $this->hierarchyNodeParentFormItems($node, $parent, $key);
-      // Todo: determine if still needed/functionality
-      \Drupal::moduleHandler()->alter('entity_hierarchy_node_parent_form_items', $form['hierarchy']['entity_hierarchy_parents'][$key], $node, $parent);
-    }
-    \Drupal::moduleHandler()->alter('entity_hierarchy_node_parent_form_items_wrapper', $form['hierarchy'], $form_state, $node);
-
-    return $form;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function hierarchyGetNodeTypeSettingsForm($key, $append_key = FALSE) {
-    $config =  \Drupal::config('entity_hierarchy.settings');
-
-    $form['nh_allowchild'] = array(
-      '#type' => 'checkboxes',
-      '#title' => t('Allowed child node types'),
-      '#options' => node_type_get_names(),
-      '#default_value' => $config->get('nh_allowchild_'.$key),
-      '#description' => t('Node types which can be created as child nodes of this node type.'),
-    );
-
-    //$form['nh_defaultparent'] = _entity_hierarchy_get_parent_selector($key, $config->get('nh_defaultparent_'.$key));
-    // TODO: add default parent support later
-    //$form['nh_defaultparent']['#title'] = t('Default Parent');
-
-    // Todo: find out why this was removed in 7.x-4.x, and possibly remove from here and the Admin form.
-//    $form['nh_createmenu'] = array(
-//      '#type' => 'radios',
-//      '#title' => t('Show item in menu'),
-//      '#default_value' => $config->get('nh_createmenu_'.$key), //variable_get('nh_createmenu_' . $key, 'optional_no'),
-//      '#options' => array(
-//        'never' => t('Never'),
-//        'optional_no' => t('Optional - default to no'),
-//        'optional_yes' => t('Optional - default to yes'),
-//        'always' => t('Always'),
-//      ),
-//      '#description' => t("Users must have the 'administer menu' or 'customize entity_hierarchy menus' permission to override default options."),
-//    );
-    // Todo: implement this later
-//    $form['nh_multiple'] = array(
-//      '#type' => 'checkbox',
-//      '#title' => t('Allow multiple parents'),
-//      '#default_value' => $config->get('nh_multiple_'.$key),
-//      '#description' => t('Can nodes of this type have multiple parents?.'),
-//    );
-
-    $form['nh_defaultparent'] = $this->hierarchyGetParentSelector($key, $config->get('nh_defaultparent_' .$key, 0));
-    $form['nh_defaultparent']['#title'] = t('Default Parent');
-
-    // Would have preferred to handle this in the entity_hierarchy_views module, but not sure how
-    if (\Drupal::moduleHandler()->moduleExists('entity_hierarchy_views')) {
-      $config =  \Drupal::config('entity_hierarchy.settings');
-      $form['nh_default_children_view'] = array(
-          '#type' => 'select',
-          '#title' => t('Default Children View'),
-          '#multiple' => FALSE,
-          '#options' => _entity_hierarchy_views_view_options(),
-          '#required' => FALSE,
-          '#default_value' => $config->get('nh_default_children_view_' . $key),
-          '#description' => t('Default for the embed children view feature.'),
-      );
-    }
-
-//    $form += \Drupal::moduleHandler()->invokeAll('entity_hierarchy_node_type_settings_form', array($key));
-
-    // If we need to append the node type key to the form elements, we do so.
-    if ($append_key) {
-      // Appending the key does not work recursively, so fieldsets etc. are not supported.
-      $children = \Drupal\Core\Render\Element::children($form);
-      foreach ($children as $form_key) {
-        $form[$form_key . '_' . $key] = $form[$form_key];
-        unset($form[$form_key]);
-      }
-    }
-    return $form;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function hierarchyDefaultRecord($cnid = NULL, $pnid = NULL) {
-    return (object)array(
-      'pnid' => $pnid,
-      // Todo: should this be cweight???
-      'weight' => 0,
-      'cnid' => $cnid,
-    );
+  public function hierarchyDefaultRecord($hid = NULL) {
+    return new HierarchyBase($hid, TRUE, TRUE);
   }
 
   /**
@@ -252,10 +150,26 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
   /**
    * {@inheritdoc}
    */
-  public function hierarchyGetAllowedChildTypes($parent_type) {
-    $config =  \Drupal::config('entity_hierarchy.settings');
-    $child_types = array_filter($config->get('nh_allowchild_'.$parent_type));
-    return array_unique($child_types);
+  public function hierarchyGetAllowedChildTypes($bundle, $entity_type = 'node') {
+    $entityManager = \Drupal::service('entity_field.manager');
+    $fields = $entityManager->getFieldDefinitions($entity_type, $bundle);
+    $types = array();
+    foreach ($fields as $field) {
+      if ($field->getType() == 'entity_reference_hierarchy') {
+        $settings = $field->getSettings();
+        $bundles = $settings['handler_settings']['target_bundles'];
+        foreach ($bundles as $bundle) {
+          // Todo: use dependency injection instead of the following; see
+          // http://drupal.stackexchange.com/questions/187980/how-to-get-bundle-label-from-entity
+          $bundle_label = \Drupal::entityTypeManager()
+            ->getStorage($entity_type.'_type')
+            ->load($bundle)
+            ->label();
+          $types[$bundle] = $bundle_label;
+        }
+      }
+    }
+    return $types;
   }
 
   /**

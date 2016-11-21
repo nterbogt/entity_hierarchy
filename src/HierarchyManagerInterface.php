@@ -18,42 +18,6 @@ use Drupal\node\NodeInterface;
 interface HierarchyManagerInterface {
 
   /**
-   * Builds the elements of the hierarchy form to be included on the node form.
-   *
-   * @param array $form
-   *   An associative array containing the structure of the form.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The current state of the form.
-   * @param \Drupal\node\NodeInterface $node
-   *   The node whose form is being viewed.
-   * @param \Drupal\Core\Session\AccountInterface $account
-   *   The account viewing the form.
-   * @param bool $collapsed
-   *   If TRUE, the fieldset starts out collapsed.
-   *
-   * @return array
-   *   The form structure, with the hierarchy elements added.
-   *
-   * @see entity_hierarchy_form_node_form_alter
-   */
-  public function addHierarchyFormElement(array $form, FormStateInterface $form_state, NodeInterface $node, AccountInterface $account, $collapsed = TRUE);
-
-  /**
-   * Create the hierarchy type settings form, and load any default values using
-   * the configuration management settings.
-   *
-   * @param string $key
-   *   The name of the node type for which the form is being built.
-   * @param bool $append_key
-   *   Append a node type where appropriate (almost always)
-   * @return array
-   *   The form array for the given hierarchy type.
-   *
-   * @see entity_hierarchy_form_node_type_edit_form_alter
-   */
-  public function hierarchyGetNodeTypeSettingsForm($key, $append_key = FALSE);
-
-  /**
    * Get the allowed child node types for the given parent node type. This
    * method uses configuration management to retrieve the hierarchy settings for
    * allowed child types based on the parent node type.
@@ -67,21 +31,19 @@ interface HierarchyManagerInterface {
    * @see hierarchyCanBeParent
    * @see NodehierarchyChildrenForm::form
    */
-  public function hierarchyGetAllowedChildTypes($parent_type);
+  public function hierarchyGetAllowedChildTypes($parent_type, $bundle);
 
   /**
    * Create a default object for a new hierarchy item.
    *
-   * @param int/null $cnid
-   *   The child node id.
-   * @param int/null $pnid
-   *   The parent node id.
+   * @param int/null $hid
+   *   The hierarchy ID.
    * @return object
    *   The new hierarchy item.
    *
    * @see entity_hierarchy_node_prepare_form
    */
-  public function hierarchyDefaultRecord($cnid = NULL, $pnid = NULL);
+  public function hierarchyDefaultRecord($hid);
 
   /**
    * Determines if a given node type is allowed to be a child node.

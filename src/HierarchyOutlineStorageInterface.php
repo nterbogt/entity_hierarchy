@@ -25,20 +25,6 @@ interface HierarchyOutlineStorageInterface {
 
 
   /**
-   * Inserts a hierarchy link.
-   *
-   * @param object $item (TODo: change to array)
-   *   The link object to be inserted in the database.
-   * @param array $parents
-   *   The array of parent ids for the link to be inserted.
-   *
-   * @return mixed
-   *   The last insert ID of the query, if one exists.
-   */
-  public function insert($item/*, $parents*/);
-
-
-  /**
    * Updates hierarchy reference for links that were moved between hierarchies.
    *
    * @param int $nid

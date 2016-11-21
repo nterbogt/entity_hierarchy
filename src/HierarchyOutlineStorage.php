@@ -115,26 +115,15 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
     return $result->fetch();
   }
 
+//  public function hierarchyGetAllowedParentEntityTypes() {
+//
+//  }
+
   /**
    * Save a entity_hierarchy record.
    */
   public function hierarchyRecordDelete($hid) {
     db_delete('entity_hierarchy')->condition('hid', $hid)->execute();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function insert($item) {
-    return $this->connection->insert('entity_hierarchy')
-      ->fields(array(
-        'pnid' => $item->pnid,
-        'cnid' => $item->cnid,
-        'cweight' => $item->cweight,
-        'pweight' => $item->pweight,
-        )
-      )
-      ->execute();
   }
 
   /**
