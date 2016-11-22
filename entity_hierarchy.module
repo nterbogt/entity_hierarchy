@@ -173,6 +173,9 @@ function entity_hierarchy_page_attachments(&$page) {
  * in the field settings.
  *
  * @see \Drupal\entity_hierarchy\HierarchyManager::hierarchyGetAllowedChildTypes()
+ *
+ * Todo: make code reusable below and implement for each type of *_view that we
+ * wish to support going forward (if it makes sense).
  */
 function entity_hierarchy_node_view(array &$build, EntityInterface $node, EntityViewDisplayInterface $display, $view_mode) {
 

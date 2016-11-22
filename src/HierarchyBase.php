@@ -58,6 +58,13 @@ class HierarchyBase implements HierarchyBaseInterface {
   private $next_child_weight;
 
   /**
+   * The depth of this child
+   *
+   * @var int
+   */
+  private $hierarchy_depth;
+
+  /**
    * Defines the minimum weight of a child (but has the highest priority).
    */
   const HIERARCHY_MIN_CHILD_WEIGHT = -50;
@@ -246,5 +253,13 @@ class HierarchyBase implements HierarchyBaseInterface {
    */
   public function hasParent() {
     return empty($this->parent_id) ? FALSE : TRUE;
+  }
+
+  public function setHierarchyDepth($depth) {
+    $this->hierarchy_depth = $depth;
+  }
+
+  public function getHierarchyDepth(){
+    return $this->hierarchy_depth;
   }
 }

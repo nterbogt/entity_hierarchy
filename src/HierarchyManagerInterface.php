@@ -71,19 +71,7 @@ interface HierarchyManagerInterface {
    * @see entity_hierarchy_form_node_form_alter
    */
   public function hierarchyCanBeParent($node);
-
-  /**
-   * Process a list of entity_hierarchy parents in preparation for writing to the
-   * database. No permission checking is done here. Each parent is written
-   * individually using HierarchyManager::hierarchyRecordSave.
-   *
-   * @param \Drupal\node\NodeInterface $node
-   *   The node object containing the list of parents to process.
-   *
-   * @see HierarchyManager::hierarchyRecordSave
-   */
-  public function hierarchySaveNode(&$node);
-
+  
   /**
    * Updates an existing hierarchy record in the database using the
    * HierarchyOutlineStorage class.
