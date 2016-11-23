@@ -16,6 +16,10 @@ use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\node\NodeInterface;
+use Drupal\Core\Entity\Query\QueryFactory;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\node\Entity\Node;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
 
 /**
  * Defines a hierarchy manager.
@@ -36,11 +40,27 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
   protected $entityManager;
 
   /**
-   * Config Factory Service Object.
+   * Config factory service object.
    *
    * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
   protected $configFactory;
+
+  /**
+   * Entity Field Manager object.
+   *
+   * @var \Drupal\Core\Entity\EntityFieldManager
+   */
+  protected $entityFieldManager;
+
+
+  /**
+   * The entity query service object.
+   *
+   * @var \Drupal\Core\Entity\Query\QueryInterface
+   */
+  protected $entityQuery;
+
 
   /**
    * Hierarchies array for storing hierarchy objects.
@@ -72,15 +92,24 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
    *   Interface for the translation.manager translation service.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   Defines the interface for a configuration object factory.
+   * @param \Drupal\Core\Entity\Query\QueryFactory $entity_query
+   *   The entity query factory.
    * @param \Drupal\entity_hierarchy\HierarchyOutlineStorageInterface $hierarchy_outline_storage
    *   The entity hierarchy storage object
    */
-  public function __construct(EntityTypeManagerInterface $entity_manager, TranslationInterface $translation, ConfigFactoryInterface $config_factory, HierarchyOutlineStorageInterface $hierarchy_outline_storage) {
+  public function __construct(EntityTypeManagerInterface $entity_manager, TranslationInterface $translation, ConfigFactoryInterface $config_factory, QueryFactory $entity_query,
+                              EntityFieldManagerInterface $field_manager, HierarchyOutlineStorageInterface $hierarchy_outline_storage) {
     $this->entityManager = $entity_manager;
     $this->stringTranslation = $translation;
     $this->configFactory = $config_factory;
+    $this->entityQuery = $entity_query;
     $this->hierarchyOutlineStorage = $hierarchy_outline_storage;
+    $this->entityFieldManager = $field_manager;
     $this->hierarchies = array();
+  }
+
+  public static function create(ContainerInterface $container) {
+    $container->get('entity.query');
   }
 
   /**
@@ -101,6 +130,44 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
     return FALSE;
   }
 
+  public function hierarchyGetNextChildWeight() {
+
+  }
+
+  public function hierarchyLoadAllEntityReferences() {
+    $field = $this->hierarchyGetHierarchyField('page');
+
+    // Add entity query similar to below
+
+//    $query = $this->entityQuery->get('node');//($entity_type);
+//    $query->condition('type', 'page')//$bundle)
+//          ->condition('field_parent_id2.target_id', $hid);
+//    $result = $query->execute();
+  }
+
+  public function hierarchyUpdateWeight($hid, $weight, $bundle, $entity_type = 'node') {
+    $node = Node::load($hid);
+    $hierarchy_field = $this->hierarchyGetHierarchyField($bundle, $entity_type);
+    $node->$hierarchy_field->target_id = $hid;
+    $node->$hierarchy_field->weight = $weight;
+    $node->save();
+    return $node;  // Don't really need this
+  }
+
+  // This function may be useful later when this module works on more than just nodes
+  public function hierarchyGetAllNodeTypes() {
+    $types = \Drupal::entityTypeManager()
+      ->getStorage('node_type')
+      ->loadMultiple();
+    return $types;
+  }
+
+  // This function may be useful later when this module works on more than just nodes
+  public function hierarchyGetAllBundles() {
+    $bundles = \Drupal::service("entity_type.bundle.info")->getAllBundleInfo();
+    return $bundles;
+  }
+
   /**
    * {@inheritdoc}
    *
@@ -112,11 +179,27 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
   }
 
   /**
+   * @inheritdoc
+   */
+  public function hierarchyGetHierarchyField($bundle, $entity_type='node') {
+    $fields = $this->entityFieldManager->getFieldDefinitions($entity_type, $bundle);
+    foreach ($fields as $field) {
+      // We only expect zero or one field of this type
+      // Todo: error checking for multiple fields
+      if ($field->getType() == 'entity_reference_hierarchy') {
+        $field_name = $field->getName();
+        $type = $field_name;
+        return $type;
+      }
+    }
+    return NULL;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function hierarchyGetAllowedChildTypes($bundle, $entity_type = 'node') {
-    $entityManager = \Drupal::service('entity_field.manager');
-    $fields = $entityManager->getFieldDefinitions($entity_type, $bundle);
+    $fields = $this->entityFieldManager->getFieldDefinitions($entity_type, $bundle);
     $types = array();
     foreach ($fields as $field) {
       if ($field->getType() == 'entity_reference_hierarchy') {

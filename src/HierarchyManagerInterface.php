@@ -18,9 +18,26 @@ use Drupal\node\NodeInterface;
 interface HierarchyManagerInterface {
 
   /**
-   * Get the allowed child node types for the given parent node type. This
-   * method uses configuration management to retrieve the hierarchy settings for
-   * allowed child types based on the parent node type.
+   * Load all hierarchy entity reference fields for a given bundle/type.
+   *
+   * Loads the field names of our hierarchy entity reference fields
+   *
+   * @param string $bundle
+   *   The name of the bundle (e.g. "page")
+   *
+   * @param string $entity_type
+   *   The type of entity (e.g. "node")
+   *
+   * @return string
+   *   The name of the hierarchy entity reference field.
+   */
+  public function hierarchyGetHierarchyField($bundle, $entity_type);
+
+  /**
+   * Get the allowed child node types for the given parent node type.
+   *
+   * This method uses configuration management to retrieve the hierarchy
+   * settings for allowed child types based on the parent node type.
    *
    * @param int/null $parent_type
    *   The parent node type.

@@ -10,7 +10,7 @@ services:
       - { name: breadcrumb_builder, priority: 700 }
   entity_hierarchy.manager:
     class: Drupal\entity_hierarchy\HierarchyManager
-    arguments: ['@entity_type.manager', '@string_translation', '@config.factory', '@entity_hierarchy.outline_storage']
+    arguments: ['@entity_type.manager', '@string_translation', '@config.factory', '@entity.query', '@entity_field.manager', '@entity_hierarchy.outline_storage']
   entity_hierarchy.outline:
     class: Drupal\entity_hierarchy\HierarchyOutline
     arguments: ['@entity_hierarchy.manager']

@@ -106,24 +106,14 @@ class HierarchyOutlineStorage implements HierarchyOutlineStorageInterface {
   }
 
   /**
-   * Save a entity_hierarchy record.
+   * Load an entity hierarchy object
    */
   public function hierarchyRecordLoad($hid) {
+    $query = \Drupal::entityQuery('node');
     $result = db_select('entity_hierarchy', 'nh')
       ->fields('nh')
       ->where('hid = :hid', array(':hid' => $hid))->execute();
     return $result->fetch();
-  }
-
-//  public function hierarchyGetAllowedParentEntityTypes() {
-//
-//  }
-
-  /**
-   * Save a entity_hierarchy record.
-   */
-  public function hierarchyRecordDelete($hid) {
-    db_delete('entity_hierarchy')->condition('hid', $hid)->execute();
   }
 
   /**
