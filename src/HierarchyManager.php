@@ -109,7 +109,9 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
   }
 
   public static function create(ContainerInterface $container) {
-    $container->get('entity.query');
+    return new static(
+      $container->get('entity.query')
+    );
   }
 
   /**
@@ -127,7 +129,7 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
   public function hierarchyCanBeChild(NodeInterface $node) {
     $type = is_object($node) ? $node->getType() : $node;
 //    return count($this->hierarchyGetAllowedParentTypes($type));
-    return FALSE;
+    return TRUE;
   }
 
   public function hierarchyGetNextChildWeight() {
@@ -143,6 +145,24 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
 //    $query->condition('type', 'page')//$bundle)
 //          ->condition('field_parent_id2.target_id', $hid);
 //    $result = $query->execute();
+  }
+
+  public function hierarchyLoadAllChildren($hid, $entity_type='node') {
+    // Determine the field being used for the hierarchy entity reference
+    $node_types = $this->hierarchyGetAllNodeTypes();
+    kint($node_types);
+    foreach ($node_types as $type => $node) {
+      kint($type);
+      // the following is causing problems, so need to debug
+     // if (!empty($field = $this->hierarchyGetHierarchyField($type, $entity_type))) {
+       // kint($field);
+       // // $query = $this->entityQuery->get($entity_type);
+       // // $query->condition('type', $type);
+       // // $query->condition($field, $hid);
+       // // $results = $query->execute();
+       // // kint($results);
+     // }
+    }
   }
 
   public function hierarchyUpdateWeight($hid, $weight, $bundle, $entity_type = 'node') {

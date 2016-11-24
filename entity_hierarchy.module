@@ -33,6 +33,9 @@ function entity_hierarchy_help($route_name, RouteMatchInterface $route_match) {
 function entity_hierarchy_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   // Todo: entity_hierarchy_set_breadcrumbs($node, TRUE);
   // Todo: unset entity reference field if user doesn't have permission
+  $node = $form_state->getFormObject()->getEntity();
+  $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
+  $hierarchy_manager->hierarchyLoadAllChildren($node->id(), $node->getType());
 }
 
 /**
@@ -184,15 +187,10 @@ function entity_hierarchy_node_view(array &$build, EntityInterface $node, Entity
     $current_user = \Drupal::currentUser();
     /** @var \Drupal\entity_hierarchy\HierarchyManager $hierarchy_manager */
     $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
-//    $types = $hierarchy_manager->hierarchyGetHierarchyField($node->getType());
-//    kint($types);
-//    kint($hierarchy_manager->hierarchyGetAllBundles());
-//    kint($hierarchy_manager->hierarchyGetAllNodeTypes());
     if ($current_user->hasPermission('create child nodes') && ($current_user->hasPermission(('create child of any parent') || $current_user->hasPermission('update')))) {
       foreach ($hierarchy_manager->hierarchyGetAllowedChildTypes($node->getType()) as $key => $type) {
         if ($node->access()) {
-//          $update = $hierarchy_manager->hierarchyUpdateWeight($node->id(), -2, $node->getType());
-//          kint($update);
+          $hierarchy_manager->hierarchyLoadAllChildren($node->id(), $node->getType());
           $destination = (array)drupal_get_destination() + array('parent' => $node->id());
           //d7: $key = str_replace('_', '-', $key);
           $url = \Drupal\Core\Url::fromRoute('node.add', array('node_type' => $key), array('query' => $destination));
