@@ -136,17 +136,16 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
 
   }
 
-  public function hierarchyLoadAllEntityReferences() {
-    $field = $this->hierarchyGetHierarchyField('page');
-
-    // Add entity query similar to below
-
-//    $query = $this->entityQuery->get('node');//($entity_type);
-//    $query->condition('type', 'page')//$bundle)
-//          ->condition('field_parent_id2.target_id', $hid);
-//    $result = $query->execute();
+  public function hierarchyGetParentId($hid, $bundle, $entity_type='node') {
+    $node = Node::load($hid);
+    $hierarchy_field = $this->hierarchyGetHierarchyField($bundle, $entity_type);
+    $parent_id = $node->$hierarchy_field->target_id;
+    return $parent_id;
   }
 
+  /**
+   * @inheritdoc
+   */
   public function hierarchyLoadAllChildren($pid, $entity_type='node') {
     $node_types = $this->hierarchyGetAllNodeTypes();
     $children = array();

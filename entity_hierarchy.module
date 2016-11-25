@@ -37,6 +37,7 @@ function entity_hierarchy_form_node_form_alter(&$form, FormStateInterface $form_
   $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
   $children = $hierarchy_manager->hierarchyLoadAllChildren($node->id(), $node->getEntityType()->id());
 //  kint($children);
+//  kint($hierarchy_manager->hierarchyGetParentId($node->id(), $node->getType(), $node->getEntityType()->id()));
 }
 
 /**

@@ -70,7 +70,8 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
     $path = explode('/', $curr_path);
     $nid = $path[2];
     $node = Node::load($nid);
-    $children = $hierarchy_storage->hierarchyGetNodeChildren($node);
+    $children = $hierarchy_manager->hierarchyLoadAllChildren($id);
+//    kint($children);
 
     if ($children) {
       $form['children'] = array(
