@@ -147,22 +147,40 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
 //    $result = $query->execute();
   }
 
-  public function hierarchyLoadAllChildren($hid, $entity_type='node') {
-    // Determine the field being used for the hierarchy entity reference
+  public function hierarchyLoadAllChildren($pid, $entity_type='node') {
     $node_types = $this->hierarchyGetAllNodeTypes();
-    kint($node_types);
+    $children = array();
     foreach ($node_types as $type => $node) {
-      kint($type);
-      // the following is causing problems, so need to debug
-     // if (!empty($field = $this->hierarchyGetHierarchyField($type, $entity_type))) {
-       // kint($field);
-       // // $query = $this->entityQuery->get($entity_type);
-       // // $query->condition('type', $type);
-       // // $query->condition($field, $hid);
-       // // $results = $query->execute();
-       // // kint($results);
-     // }
+      // Determine the field being used for the hierarchy entity reference
+      if (!empty($field = $this->hierarchyGetHierarchyField($type, $entity_type))) {
+        // Load all entities referenced to the given parent id ($pid)
+        $query = $this->entityQuery->get($entity_type);
+        $query->condition('type', $type);
+        $query->condition($field, $pid);
+        $entity_ids = $query->execute();
+        if ($entity_ids){
+          $children[$type] = $entity_ids;
+        }
+      }
     }
+    return $children;
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public function hierarchyGetHierarchyField($bundle, $entity_type='node') {
+    $fields = $this->entityFieldManager->getFieldDefinitions($entity_type, $bundle);
+    foreach ($fields as $field) {
+      // We only expect zero or one field of this type
+      // Todo: error checking for multiple fields
+      if ($field->getType() == 'entity_reference_hierarchy') {
+        $field_name = $field->getName();
+        $type = $field_name;
+        return $type;
+      }
+    }
+    return NULL;
   }
 
   public function hierarchyUpdateWeight($hid, $weight, $bundle, $entity_type = 'node') {
@@ -196,23 +214,6 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
   public function hierarchyCanBeParent($node) {
     $type = is_object($node) ? $node->getType() : $node;
     return count($this->hierarchyGetAllowedChildTypes($type));
-  }
-
-  /**
-   * @inheritdoc
-   */
-  public function hierarchyGetHierarchyField($bundle, $entity_type='node') {
-    $fields = $this->entityFieldManager->getFieldDefinitions($entity_type, $bundle);
-    foreach ($fields as $field) {
-      // We only expect zero or one field of this type
-      // Todo: error checking for multiple fields
-      if ($field->getType() == 'entity_reference_hierarchy') {
-        $field_name = $field->getName();
-        $type = $field_name;
-        return $type;
-      }
-    }
-    return NULL;
   }
 
   /**

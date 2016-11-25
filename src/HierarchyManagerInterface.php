@@ -18,6 +18,18 @@ use Drupal\node\NodeInterface;
 interface HierarchyManagerInterface {
 
   /**
+   * Loads all children of a given parent.
+   *
+   * @param int $pid
+   *   The parent entity ID.
+   * @param string $entity_type
+   *   The type of entity to reference (e.g. node).
+   * @return array/null
+   *   A keyed array of children where the key is the bundle ID (e.g. "page").
+   */
+  public function hierarchyLoadAllChildren($pid, $entity_type);
+
+  /**
    * Load all hierarchy entity reference fields for a given bundle/type.
    *
    * Loads the field names of our hierarchy entity reference fields
