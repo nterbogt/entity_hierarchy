@@ -16,6 +16,7 @@ use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\node\NodeInterface;
+use Drupal\node\Entity\Node;
 
 /**
  * Provides a breadcrumb builder for nodes in a book.
@@ -29,10 +30,13 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
   public function applies(RouteMatchInterface $route_match) {
     $node = $route_match->getParameter('node');
     $parent = null;
+    kint($node);
     if ($node instanceof NodeInterface) {
       $current_nid = $node->id();
-      $hierarchy_storage = \Drupal::service('entity_hierarchy.outline_storage');
-      $parent = $hierarchy_storage->hierarchyGetParent($current_nid);
+      $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
+      $parent = $hierarchy_manager->hierarchyGetParentId($current_nid);
+      kint($node->getType());
+      kint($parent);
     }
     return !empty($parent) ? true : false;
   }
@@ -42,25 +46,28 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
    */
   public function build(RouteMatchInterface $route_match) {
 
-    // Get all the possible breadcrumbs for the node.
-    $node = $route_match->getParameter('node');
-    $nid = $node->nid->value;
-    $trail = $this->hierarchyGetNodePrimaryAncestorNodes($nid);
-    if ($trail) {
-      $breadcrumb = new Breadcrumb();
-      $links = [Link::createFromRoute($this->t('Home'), '<front>')];
-      foreach ($trail as $node) {
-        $options = array();
-        $links[] = $node->toLink($node->getTitle(), 'canonical', $options);
-      }
-      $breadcrumb->addCacheableDependency($node);
-      $breadcrumb->setLinks($links);
-      $breadcrumb->addCacheContexts(['route']);
-      return $breadcrumb;
-    }
-    else {
-      return;
-    }
+//    // Get all the possible breadcrumbs for the node.
+//    $node = $route_match->getParameter('node');
+//    $nid = $node->nid->value;
+//    $trail = $this->hierarchyGetNodePrimaryAncestorNodes($nid);
+//    if ($trail) {
+//      $breadcrumb = new Breadcrumb();
+//      $links = [Link::createFromRoute($this->t('Home'), '<front>')];
+//      foreach ($trail as $node) {
+//        $options = array();
+//        $links[] = $node->toLink($node->getTitle(), 'canonical', $options);
+//      }
+//      $breadcrumb->addCacheableDependency($node);
+//      $breadcrumb->setLinks($links);
+//      $breadcrumb->addCacheContexts(['route']);
+//      return $breadcrumb;
+//    }
+//    else {
+//      return;
+//    }
+
+    $breadcrumb = new Breadcrumb();
+    return $breadcrumb;
 
   }
 
@@ -119,6 +126,11 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
       $cnid = $node->nid;
     }
     $out = array();
+    $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
+    $node = Node::load($cnid);
+    $query = $hierarchy_manager->entityQuery->get($node->getEntityTypeId());
+    $query->condition();
+
     $db = \Drupal::database();
     $query = $db->select('entity_hierarchy', 'nh')
       ->fields('nh')

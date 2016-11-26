@@ -136,9 +136,9 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
 
   }
 
-  public function hierarchyGetParentId($hid, $bundle, $entity_type='node') {
+  public function hierarchyGetParentId($hid) {
     $node = Node::load($hid);
-    $hierarchy_field = $this->hierarchyGetHierarchyField($bundle, $entity_type);
+    $hierarchy_field = $this->hierarchyGetHierarchyField($node->getType(), $node->getEntityTypeId());
     $parent_id = $node->$hierarchy_field->target_id;
     return $parent_id;
   }
@@ -151,18 +151,29 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
     $children = array();
     foreach ($node_types as $type => $node) {
       // Determine the field being used for the hierarchy entity reference
-      if (!empty($field = $this->hierarchyGetHierarchyField($type, $entity_type))) {
+      if ($field = $this->hierarchyGetHierarchyField($type, $entity_type)) {
         // Load all entities referenced to the given parent id ($pid)
         $query = $this->entityQuery->get($entity_type);
         $query->condition('type', $type);
         $query->condition($field, $pid);
         $entity_ids = $query->execute();
         if ($entity_ids){
-          $children[$type] = $entity_ids;
+          foreach ($entity_ids as $id) {
+            $weight = $this->hierarchyGetWeight($id);
+            $children[$weight] = $id;
+          }
         }
       }
     }
+    ksort($children);
     return $children;
+  }
+
+  public function hierarchyGetWeight($pid){
+    $node = Node::load($pid);
+    $hierarchy_field = $this->hierarchyGetHierarchyField($node->getType(), $node->getEntityTypeId());
+    $weight = $node->$hierarchy_field->weight;
+    return $weight;
   }
 
   /**
@@ -182,10 +193,9 @@ class HierarchyManager extends HierarchyBase implements HierarchyManagerInterfac
     return NULL;
   }
 
-  public function hierarchyUpdateWeight($hid, $weight, $bundle, $entity_type = 'node') {
+  public function hierarchyUpdateWeight($hid, $weight) {
     $node = Node::load($hid);
-    $hierarchy_field = $this->hierarchyGetHierarchyField($bundle, $entity_type);
-    $node->$hierarchy_field->target_id = $hid;
+    $hierarchy_field = $this->hierarchyGetHierarchyField($node->getType(), $node->getEntityTypeId());
     $node->$hierarchy_field->weight = $weight;
     $node->save();
     return $node;  // Don't really need this

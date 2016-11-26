@@ -9,6 +9,7 @@ namespace Drupal\entity_hierarchy\Form;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\entity_hierarchy\HierarchyBase;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Entity\ContentEntityForm;
@@ -59,19 +60,10 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
    * {@inheritdoc}
    */
   public function form(array $form, FormStateInterface $form_state) {
-    $hierarchy_storage = \Drupal::service('entity_hierarchy.outline_storage');
     $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
 
-    $children = $this->entity;
     $id = $this->entity->id();
-
-    $url = Url::fromRoute('<current>');
-    $curr_path = $url->toString();
-    $path = explode('/', $curr_path);
-    $nid = $path[2];
-    $node = Node::load($nid);
     $children = $hierarchy_manager->hierarchyLoadAllChildren($id);
-//    kint($children);
 
     if ($children) {
       $form['children'] = array(
@@ -91,42 +83,41 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
     }
     $type_names = node_type_get_names();
 
-    foreach ($children as $child) {
-      if ($node = Node::load($child->cnid)) {
+    foreach ($children as $weight => $child) {
+      if ($node = Node::load($child)) {
         $url = Url::fromRoute('entity.node.canonical', array('node'=>$node->id()));
-        $form['children'][$child->hid]['#attributes']['class'][] = 'draggable';
-        $form['children'][$child->hid]['#weight'] = $child->cweight;
-        $form['children'][$child->hid]['title'] = array(
+        $form['children'][$child]['#attributes']['class'][] = 'draggable';
+        $form['children'][$child]['#weight'] = $weight;
+        $form['children'][$child]['title'] = array(
           '#markup' => $this->l(SafeMarkup::checkPlain($node->getTitle()), $url),
         );
-        $form['children'][$child->hid]['type'] = array(
+        $form['children'][$child]['type'] = array(
           '#markup' => SafeMarkup::checkPlain($type_names[$node->getType()]),
         );
         //
-        $form['children'][$child->hid]['weight'] = array(
+        $form['children'][$child]['weight'] = array(
           '#type' => 'weight',
           '#title' => t('Weight for @title', array('@title' => $this->l($node->getTitle(), $url))),
           '#title_display' => 'invisible',
-          '#default_value' => $child->cweight,
+          '#default_value' => $weight,
           // Classify the weight element for #tabledrag.
           '#attributes' => array('class' => array('children-order-weight')),
         );
         // Operations column.
-        $form['children'][$child->hid]['operations'] = array(
+        $form['children'][$child]['operations'] = array(
           '#type' => 'operations',
           '#links' => array(),
         );
-        $id = $node->id();
-        $form['children'][$child->hid]['operations']['#links']['edit'] = array(
+        $form['children'][$child]['operations']['#links']['edit'] = array(
           'title' => t('Edit'),
           'url' => Url::fromRoute('entity.node.edit_form', array('node'=>$node->id())),
         );
-        $form['children'][$child->hid]['operations']['#links']['delete'] = array(
+        $form['children'][$child]['operations']['#links']['delete'] = array(
           'title' => t('Delete'),
           'url' => Url::fromRoute('entity.node.delete_form', array('node'=>$node->id())),
         );
         // The link to the child tab
-        $form['children'][$child->hid]['operations']['#links']['children'] = array(
+        $form['children'][$child]['operations']['#links']['children'] = array(
           'title' => t('Children'),
           'url' => Url::fromRoute('entity.node.entity_hierarchy_children_form', array('node'=>$node->id())),
         );
@@ -152,11 +143,10 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
       if (is_object($node)) {
         $node_type = $node->getType();
       }
-      $allowed_child_types = $hierarchy_manager->hierarchyGetAllowedChildTypes($node_type);
-      foreach ($allowed_child_types as $type) {
+      foreach ($hierarchy_manager->hierarchyGetAllowedChildTypes($node->getType()) as $key => $type) {
         if ($node->access('create')) {
           $destination = (array) drupal_get_destination() + array('parent' => $nid);
-          $url = Url::fromRoute('node.add', array('node_type' => $type), array('query' => $destination));
+          $url = Url::fromRoute('node.add', array('node_type' => $key), array('query' => $destination));
           $link = Link::fromTextAndUrl(t($type), $url);
           $create_links[] = render(@$link->toRenderable());
         }
@@ -176,7 +166,6 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
     $actions = parent::actions($form, $form_state);
     $actions['submit']['#value'] = $this->t('Update child order');
     $actions['delete']['#value'] = $this->t('Remove all children');
-//    $actions['delete']['#access'] = $this->bookManager->checkNodeIsRemovable($this->entity);
     // Don't show the actions links if there are no children
     if (isset($form['no_children'])) {
       unset ($actions['submit']);
@@ -200,10 +189,10 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
   public function save(array $form, FormStateInterface $form_state) {
     $children = $form_state->getValue('children');
     $hierarchyManager = \Drupal::service('entity_hierarchy.manager');
+    $id = $this->entity->id();
+    $hierarchy = new HierarchyBase($id);
     foreach ($children as $hid => $child) {
-      $item->hid = $hid;
-      $item->cweight = $child['weight'];
-      $hierarchyManager->updateHierarchy($item);
+      $hierarchyManager->hierarchyUpdateWeight($hid, $child['weight']);
     }
   }
 

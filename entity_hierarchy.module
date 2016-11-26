@@ -192,7 +192,7 @@ function entity_hierarchy_node_view(array &$build, EntityInterface $node, Entity
     if ($current_user->hasPermission('create child nodes') && ($current_user->hasPermission(('create child of any parent') || $current_user->hasPermission('update')))) {
       foreach ($hierarchy_manager->hierarchyGetAllowedChildTypes($node->getType()) as $key => $type) {
         if ($node->access()) {
-          $hierarchy_manager->hierarchyLoadAllChildren($node->id(), $node->getEntityType()->id());
+//          $hierarchy_manager->hierarchyLoadAllChildren($node->id(), $node->getEntityType()->id());
           $destination = (array)drupal_get_destination() + array('parent' => $node->id());
           //d7: $key = str_replace('_', '-', $key);
           $url = \Drupal\Core\Url::fromRoute('node.add', array('node_type' => $key), array('query' => $destination));
