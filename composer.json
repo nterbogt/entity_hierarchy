@@ -2,7 +2,8 @@
     "name": "drupal/entity_hierarchy",
     "type": "drupal-module",
     "require": {
-        "previousnext/nested-set": "dev-master"
+        "previousnext/nested-set": "dev-master",
+        "drupal/dbal": "dev-1.x"
     },
     "license": "GPL2+",
     "minimum-stability": "dev"
