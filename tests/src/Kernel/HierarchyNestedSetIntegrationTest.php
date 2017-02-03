@@ -46,15 +46,34 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $tree_storage = $this->container->get('entity_hierarchy.nested_set_storage_factory')->get(self::FIELD_NAME, self::ENTITY_TYPE);
     $this->setupEntityHierarchyField(self::ENTITY_TYPE, self::ENTITY_TYPE, self::FIELD_NAME);
     $parent = EntityTest::create([
-      'type' => 'entity_test',
+      'type' => self::ENTITY_TYPE,
       'name' => 'Parent',
     ]);
     $parent->save();
+
+    $child = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Child 1',
+      self::FIELD_NAME => [
+        'target_id' => $parent->id(),
+        'weight' => 0,
+      ],
+    ]);
+    $child->save();
     $root_node = $tree_storage->getNode($parent->id(), $parent->id());
     $this->assertNotEmpty($root_node);
     $this->assertEquals($parent->id(), $root_node->getId());
     $this->assertEquals($parent->id(), $root_node->getRevisionId());
     $this->assertEquals(0, $root_node->getDepth());
+    $children = $tree_storage->findChildren($root_node);
+    $this->assertCount(1, $children);
+    $first = reset($children);
+    $this->assertEquals($child->id(), $first->getId());
+    $this->assertEquals($child->id(), $first->getRevisionId());
+    $this->assertEquals(1, $first->getDepth());
+    // Test for weight ordering of inserts.
+    // Test for deleting.
+    // Test for new revisions.
   }
 
   /**

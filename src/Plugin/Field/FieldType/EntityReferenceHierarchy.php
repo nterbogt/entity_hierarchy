@@ -17,9 +17,10 @@ use Drupal\Core\Form\FormStateInterface;
  *   category = @Translation("Reference"),
  *   default_widget = "entity_reference_hierarchy_autocomplete",
  *   default_formatter = "entity_reference_hierarchy_label",
- *   list_class = "\Drupal\Core\Field\EntityReferenceFieldItemList" * )
+ *   list_class = "\Drupal\Core\Field\EntityReferenceFieldItemList"
+ * )
  */
-class EntityReferenceHierarchyWeight extends EntityReferenceItem {
+class EntityReferenceHierarchy extends EntityReferenceItem {
 
   /**
    * Defines the minimum weight of a child (but has the highest priority).
@@ -30,7 +31,7 @@ class EntityReferenceHierarchyWeight extends EntityReferenceItem {
    * Defines the maximum weight of a child (but has the lowest priority).
    */
   const HIERARCHY_MAX_CHILD_WEIGHT = 50;
-  
+
   /**
    * {@inheritdoc}
    */
@@ -103,4 +104,44 @@ class EntityReferenceHierarchyWeight extends EntityReferenceItem {
     // Also, keeps the field type dropdown from getting too cluttered.
     return array();
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function postSave($update) {
+    $entity = $this->get('entity')->getValue();
+    $nodeFactory = $this->getNestedSetNodeFactory();
+    $parentNode = $nodeFactory->fromEntity($entity);
+    $child = $this->getEntity();
+    $childNode = $nodeFactory->fromEntity($child);
+    $storage = $this->getTreeStorage();
+    if ($existingNode = $storage->getNode($parentNode->getId(), $parentNode->getRevisionId())) {
+      $storage->addNodeBelow($existingNode, $childNode);
+    }
+    else {
+      $parentNode = $storage->addRootNode($parentNode);
+      $storage->addNodeBelow($parentNode, $childNode);
+    }
+  }
+
+  /**
+   * Returns the tree storage.
+   *
+   * @return \PNX\NestedSet\NestedSetInterface
+   *   Tree storage.
+   */
+  protected function getTreeStorage() {
+    return \Drupal::service('entity_hierarchy.nested_set_storage_factory')->get($this->getName(), $this->getFieldDefinition()->getTargetEntityTypeId());
+  }
+
+  /**
+   * Returns the node factory.
+   *
+   * @return \Drupal\entity_hierarchy\Storage\NestedSetNodeFactory
+   *   The factory.
+   */
+  protected function getNestedSetNodeFactory() {
+    return \Drupal::service('entity_hierarchy.nested_set_node_factory');
+  }
+
 }
