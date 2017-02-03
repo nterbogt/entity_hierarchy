@@ -27,4 +27,6 @@ services:
     arguments: ['@entity_hierarchy.manager']
     tags:
       - { name: access_check, applies_to: _access_entity_hierarchy_removable }
-      
+  entity_hierarchy.nested_set_storage_factory:
+    class: Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
+    arguments: ['@dbal_connection']
