@@ -54,9 +54,11 @@ function entity_hierarchy_form_node_form_alter(&$form, FormStateInterface $form_
  */
 function entity_hierarchy_entity_type_build(array &$entity_types) {
   /** @type $entity_types \Drupal\Core\Entity\EntityTypeInterface[] */
-  $entity_types['node']
-    ->setFormClass('entity_hierarchy_children', 'Drupal\entity_hierarchy\Form\NodehierarchyChildrenForm')
-    ->setLinkTemplate('entity_hierarchy-children-form', '/node/{node}/children');
+  if (isset($entity_types['node'])) {
+    $entity_types['node']
+      ->setFormClass('entity_hierarchy_children', 'Drupal\entity_hierarchy\Form\NodehierarchyChildrenForm')
+      ->setLinkTemplate('entity_hierarchy-children-form', '/node/{node}/children');
+  }
 }
 
 /**
