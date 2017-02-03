@@ -3,6 +3,7 @@
 namespace Drupal\Tests\entity_hierarchy\Kernel;
 
 use Drupal\Component\Utility\Unicode;
+use Drupal\entity_test\Entity\EntityTest;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\KernelTestBase;
@@ -34,14 +35,26 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   protected function setUp() {
     parent::setUp();
+    $this->installEntitySchema(self::ENTITY_TYPE);
   }
 
   /**
    * Tests storage in nested set tables.
    */
   public function testNestedSetStorage() {
+    /** @var \PNX\NestedSet\Storage\DbalNestedSet $tree_storage */
     $tree_storage = $this->container->get('entity_hierarchy.nested_set_storage_factory')->get(self::FIELD_NAME, self::ENTITY_TYPE);
-    $this->setupEntityHierarchyField('entity_test', 'entity_test', 'parent');
+    $this->setupEntityHierarchyField(self::ENTITY_TYPE, self::ENTITY_TYPE, self::FIELD_NAME);
+    $parent = EntityTest::create([
+      'type' => 'entity_test',
+      'name' => 'Parent',
+    ]);
+    $parent->save();
+    $root_node = $tree_storage->getNode($parent->id(), $parent->id());
+    $this->assertNotEmpty($root_node);
+    $this->assertEquals($parent->id(), $root_node->getId());
+    $this->assertEquals($parent->id(), $root_node->getRevisionId());
+    $this->assertEquals(0, $root_node->getDepth());
   }
 
   /**
