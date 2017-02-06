@@ -7,6 +7,7 @@ use Drupal\entity_test\Entity\EntityTest;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\KernelTestBase;
+use PNX\NestedSet\Node;
 
 /**
  * Tests integration with entity_hierarchy.
@@ -17,6 +18,20 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
 
   const FIELD_NAME = 'parents';
   const ENTITY_TYPE = 'entity_test';
+
+  /**
+   * Test parent.
+   *
+   * @var \Drupal\entity_test\Entity\EntityTest
+   */
+  protected $parent;
+
+  /**
+   * Tree storage.
+   *
+   * @var \PNX\NestedSet\Storage\DbalNestedSet
+   */
+  protected $treeStorage;
 
   /**
    * {@inheritdoc}
@@ -36,45 +51,77 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
   protected function setUp() {
     parent::setUp();
     $this->installEntitySchema(self::ENTITY_TYPE);
-  }
-
-  /**
-   * Tests storage in nested set tables.
-   */
-  public function testNestedSetStorage() {
-    /** @var \PNX\NestedSet\Storage\DbalNestedSet $tree_storage */
-    $tree_storage = $this->container->get('entity_hierarchy.nested_set_storage_factory')->get(self::FIELD_NAME, self::ENTITY_TYPE);
     $this->setupEntityHierarchyField(self::ENTITY_TYPE, self::ENTITY_TYPE, self::FIELD_NAME);
-    $parent = EntityTest::create([
+
+    $this->treeStorage = $this->container->get('entity_hierarchy.nested_set_storage_factory')->get(self::FIELD_NAME, self::ENTITY_TYPE);
+
+    $this->parent = EntityTest::create([
       'type' => self::ENTITY_TYPE,
       'name' => 'Parent',
     ]);
-    $parent->save();
+    $this->parent->save();
+  }
 
+  /**
+   * Tests simple storage in nested set tables.
+   */
+  public function testNestedSetStorageSimple() {
     $child = EntityTest::create([
       'type' => self::ENTITY_TYPE,
       'name' => 'Child 1',
       self::FIELD_NAME => [
-        'target_id' => $parent->id(),
+        'target_id' => $this->parent->id(),
         'weight' => 0,
       ],
     ]);
     $child->save();
-    $root_node = $tree_storage->getNode($parent->id(), $parent->id());
+    $root_node = $this->treeStorage->getNode($this->parent->id(), $this->parent->id());
     $this->assertNotEmpty($root_node);
-    $this->assertEquals($parent->id(), $root_node->getId());
-    $this->assertEquals($parent->id(), $root_node->getRevisionId());
+    $this->assertEquals($this->parent->id(), $root_node->getId());
+    $this->assertEquals($this->parent->id(), $root_node->getRevisionId());
     $this->assertEquals(0, $root_node->getDepth());
-    $children = $tree_storage->findChildren($root_node);
+    $children = $this->treeStorage->findChildren($root_node);
     $this->assertCount(1, $children);
     $first = reset($children);
     $this->assertEquals($child->id(), $first->getId());
     $this->assertEquals($child->id(), $first->getRevisionId());
     $this->assertEquals(1, $first->getDepth());
-    // Test for weight ordering of inserts.
-    // Test for deleting.
-    // Test for new revisions.
   }
+
+  /**
+   * Tests ordered storage in nested set tables.
+   */
+  public function testNestedSetOrdering() {
+    // Test for weight ordering of inserts.
+    $entities  = [];
+    for ($i = 1; $i <= 5; $i++) {
+      $name = sprintf('Child %d', $i);
+      $entities[$name] = EntityTest::create([
+        'type' => self::ENTITY_TYPE,
+        'name' => $name,
+        self::FIELD_NAME => [
+          'target_id' => $this->parent->id(),
+          // We insert them in reverse order.
+          'weight' => -1 * $i,
+        ],
+      ]);
+      $entities[$name]->save();
+    }
+    $root_node = $this->treeStorage->getNode($this->parent->id(), $this->parent->id());
+    $children = $this->treeStorage->findChildren($root_node);
+    $this->assertCount(5, $children);
+    $this->assertEquals(array_map(function ($name) use ($entities) {
+      return $entities[$name]->id();
+    }, ['Child 5', 'Child 4', 'Child 3', 'Child 2', 'Child 1']), array_map(function (Node $node) {
+      return $node->getId();
+    }, $children));
+  }
+
+  // Test for deleting.
+  // Test for saving with existing parent (no value change).
+  // Test for new revisions.
+  // Test for new parent.
+  // Test for moving a tree.
 
   /**
    * Creates a new entity hierarchy field for the given bundle.

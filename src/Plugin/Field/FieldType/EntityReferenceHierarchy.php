@@ -6,6 +6,7 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Form\FormStateInterface;
+use PNX\NestedSet\Node;
 
 /**
  * Plugin implementation of the 'entity_reference_hierarchy' field type.
@@ -115,13 +116,71 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     $child = $this->getEntity();
     $childNode = $nodeFactory->fromEntity($child);
     $storage = $this->getTreeStorage();
+
     if ($existingNode = $storage->getNode($parentNode->getId(), $parentNode->getRevisionId())) {
-      $storage->addNodeBelow($existingNode, $childNode);
+      if ($siblings = $storage->findChildren($existingNode)) {
+        // We need to conserve order here.
+        $siblingEntities = $this->loadSiblingEntities($siblings);
+        $fieldDefinition = $this->getFieldDefinition();
+        $fieldName = $fieldDefinition->getName();
+        // @todo refactor this onto Drupal tree storage wrapper?
+        $weightMap = [];
+        foreach ($siblingEntities as $node) {
+          $siblingEntity = $siblingEntities->offsetGet($node);
+          $weightMap[$siblingEntity->{$fieldName}->weight][] = $node;
+        }
+        $weight = $this->get('weight')->getValue();
+        if (isset($weightMap[$weight])) {
+          // There are already nodes at the same weight.
+          $position = end($weightMap[$weight]);
+          $method = 'addNodeBefore';
+        }
+        else {
+          // There are no nodes at this weight, we need to make space.
+          ksort($weightMap);
+          $firstGroup = reset($weightMap);
+          $position = reset($firstGroup);
+          $method = 'addNodeAfter';
+          $start = key($weightMap);
+          if ($weight < $start) {
+            // We're going to position before all existing nodes.
+            $method = 'addNodeBefore';
+          }
+          else {
+            foreach (array_keys($weightMap) as $weightPosition) {
+              if ($weight < $weightPosition) {
+                $method = 'addNodeBefore';
+                $position = reset($weightMap[$weightPosition]);
+              }
+            }
+            if ($method === 'addNodeAfter') {
+              // We're inserting at the end.
+              $lastGroup = end($weightMap);
+              $position = end($lastGroup);
+            }
+          }
+        }
+        call_user_func_array([$storage, $method], [$position, $childNode]);
+      }
+      else {
+        // No particular order needed here.
+        $storage->addNodeBelow($existingNode, $childNode);
+      }
     }
     else {
       $parentNode = $storage->addRootNode($parentNode);
       $storage->addNodeBelow($parentNode, $childNode);
     }
+  }
+
+  /**
+   * Returns the storage handler for the given entity-type.
+   *
+   * @return \Drupal\Core\Entity\EntityStorageInterface
+   *   Storage handler.
+   */
+  protected function entityTypeStorage($entity_type_id) {
+    return \Drupal::entityTypeManager()->getStorage($entity_type_id);
   }
 
   /**
@@ -143,6 +202,45 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    */
   protected function getNestedSetNodeFactory() {
     return \Drupal::service('entity_hierarchy.nested_set_node_factory');
+  }
+
+  /**
+   * Gets the entity type definition.
+   *
+   * @return \Drupal\Core\Entity\EntityTypeInterface
+   *   Entity type.
+   */
+  protected function entityTypeDefinition() {
+    return \Drupal::entityTypeManager()->getDefinition($this->getFieldDefinition()->getTargetEntityTypeId());
+  }
+
+  /**
+   * Loads other children of the given parent.
+   *
+   * @param \PNX\NestedSet\Node[] $siblings
+   *   Target siblings.
+   *
+   * @return \SplObjectStorage
+   *   Map of entities keyed by node.
+   *
+   * @todo move this to its own service or onto the tree storage wrapper?
+   */
+  protected function loadSiblingEntities(array $siblings) {
+    $fieldDefinition = $this->getFieldDefinition();
+    $entityType = $this->entityTypeDefinition();
+    $entityTypeId = $fieldDefinition->getTargetEntityTypeId();
+    $entityStorage = $this->entityTypeStorage($entityTypeId);
+    $siblingEntities = new \SplObjectStorage();
+    foreach ($siblings as $node) {
+      if ($entityType->hasKey('revision')) {
+        $siblingEntities[$node] = $entityStorage->loadRevision($node->getRevisionId());
+      }
+      else {
+        $siblingEntities[$node] = $entityStorage->load($node->getId());
+      }
+    }
+
+    return $siblingEntities;
   }
 
 }
