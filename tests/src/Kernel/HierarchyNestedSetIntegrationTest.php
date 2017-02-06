@@ -94,7 +94,7 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
   public function testNestedSetOrdering() {
     // Test for weight ordering of inserts.
     $entities  = [];
-    for ($i = 1; $i <= 5; $i++) {
+    foreach (range(1, 5) as $i) {
       $name = sprintf('Child %d', $i);
       $entities[$name] = EntityTest::create([
         'type' => self::ENTITY_TYPE,

@@ -129,6 +129,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
           $siblingEntity = $siblingEntities->offsetGet($node);
           $weightMap[$siblingEntity->{$fieldName}->weight][] = $node;
         }
+        ksort($weightMap);
         $weight = $this->get('weight')->getValue();
         if (isset($weightMap[$weight])) {
           // There are already nodes at the same weight.
@@ -137,7 +138,6 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
         }
         else {
           // There are no nodes at this weight, we need to make space.
-          ksort($weightMap);
           $firstGroup = reset($weightMap);
           $position = reset($firstGroup);
           $method = 'addNodeAfter';
