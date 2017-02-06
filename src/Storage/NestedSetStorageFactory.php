@@ -3,6 +3,7 @@
 namespace Drupal\entity_hierarchy\Storage;
 
 use Doctrine\DBAL\Connection;
+use Drupal\Core\Database\Connection as DrupalConnection;
 
 /**
  * Defines a factory for creating a nested set storage handler for hierarchies.
@@ -24,13 +25,23 @@ class NestedSetStorageFactory {
   protected $cache = [];
 
   /**
+   * Table prefix.
+   *
+   * @var string
+   */
+  protected $tablePrefix = '';
+
+  /**
    * Constructs a new NestedSetStorageFactory object.
    *
    * @param \Doctrine\DBAL\Connection $connection
-   *   Db Connection.
+   *   Dbal Connection.
+   * @param \Drupal\Core\Database\Connection $drupalConnection
+   *   Drupal connection.
    */
-  public function __construct(Connection $connection) {
+  public function __construct(Connection $connection, DrupalConnection $drupalConnection) {
     $this->connection = $connection;
+    $this->tablePrefix = $drupalConnection->tablePrefix();
   }
 
   /**
@@ -45,11 +56,11 @@ class NestedSetStorageFactory {
    *   Nested set for given field.
    */
   public function get($field_name, $entity_type_id) {
-    $cache_id = sprintf('nested_set_%s_%s', $field_name, $entity_type_id);
-    if (!isset($this->cache[$cache_id])) {
-      $this->cache[$cache_id] = new NestedSetStorage($this->connection, $cache_id);
+    $table_name = sprintf('%snested_set_%s_%s', $this->tablePrefix, $field_name, $entity_type_id);
+    if (!isset($this->cache[$table_name])) {
+      $this->cache[$table_name] = new NestedSetStorage($this->connection, $table_name);
     }
-    return $this->cache[$cache_id];
+    return $this->cache[$table_name];
   }
 
 }
