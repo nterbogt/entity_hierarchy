@@ -131,7 +131,8 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    *   Tree storage.
    */
   protected function getTreeStorage() {
-    return \Drupal::service('entity_hierarchy.nested_set_storage_factory')->get($this->getName(), $this->getFieldDefinition()->getTargetEntityTypeId());
+    $fieldDefinition = $this->getFieldDefinition();
+    return \Drupal::service('entity_hierarchy.nested_set_storage_factory')->get($fieldDefinition->getName(), $fieldDefinition->getTargetEntityTypeId());
   }
 
   /**
