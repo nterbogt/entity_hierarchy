@@ -188,7 +188,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
           // New item to insert.
           $storage->addNodeBelow($existingParent, $childNode);
         }
-        elseif (!$this->isAlreadyChildOf($existingParent, $childNode)) {
+        else {
           $storage->moveSubTreeBelow($existingParent, $childNode);
         }
       }
@@ -285,24 +285,6 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     return array_filter($storage->findChildren($parentNode), function (Node $node) use ($childNode) {
       return [$childNode->getId(), $childNode->getRevisionId()] !== [$node->getId(), $node->getRevisionId()];
     });
-  }
-
-  /**
-   * Check if a node is already a child of given parent.
-   *
-   * @param \PNX\NestedSet\Node $parent
-   *   Parent.
-   * @param \PNX\NestedSet\Node $child
-   *   Child.
-   *
-   * @return bool
-   *   TRUE if is existing child.
-   */
-  protected function isAlreadyChildOf(Node $parent, Node $child) {
-    var_export($child);
-    var_export($parent);
-    $left = $child->getLeft();
-    return $parent->getLeft() < $left && $parent->getDepth() + 1 === $child->getDepth() && $parent->getRight() > $left;
   }
 
 }
