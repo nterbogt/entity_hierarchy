@@ -6,6 +6,8 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\entity_hierarchy\Storage\NestedSetStorage;
+use PNX\NestedSet\NestedSetInterface;
 use PNX\NestedSet\Node;
 
 /**
@@ -128,11 +130,11 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     $nodeFactory = $this->getNestedSetNodeFactory();
     $parentNode = $nodeFactory->fromEntity($entity);
     $child = $this->getEntity();
-    $childNode = $nodeFactory->fromEntity($child);
+    $childStub = $nodeFactory->fromEntity($child);
     $storage = $this->getTreeStorage();
-
-    if ($existingNode = $storage->getNode($parentNode->getId(), $parentNode->getRevisionId())) {
-      if ($siblings = $storage->findChildren($existingNode)) {
+    $childNode = $storage->getNode($childStub->getId(), $childStub->getRevisionId()) ?: $childStub;
+    if ($existingParent = $storage->getNode($parentNode->getId(), $parentNode->getRevisionId())) {
+      if ($siblings = $this->findSiblings($storage, $existingParent, $childNode)) {
         // We need to conserve order here.
         $siblingEntities = $this->loadSiblingEntities($siblings);
         $fieldDefinition = $this->getFieldDefinition();
@@ -174,11 +176,21 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
             }
           }
         }
+        // Not a new node, so we need to move.
+        if ($childNode !== $childStub) {
+          $method = str_replace('addNode', 'moveSubTree', $method);
+        }
         call_user_func_array([$storage, $method], [$position, $childNode]);
       }
       else {
         // No particular order needed here.
-        $storage->addNodeBelow($existingNode, $childNode);
+        if ($childNode === $childStub) {
+          // New item to insert.
+          $storage->addNodeBelow($existingParent, $childNode);
+        }
+        elseif (!$this->isAlreadyChildOf($existingParent, $childNode)) {
+          $storage->moveSubTreeBelow($existingParent, $childNode);
+        }
       }
     }
     else {
@@ -255,6 +267,42 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     }
 
     return $siblingEntities;
+  }
+
+  /**
+   * Gets siblings.
+   *
+   * @param \Drupal\entity_hierarchy\Storage\NestedSetStorage $storage
+   *   Storage.
+   * @param \PNX\NestedSet\Node $parentNode
+   *   Existing parent node.
+   * @param \PNX\NestedSet\Node $childNode
+   *   Child node.
+   * @return \PNX\NestedSet\Node[] Sibling nodes.
+   * Sibling nodes.
+   */
+  protected function findSiblings(NestedSetStorage $storage, Node $parentNode, Node $childNode) {
+    return array_filter($storage->findChildren($parentNode), function (Node $node) use ($childNode) {
+      return [$childNode->getId(), $childNode->getRevisionId()] !== [$node->getId(), $node->getRevisionId()];
+    });
+  }
+
+  /**
+   * Check if a node is already a child of given parent.
+   *
+   * @param \PNX\NestedSet\Node $parent
+   *   Parent.
+   * @param \PNX\NestedSet\Node $child
+   *   Child.
+   *
+   * @return bool
+   *   TRUE if is existing child.
+   */
+  protected function isAlreadyChildOf(Node $parent, Node $child) {
+    var_export($child);
+    var_export($parent);
+    $left = $child->getLeft();
+    return $parent->getLeft() < $left && $parent->getDepth() + 1 === $child->getDepth() && $parent->getRight() > $left;
   }
 
 }

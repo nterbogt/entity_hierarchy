@@ -4,7 +4,6 @@ namespace Drupal\entity_hierarchy\Plugin\Field\FieldType;
 
 
 use Drupal\Core\Field\EntityReferenceFieldItemList;
-use PNX\NestedSet\Node;
 
 class EntityReferenceHierarchyFieldItemList extends EntityReferenceFieldItemList {
 

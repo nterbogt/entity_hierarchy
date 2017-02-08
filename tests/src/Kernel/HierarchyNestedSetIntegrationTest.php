@@ -4,6 +4,7 @@ namespace Drupal\Tests\entity_hierarchy\Kernel;
 
 use Console_Table;
 use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
@@ -76,17 +77,7 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
       ],
     ]);
     $child->save();
-    $root_node = $this->treeStorage->getNode($this->parent->id(), $this->parent->id());
-    $this->assertNotEmpty($root_node);
-    $this->assertEquals($this->parent->id(), $root_node->getId());
-    $this->assertEquals($this->parent->id(), $root_node->getRevisionId());
-    $this->assertEquals(0, $root_node->getDepth());
-    $children = $this->treeStorage->findChildren($root_node);
-    $this->assertCount(1, $children);
-    $first = reset($children);
-    $this->assertEquals($child->id(), $first->getId());
-    $this->assertEquals($child->id(), $first->getRevisionId());
-    $this->assertEquals(1, $first->getDepth());
+    $this->assertSimpleParentChild($child);
   }
 
   /**
@@ -263,11 +254,55 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $this->assertEquals(1, $grandChildNode->getDepth());
   }
 
-  // Test removing parent reference with granchildren
-  // Test for saving with existing parent (no value change).
+  /**
+   * Tests saving with existing parent (no value change).
+   */
+  public function testNestedSetStorageSimpleUpdate() {
+    $child = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Child 1',
+      self::FIELD_NAME => [
+        'target_id' => $this->parent->id(),
+        'weight' => 0,
+      ],
+    ]);
+    $child->save();
+    $this->assertSimpleParentChild($child);
+    $child->save();
+    $this->assertSimpleParentChild($child);
+  }
+
+  /**
+   * Tests saving with existing parent and sibling (no value change).
+   */
+  public function testNestedSetStorageWithSiblingUpdate() {
+    $child = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Child 1',
+      self::FIELD_NAME => [
+        'target_id' => $this->parent->id(),
+        'weight' => 1,
+      ],
+    ]);
+    $child->save();
+    $sibling = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Child 2',
+      self::FIELD_NAME => [
+        'target_id' => $this->parent->id(),
+        'weight' => 2,
+      ],
+    ]);
+    $sibling->save();
+    $this->assertParentWithTwoChildren($child, $sibling);
+    $child->save();
+    $this->assertParentWithTwoChildren($child, $sibling);
+  }
   // Test for new revisions.
   // Test for new parent.
   // Test for moving a tree.
+  // Test for going from non child to child.
+  // Test for going from non child, to child of parent with existing children.
 
   /**
    * Creates a new entity hierarchy field for the given bundle.
@@ -322,6 +357,52 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
       ]);
     }
     echo PHP_EOL . $table->getTable();
+  }
+
+  /**
+   * Test parent/child relationship.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $child
+   *   Child node.
+   */
+  protected function assertSimpleParentChild(EntityInterface $child) {
+    $root_node = $this->treeStorage->getNode($this->parent->id(), $this->parent->id());
+    $this->assertNotEmpty($root_node);
+    $this->assertEquals($this->parent->id(), $root_node->getId());
+    $this->assertEquals($this->parent->id(), $root_node->getRevisionId());
+    $this->assertEquals(0, $root_node->getDepth());
+    $children = $this->treeStorage->findChildren($root_node);
+    $this->assertCount(1, $children);
+    $first = reset($children);
+    $this->assertEquals($child->id(), $first->getId());
+    $this->assertEquals($child->id(), $first->getRevisionId());
+    $this->assertEquals(1, $first->getDepth());
+  }
+
+  /**
+   * Test parent/child relationship.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $child
+   *   Child node.
+   * @param \Drupal\Core\Entity\EntityInterface $sibling
+   *   Sibling node.
+   */
+  protected function assertParentWithTwoChildren(EntityInterface $child, EntityInterface $sibling) {
+    $root_node = $this->treeStorage->getNode($this->parent->id(), $this->parent->id());
+    $this->assertNotEmpty($root_node);
+    $this->assertEquals($this->parent->id(), $root_node->getId());
+    $this->assertEquals($this->parent->id(), $root_node->getRevisionId());
+    $this->assertEquals(0, $root_node->getDepth());
+    $children = $this->treeStorage->findChildren($root_node);
+    $this->assertCount(2, $children);
+    $first = reset($children);
+    $this->assertEquals($child->id(), $first->getId());
+    $this->assertEquals($child->id(), $first->getRevisionId());
+    $this->assertEquals(1, $first->getDepth());
+    $last = end($children);
+    $this->assertEquals($sibling->id(), $last->getId());
+    $this->assertEquals($sibling->id(), $last->getRevisionId());
+    $this->assertEquals(1, $last->getDepth());
   }
 
 }
