@@ -16,14 +16,7 @@ class EntityReferenceHierarchyFieldItemList extends EntityReferenceFieldItemList
       $stubNode = $this->getNestedSetNodeFactory()->fromEntity($this->getEntity());
       $storage = $this->getTreeStorage();
       if (($existingNode = $storage->getNode($stubNode->getId(), $stubNode->getRevisionId())) && $existingNode->getDepth() > 0) {
-        // @todo Use move to root method instead once it exists.
-        if ($children = $storage->findChildren($existingNode)) {
-          //$storage->moveSubTreeBefore($storage->getNodeAtPosition(1), $existingNode);
-        }
-        else {
-          $storage->deleteNode($existingNode);
-          $storage->addRootNode($existingNode);
-        }
+        $storage->moveSubTreeToRoot($existingNode);
       }
     }
     return parent::postSave($update);

@@ -30,13 +30,10 @@ class HierarchyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
   public function applies(RouteMatchInterface $route_match) {
     $node = $route_match->getParameter('node');
     $parent = null;
-    kint($node);
     if ($node instanceof NodeInterface) {
       $current_nid = $node->id();
       $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
       $parent = $hierarchy_manager->hierarchyGetParentId($current_nid);
-      kint($node->getType());
-      kint($parent);
     }
     return !empty($parent) ? true : false;
   }
