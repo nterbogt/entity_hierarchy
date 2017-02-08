@@ -9,7 +9,6 @@ use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\KernelTestBase;
 use PNX\NestedSet\Node;
-use PNX\NestedSet\Tests\Functional\DbalNestedSetTest;
 
 /**
  * Tests integration with entity_hierarchy.
@@ -218,6 +217,52 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $this->assertCount(1, $children);
     $this->assertEquals(reset($grand_children)->getId(), reset($children)->getId());
   }
+
+  /**
+   * Tests removing parent reference with grandchildren.
+   */
+  public function testRemoveParentReferenceWithGrandChildren() {
+    $child = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Child 1',
+      self::FIELD_NAME => [
+        'target_id' => $this->parent->id(),
+        'weight' => 0,
+      ],
+    ]);
+    $child->save();
+    $grand_child = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Grandchild 1',
+      self::FIELD_NAME => [
+        'target_id' => $child->id(),
+        'weight' => 0,
+      ],
+    ]);
+    $grand_child->save();
+    $root_node = $this->treeStorage->getNode($this->parent->id(), $this->parent->id());
+    $children = $this->treeStorage->findChildren($root_node);
+    $this->assertCount(1, $children);
+    $child->set(self::FIELD_NAME, NULL);
+    $childNode = reset($children);
+    $grand_children = $this->treeStorage->findChildren($childNode);
+    $this->assertCount(1, $grand_children);
+    $grandChildNode = reset($grand_children);
+    $this->assertEquals($grand_child->id(), $grandChildNode->getId());
+    $this->assertEquals(2, $grandChildNode->getDepth());
+    $child->set(self::FIELD_NAME, NULL);
+    $child->save();
+    $children = $this->treeStorage->findChildren($root_node);
+    $this->assertCount(0, $children);
+    $child_node = $this->treeStorage->getNode($child->id(), $child->id());
+    $this->assertEquals(0, $child_node->getDepth());
+    $grand_children = $this->treeStorage->findChildren($child_node);
+    $this->assertCount(1, $grand_children);
+    $grandChildNode = reset($grand_children);
+    $this->assertEquals($grand_child->id(), $grandChildNode->getId());
+    $this->assertEquals(1, $grandChildNode->getDepth());
+  }
+
   // Test removing parent reference with granchildren
   // Test for saving with existing parent (no value change).
   // Test for new revisions.
