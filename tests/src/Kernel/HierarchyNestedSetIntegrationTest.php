@@ -115,6 +115,25 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     }, ['Child 5', 'Child 4', 'Child 3', 'Child 2', 'Child 1']), array_map(function (Node $node) {
       return $node->getId();
     }, $children));
+    // Now insert one in the middle.
+    $name = 'Child 6';
+    $entities[$name] = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => $name,
+      self::FIELD_NAME => [
+        'target_id' => $this->parent->id(),
+        // We insert them in reverse order.
+        'weight' => -2,
+      ],
+    ]);
+    $entities[$name]->save();
+    $children = $this->treeStorage->findChildren($root_node);
+    $this->assertCount(6, $children);
+    $this->assertEquals(array_map(function ($name) use ($entities) {
+      return $entities[$name]->id();
+    }, ['Child 5', 'Child 4', 'Child 3', 'Child 6', 'Child 2', 'Child 1']), array_map(function (Node $node) {
+      return $node->getId();
+    }, $children));
   }
 
   // Test for deleting.
