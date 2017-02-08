@@ -18,7 +18,7 @@ use PNX\NestedSet\Node;
  *   category = @Translation("Reference"),
  *   default_widget = "entity_reference_hierarchy_autocomplete",
  *   default_formatter = "entity_reference_hierarchy_label",
- *   list_class = "\Drupal\Core\Field\EntityReferenceFieldItemList"
+ *   list_class = "\Drupal\entity_hierarchy\Plugin\Field\FieldType\EntityReferenceHierarchyFieldItemList"
  * )
  */
 class EntityReferenceHierarchy extends EntityReferenceItem {
@@ -104,6 +104,20 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     // Too much work, we'll just make people fill that out later.
     // Also, keeps the field type dropdown from getting too cluttered.
     return array();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function delete() {
+    parent::delete();
+    $storage = $this->getTreeStorage();
+    $nodeFactory = $this->getNestedSetNodeFactory();
+    $stubNode = $nodeFactory->fromEntity($this->getEntity());
+    if ($existingNode = $storage->getNode($stubNode->getId(), $stubNode->getRevisionId())) {
+      // The NestedSet implementation handles moving children up a layer.
+      $storage->deleteNode($existingNode);
+    }
   }
 
   /**

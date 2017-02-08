@@ -2,12 +2,14 @@
 
 namespace Drupal\Tests\entity_hierarchy\Kernel;
 
+use Console_Table;
 use Drupal\Component\Utility\Unicode;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\KernelTestBase;
 use PNX\NestedSet\Node;
+use PNX\NestedSet\Tests\Functional\DbalNestedSetTest;
 
 /**
  * Tests integration with entity_hierarchy.
@@ -136,7 +138,87 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     }, $children));
   }
 
-  // Test for deleting.
+  /**
+   * Tests removing parent reference.
+   */
+  public function testRemoveParentReference() {
+    $child = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Child 1',
+      self::FIELD_NAME => [
+        'target_id' => $this->parent->id(),
+        'weight' => 0,
+      ],
+    ]);
+    $child->save();
+    $root_node = $this->treeStorage->getNode($this->parent->id(), $this->parent->id());
+    $children = $this->treeStorage->findChildren($root_node);
+    $this->assertCount(1, $children);
+    $child->set(self::FIELD_NAME, NULL);
+    $child->save();
+    $children = $this->treeStorage->findChildren($root_node);
+    $this->assertCount(0, $children);
+    $child_node = $this->treeStorage->getNode($child->id(), $child->id());
+    $this->assertEquals(0, $child_node->getDepth());
+  }
+
+  /**
+   * Tests deleting child node.
+   */
+  public function testDeleteChild() {
+    $child = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Child 1',
+      self::FIELD_NAME => [
+        'target_id' => $this->parent->id(),
+        'weight' => 0,
+      ],
+    ]);
+    $child->save();
+    $root_node = $this->treeStorage->getNode($this->parent->id(), $this->parent->id());
+    $children = $this->treeStorage->findChildren($root_node);
+    $this->assertCount(1, $children);
+    $child->delete();
+    $children = $this->treeStorage->findChildren($root_node);
+    $this->assertCount(0, $children);
+  }
+
+  /**
+   * Tests deleting child node with grandchildren.
+   */
+  public function testDeleteChildWithGrandChildren() {
+    $child = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Child 1',
+      self::FIELD_NAME => [
+        'target_id' => $this->parent->id(),
+        'weight' => 0,
+      ],
+    ]);
+    $child->save();
+    $grand_child = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Grandchild 1',
+      self::FIELD_NAME => [
+        'target_id' => $child->id(),
+        'weight' => 0,
+      ],
+    ]);
+    $grand_child->save();
+    $root_node = $this->treeStorage->getNode($this->parent->id(), $this->parent->id());
+    $children = $this->treeStorage->findChildren($root_node);
+    $this->assertCount(1, $children);
+    $childNode = reset($children);
+    $grand_children = $this->treeStorage->findChildren($childNode);
+    $this->assertCount(1, $grand_children);
+    $grandChildNode = reset($grand_children);
+    $this->assertEquals($grand_child->id(), $grandChildNode->getId());
+    $child->delete();
+    $children = $this->treeStorage->findChildren($root_node);
+    $this->assertCount(1, $children);
+    $this->assertEquals(reset($grand_children)->getId(), reset($children)->getId());
+  }
+  // Test removing parent reference with granchildren
   // Test for saving with existing parent (no value change).
   // Test for new revisions.
   // Test for new parent.
@@ -171,6 +253,30 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
       'label' => Unicode::ucfirst($field_name),
     ]);
     $config->save();
+  }
+
+  /**
+   * Prints out a tree to the console.
+   *
+   * @param array $tree
+   *   The tree to print.
+   */
+  public function printTree($tree) {
+    $table = new Console_Table(CONSOLE_TABLE_ALIGN_RIGHT);
+    $table->setHeaders(['ID', 'Rev', 'Left', 'Right', 'Depth']);
+    $table->setAlign(0, CONSOLE_TABLE_ALIGN_LEFT);
+    /** @var Node $node */
+    foreach ($tree as $node) {
+      $indent = str_repeat('-', $node->getDepth());
+      $table->addRow([
+        $indent . $node->getId(),
+        $node->getRevisionId(),
+        $node->getLeft(),
+        $node->getRight(),
+        $node->getDepth(),
+      ]);
+    }
+    echo PHP_EOL . $table->getTable();
   }
 
 }
