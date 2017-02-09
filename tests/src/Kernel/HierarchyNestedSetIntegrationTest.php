@@ -92,6 +92,8 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
 
   /**
    * Tests ordered storage in nested set tables.
+   *
+   * @group entity_hierarchy_ordering
    */
   public function testNestedSetOrdering() {
     // Test for weight ordering of inserts.
@@ -107,7 +109,6 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     // Now insert one in the middle.
     $name = 'Child 6';
     $entities[$name] = $this->createTestEntity($this->parent->id(), $name, -2);
-    $this->printTree($this->treeStorage->getTree());
     $children = $this->getChildren($root_node);
     $this->assertCount(6, $children);
     $this->assertEquals(array_map(function ($name) use ($entities) {
@@ -208,7 +209,6 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $this->assertSimpleParentChild($child, $parent2);
   }
 
-  // Test for moving a tree
   /**
    * Tests moving tree.
    */
@@ -226,6 +226,8 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
 
   /**
    * Tests moving parents with weight ordering.
+   *
+   * @group entity_hierarchy_ordering
    */
   public function testNestedSetStorageMoveParentWithSiblingOrdering() {
     $child = $this->createTestEntity($this->parent->id(), 'Cousin 1', -2);
@@ -256,6 +258,8 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
 
   /**
    * Tests moving from out of tree, into tree with existing siblings.
+   *
+   * @group entity_hierarchy_ordering
    */
   public function testNestedSetParentToChildWithSiblings() {
     $child = $this->createTestEntity(NULL, 'Once was a parent');
@@ -351,7 +355,7 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $this->assertCount(1, $children);
     $first = reset($children);
     $this->assertEquals($child->id(), $first->getId());
-    $this->assertEquals($child->id(), $first->getRevisionId());
+    $this->assertEquals($this->getEntityRevisionId($child), $first->getRevisionId());
     $this->assertEquals(1 + $baseDepth, $first->getDepth());
   }
 
@@ -367,17 +371,17 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $root_node = $this->treeStorage->getNode($this->parentStub);
     $this->assertNotEmpty($root_node);
     $this->assertEquals($this->parent->id(), $root_node->getId());
-    $this->assertEquals($this->parent->id(), $root_node->getRevisionId());
+    $this->assertEquals($this->getEntityRevisionId($this->parent), $root_node->getRevisionId());
     $this->assertEquals(0, $root_node->getDepth());
     $children = $this->getChildren($root_node);
     $this->assertCount(2, $children);
     $first = reset($children);
     $this->assertEquals($child->id(), $first->getId());
-    $this->assertEquals($child->id(), $first->getRevisionId());
+    $this->assertEquals($this->getEntityRevisionId($child), $first->getRevisionId());
     $this->assertEquals(1, $first->getDepth());
     $last = end($children);
     $this->assertEquals($sibling->id(), $last->getId());
-    $this->assertEquals($sibling->id(), $last->getRevisionId());
+    $this->assertEquals($this->getEntityRevisionId($sibling), $last->getRevisionId());
     $this->assertEquals(1, $last->getDepth());
   }
 
@@ -396,7 +400,7 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $entities = [];
     foreach (range(1, $count) as $i) {
       $label = sprintf('Child %d', $i);
-      $entities[$label] = $this->doCreateChildTestEntity($parentId, $label, $i);
+      $entities[$label] = $this->doCreateChildTestEntity($parentId, $label, -1 * $i);
     }
     return $entities;
   }
@@ -475,7 +479,7 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    *   New entity.
    */
   protected function doCreateChildTestEntity($parentId, $label, $weight) {
-    return $this->createTestEntity($parentId, $label, -1 * $weight);
+    return $this->createTestEntity($parentId, $label, $weight);
   }
 
   /**
