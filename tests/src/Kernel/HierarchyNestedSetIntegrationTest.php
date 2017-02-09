@@ -407,7 +407,30 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $child->save();
     $this->assertSimpleParentChild($child);
   }
-  // Test for going from non child, to child of parent with existing children.
+
+  /**
+   * Tests moving from out of tree, into tree with existing siblings.
+   */
+  public function testNestedSetParentToChildWithSiblings() {
+    $child = EntityTest::create([
+      'type' => static::ENTITY_TYPE,
+      'name' => 'Once was a parent',
+    ]);
+    $child->save();
+    $entities = $this->createChildEntities($this->parent->id());
+    $entities[$child->label()] = $child;
+    $child->{static::FIELD_NAME} = [
+      'target_id' => $this->parent->id(),
+      'weight' => -2,
+    ];
+    $child->save();
+    $children = $this->treeStorage->findChildren($this->parentStub);
+    $this->assertEquals(array_map(function ($name) use ($entities) {
+      return $entities[$name]->id();
+    }, ['Child 5', 'Child 4', 'Child 3', 'Once was a parent', 'Child 2', 'Child 1']), array_map(function (Node $node) {
+      return $node->getId();
+    }, $children));
+  }
 
   /**
    * Creates a new entity hierarchy field for the given bundle.
