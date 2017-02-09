@@ -393,7 +393,20 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
       return $node->getId();
     }, $children));
   }
-  // Test for going from non child to child.
+
+  /**
+   * Tests moving from out of tree, into tree.
+   */
+  public function testNestedSetParentToChild() {
+    $child = EntityTest::create([
+      'type' => static::ENTITY_TYPE,
+      'name' => 'Child 1',
+    ]);
+    $child->save();
+    $child->set(static::FIELD_NAME, $this->parent->id());
+    $child->save();
+    $this->assertSimpleParentChild($child);
+  }
   // Test for going from non child, to child of parent with existing children.
 
   /**
