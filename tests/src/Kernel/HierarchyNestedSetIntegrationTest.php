@@ -101,20 +101,7 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   public function testNestedSetOrdering() {
     // Test for weight ordering of inserts.
-    $entities  = [];
-    foreach (range(1, 5) as $i) {
-      $name = sprintf('Child %d', $i);
-      $entities[$name] = EntityTest::create([
-        'type' => self::ENTITY_TYPE,
-        'name' => $name,
-        self::FIELD_NAME => [
-          'target_id' => $this->parent->id(),
-          // We insert them in reverse order.
-          'weight' => -1 * $i,
-        ],
-      ]);
-      $entities[$name]->save();
-    }
+    $entities = $this->createChildEntities($this->parent->id());
     $root_node = $this->treeStorage->getNode($this->parentStub);
     $children = $this->treeStorage->findChildren($root_node->getNodeKey());
     $this->assertCount(5, $children);
@@ -374,7 +361,38 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $this->assertSimpleParentChild($child, $parent2);
     $this->assertSimpleParentChild($grandchild, $child, 1);
   }
-  // Test for new parent with weight ordering
+
+  /**
+   * Tests moving parents with weight ordering.
+   */
+  public function testNestedSetStorageMoveParentWithSiblingOrdering() {
+    $child = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Cousin 1',
+      self::FIELD_NAME => [
+        'target_id' => $this->parent->id(),
+        'weight' => -2,
+      ],
+    ]);
+    $child->save();
+    $parent2 = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Parent 2',
+    ]);
+    $parent2->save();
+    $child_entities = $this->createChildEntities($parent2->id(), 5);
+    $child_entities['Cousin 1'] = $child;
+    $this->assertSimpleParentChild($child);
+    $child->set(self::FIELD_NAME, $parent2->id());
+    $child->save();
+    $children = $this->treeStorage->findChildren($this->nodeFactory->fromEntity($parent2));
+    $this->assertCount(6, $children);
+    $this->assertEquals(array_map(function ($name) use ($child_entities) {
+      return $child_entities[$name]->id();
+    }, ['Child 5', 'Child 4', 'Child 3', 'Cousin 1', 'Child 2', 'Child 1']), array_map(function (Node $node) {
+      return $node->getId();
+    }, $children));
+  }
   // Test for going from non child to child.
   // Test for going from non child, to child of parent with existing children.
 
@@ -483,6 +501,35 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $this->assertEquals($sibling->id(), $last->getId());
     $this->assertEquals($sibling->id(), $last->getRevisionId());
     $this->assertEquals(1, $last->getDepth());
+  }
+
+  /**
+   * Create child entities.
+   *
+   * @param int $parentId
+   *   Parent ID.
+   * @param int $count
+   *   (optional) Number to create. Defaults to 5
+   *
+   * @return \Drupal\Core\Entity\EntityInterface[]
+   *   Child entities
+   */
+  protected function createChildEntities($parentId, $count = 5) {
+    $entities = [];
+    foreach (range(1, $count) as $i) {
+      $label = sprintf('Child %d', $i);
+      $entities[$label] = EntityTest::create([
+        'type' => self::ENTITY_TYPE,
+        'name' => $label,
+        self::FIELD_NAME => [
+          'target_id' => $parentId,
+          // We insert them in reverse order.
+          'weight' => -1 * $i,
+        ],
+      ]);
+      $entities[$label]->save();
+    }
+    return $entities;
   }
 
 }
