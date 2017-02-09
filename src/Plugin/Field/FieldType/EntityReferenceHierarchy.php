@@ -7,7 +7,6 @@ use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetStorage;
-use PNX\NestedSet\NestedSetInterface;
 use PNX\NestedSet\Node;
 
 /**
@@ -116,7 +115,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     $storage = $this->getTreeStorage();
     $nodeFactory = $this->getNestedSetNodeFactory();
     $stubNode = $nodeFactory->fromEntity($this->getEntity());
-    if ($existingNode = $storage->getNode($stubNode->getId(), $stubNode->getRevisionId())) {
+    if ($existingNode = $storage->getNode($stubNode)) {
       // The NestedSet implementation handles moving children up a layer.
       $storage->deleteNode($existingNode);
     }
@@ -132,8 +131,8 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     $child = $this->getEntity();
     $childStub = $nodeFactory->fromEntity($child);
     $storage = $this->getTreeStorage();
-    $childNode = $storage->getNode($childStub->getId(), $childStub->getRevisionId()) ?: $childStub;
-    if ($existingParent = $storage->getNode($parentNode->getId(), $parentNode->getRevisionId())) {
+    $childNode = $storage->getNode($childStub) ?: $childStub;
+    if ($existingParent = $storage->getNode($parentNode)) {
       if ($siblings = $this->findSiblings($storage, $existingParent, $childNode)) {
         // We need to conserve order here.
         $siblingEntities = $this->loadSiblingEntities($siblings);
@@ -195,7 +194,12 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     }
     else {
       $parentNode = $storage->addRootNode($parentNode);
-      $storage->addNodeBelow($parentNode, $childNode);
+      if ($childNode === $childStub) {
+        $storage->addNodeBelow($parentNode, $childNode);
+      }
+      else {
+        $storage->moveSubTreeBelow($parentNode, $childNode);
+      }
     }
   }
 
@@ -223,7 +227,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
   /**
    * Returns the node factory.
    *
-   * @return \Drupal\entity_hierarchy\Storage\NestedSetNodeFactory
+   * @return \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
    *   The factory.
    */
   protected function getNestedSetNodeFactory() {
@@ -276,13 +280,13 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    *   Storage.
    * @param \PNX\NestedSet\Node $parentNode
    *   Existing parent node.
-   * @param \PNX\NestedSet\Node $childNode
+   * @param \PNX\NestedSet\Node|\PNX\NestedSet\NodeKey $childNode
    *   Child node.
    * @return \PNX\NestedSet\Node[] Sibling nodes.
    * Sibling nodes.
    */
-  protected function findSiblings(NestedSetStorage $storage, Node $parentNode, Node $childNode) {
-    return array_filter($storage->findChildren($parentNode), function (Node $node) use ($childNode) {
+  protected function findSiblings(NestedSetStorage $storage, Node $parentNode, $childNode) {
+    return array_filter($storage->findChildren($parentNode->getNodeKey()), function (Node $node) use ($childNode) {
       return [$childNode->getId(), $childNode->getRevisionId()] !== [$node->getId(), $node->getRevisionId()];
     });
   }

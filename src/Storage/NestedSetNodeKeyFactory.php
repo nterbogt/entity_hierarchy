@@ -3,12 +3,12 @@
 namespace Drupal\entity_hierarchy\Storage;
 
 use Drupal\Core\Entity\ContentEntityInterface;
-use PNX\NestedSet\Node;
+use PNX\NestedSet\NodeKey;
 
 /**
  * Defines a class for turning Drupal entities into nested set nodes.
  */
-class NestedSetNodeFactory {
+class NestedSetNodeKeyFactory {
 
   /**
    * Creates a new node from an entity.
@@ -16,7 +16,7 @@ class NestedSetNodeFactory {
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
    *   Entity to convert into nested set node.
    *
-   * @return \PNX\NestedSet\Node
+   * @return \PNX\NestedSet\NodeKey
    *   New node.
    */
   public function fromEntity(ContentEntityInterface $entity) {
@@ -24,7 +24,7 @@ class NestedSetNodeFactory {
     if (!$revision_id = $entity->getRevisionId()) {
       $revision_id = $id;
     }
-    return new Node($id, $revision_id);
+    return new NodeKey($id, $revision_id);
   }
 
 }

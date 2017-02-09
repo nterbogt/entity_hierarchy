@@ -15,7 +15,7 @@ class EntityReferenceHierarchyFieldItemList extends EntityReferenceFieldItemList
       // If this node was in the tree, it needs to be moved to a root node.
       $stubNode = $this->getNestedSetNodeFactory()->fromEntity($this->getEntity());
       $storage = $this->getTreeStorage();
-      if (($existingNode = $storage->getNode($stubNode->getId(), $stubNode->getRevisionId())) && $existingNode->getDepth() > 0) {
+      if (($existingNode = $storage->getNode($stubNode)) && $existingNode->getDepth() > 0) {
         $storage->moveSubTreeToRoot($existingNode);
       }
     }
@@ -25,7 +25,7 @@ class EntityReferenceHierarchyFieldItemList extends EntityReferenceFieldItemList
   /**
    * Returns the node factory.
    *
-   * @return \Drupal\entity_hierarchy\Storage\NestedSetNodeFactory
+   * @return \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
    *   The factory.
    */
   protected function getNestedSetNodeFactory() {
