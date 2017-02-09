@@ -2,15 +2,18 @@
 
 namespace Drupal\entity_hierarchy\Plugin\Field\FieldType;
 
-
 use Drupal\Core\Field\EntityReferenceFieldItemList;
 
+/**
+ * Defines a field item list for entity reference with hierarchy.
+ */
 class EntityReferenceHierarchyFieldItemList extends EntityReferenceFieldItemList {
 
   /**
    * {@inheritdoc}
    */
   public function postSave($update) {
+    // The values are now empty.
     if (empty($this->list)) {
       // If this node was in the tree, it needs to be moved to a root node.
       $stubNode = $this->getNestedSetNodeFactory()->fromEntity($this->getEntity());
