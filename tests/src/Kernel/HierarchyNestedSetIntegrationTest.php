@@ -66,13 +66,13 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   protected function setUp() {
     parent::setUp();
-    $this->installEntitySchema(self::ENTITY_TYPE);
-    $this->setupEntityHierarchyField(self::ENTITY_TYPE, self::ENTITY_TYPE, self::FIELD_NAME);
+    $this->installEntitySchema(static::ENTITY_TYPE);
+    $this->setupEntityHierarchyField(static::ENTITY_TYPE, static::ENTITY_TYPE, static::FIELD_NAME);
 
-    $this->treeStorage = $this->container->get('entity_hierarchy.nested_set_storage_factory')->get(self::FIELD_NAME, self::ENTITY_TYPE);
+    $this->treeStorage = $this->container->get('entity_hierarchy.nested_set_storage_factory')->get(static::FIELD_NAME, static::ENTITY_TYPE);
 
     $this->parent = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Parent',
     ]);
     $this->parent->save();
@@ -85,9 +85,9 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   public function testNestedSetStorageSimple() {
     $child = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Child 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $this->parent->id(),
         'weight' => 0,
       ],
@@ -113,9 +113,9 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     // Now insert one in the middle.
     $name = 'Child 6';
     $entities[$name] = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => $name,
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $this->parent->id(),
         // We insert them in reverse order.
         'weight' => -2,
@@ -136,9 +136,9 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   public function testRemoveParentReference() {
     $child = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Child 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $this->parent->id(),
         'weight' => 0,
       ],
@@ -147,7 +147,7 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $root_node = $this->treeStorage->getNode($this->parentStub);
     $children = $this->treeStorage->findChildren($root_node->getNodeKey());
     $this->assertCount(1, $children);
-    $child->set(self::FIELD_NAME, NULL);
+    $child->set(static::FIELD_NAME, NULL);
     $child->save();
     $children = $this->treeStorage->findChildren($root_node->getNodeKey());
     $this->assertCount(0, $children);
@@ -160,9 +160,9 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   public function testDeleteChild() {
     $child = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Child 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $this->parent->id(),
         'weight' => 0,
       ],
@@ -181,18 +181,18 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   public function testDeleteChildWithGrandChildren() {
     $child = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Child 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $this->parent->id(),
         'weight' => 0,
       ],
     ]);
     $child->save();
     $grand_child = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Grandchild 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $child->id(),
         'weight' => 0,
       ],
@@ -217,18 +217,18 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   public function testRemoveParentReferenceWithGrandChildren() {
     $child = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Child 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $this->parent->id(),
         'weight' => 0,
       ],
     ]);
     $child->save();
     $grand_child = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Grandchild 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $child->id(),
         'weight' => 0,
       ],
@@ -237,14 +237,14 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $root_node = $this->treeStorage->getNode($this->parentStub);
     $children = $this->treeStorage->findChildren($root_node->getNodeKey());
     $this->assertCount(1, $children);
-    $child->set(self::FIELD_NAME, NULL);
+    $child->set(static::FIELD_NAME, NULL);
     $childNode = reset($children);
     $grand_children = $this->treeStorage->findChildren($childNode->getNodeKey());
     $this->assertCount(1, $grand_children);
     $grandChildNode = reset($grand_children);
     $this->assertEquals($grand_child->id(), $grandChildNode->getId());
     $this->assertEquals(2, $grandChildNode->getDepth());
-    $child->set(self::FIELD_NAME, NULL);
+    $child->set(static::FIELD_NAME, NULL);
     $child->save();
     $children = $this->treeStorage->findChildren($root_node->getNodeKey());
     $this->assertCount(0, $children);
@@ -262,9 +262,9 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   public function testNestedSetStorageSimpleUpdate() {
     $child = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Child 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $this->parent->id(),
         'weight' => 0,
       ],
@@ -280,18 +280,18 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   public function testNestedSetStorageWithSiblingUpdate() {
     $child = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Child 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $this->parent->id(),
         'weight' => 1,
       ],
     ]);
     $child->save();
     $sibling = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Child 2',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $this->parent->id(),
         'weight' => 2,
       ],
@@ -307,21 +307,21 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   public function testNestedSetStorageMoveParent() {
     $child = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Child 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $this->parent->id(),
         'weight' => 1,
       ],
     ]);
     $child->save();
     $parent2 = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Parent 2',
     ]);
     $parent2->save();
     $this->assertSimpleParentChild($child);
-    $child->set(self::FIELD_NAME, $parent2->id());
+    $child->set(static::FIELD_NAME, $parent2->id());
     $child->save();
     $this->assertSimpleParentChild($child, $parent2);
   }
@@ -332,23 +332,23 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   public function testNestedSetStorageMoveParentWithChildren() {
     $child = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Child 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $this->parent->id(),
         'weight' => 1,
       ],
     ]);
     $child->save();
     $parent2 = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Parent 2',
     ]);
     $parent2->save();
     $grandchild = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Grandchild 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $child->id(),
         'weight' => 1,
       ],
@@ -356,7 +356,7 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $grandchild->save();
     $this->assertSimpleParentChild($child);
     $this->assertSimpleParentChild($grandchild, $child, 1);
-    $child->set(self::FIELD_NAME, $parent2->id());
+    $child->set(static::FIELD_NAME, $parent2->id());
     $child->save();
     $this->assertSimpleParentChild($child, $parent2);
     $this->assertSimpleParentChild($grandchild, $child, 1);
@@ -367,23 +367,23 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    */
   public function testNestedSetStorageMoveParentWithSiblingOrdering() {
     $child = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Cousin 1',
-      self::FIELD_NAME => [
+      static::FIELD_NAME => [
         'target_id' => $this->parent->id(),
         'weight' => -2,
       ],
     ]);
     $child->save();
     $parent2 = EntityTest::create([
-      'type' => self::ENTITY_TYPE,
+      'type' => static::ENTITY_TYPE,
       'name' => 'Parent 2',
     ]);
     $parent2->save();
     $child_entities = $this->createChildEntities($parent2->id(), 5);
     $child_entities['Cousin 1'] = $child;
     $this->assertSimpleParentChild($child);
-    $child->set(self::FIELD_NAME, $parent2->id());
+    $child->set(static::FIELD_NAME, $parent2->id());
     $child->save();
     $children = $this->treeStorage->findChildren($this->nodeFactory->fromEntity($parent2));
     $this->assertCount(6, $children);
@@ -519,9 +519,9 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     foreach (range(1, $count) as $i) {
       $label = sprintf('Child %d', $i);
       $entities[$label] = EntityTest::create([
-        'type' => self::ENTITY_TYPE,
+        'type' => static::ENTITY_TYPE,
         'name' => $label,
-        self::FIELD_NAME => [
+        static::FIELD_NAME => [
           'target_id' => $parentId,
           // We insert them in reverse order.
           'weight' => -1 * $i,
