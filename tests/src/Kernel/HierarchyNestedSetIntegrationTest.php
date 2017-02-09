@@ -315,8 +315,6 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
     $this->assertParentWithTwoChildren($child, $sibling);
   }
 
-  // Test for new revisions.
-
   /**
    * Tests moving parents.
    */
@@ -342,6 +340,40 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
   }
 
   // Test for moving a tree
+  /**
+   * Tests moving tree.
+   */
+  public function testNestedSetStorageMoveParentWithChildren() {
+    $child = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Child 1',
+      self::FIELD_NAME => [
+        'target_id' => $this->parent->id(),
+        'weight' => 1,
+      ],
+    ]);
+    $child->save();
+    $parent2 = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Parent 2',
+    ]);
+    $parent2->save();
+    $grandchild = EntityTest::create([
+      'type' => self::ENTITY_TYPE,
+      'name' => 'Grandchild 1',
+      self::FIELD_NAME => [
+        'target_id' => $child->id(),
+        'weight' => 1,
+      ],
+    ]);
+    $grandchild->save();
+    $this->assertSimpleParentChild($child);
+    $this->assertSimpleParentChild($grandchild, $child, 1);
+    $child->set(self::FIELD_NAME, $parent2->id());
+    $child->save();
+    $this->assertSimpleParentChild($child, $parent2);
+    $this->assertSimpleParentChild($grandchild, $child, 1);
+  }
   // Test for new parent with weight ordering
   // Test for going from non child to child.
   // Test for going from non child, to child of parent with existing children.
@@ -409,20 +441,22 @@ class HierarchyNestedSetIntegrationTest extends KernelTestBase {
    * @param \Drupal\Core\Entity\EntityInterface $parent
    *   (optional) Parent to test relationship with, defaults to the one
    *   created in setup if not passed.
+   * @param int $baseDepth
+   *   (optional) Base depth to add, defaults to 0.
    */
-  protected function assertSimpleParentChild(EntityInterface $child, EntityInterface $parent = NULL) {
+  protected function assertSimpleParentChild(EntityInterface $child, EntityInterface $parent = NULL, $baseDepth = 0) {
     $parent = $parent ?: $this->parent;
     $root_node = $this->treeStorage->getNode($this->nodeFactory->fromEntity($parent));
     $this->assertNotEmpty($root_node);
     $this->assertEquals($parent->id(), $root_node->getId());
     $this->assertEquals($parent->id(), $root_node->getRevisionId());
-    $this->assertEquals(0, $root_node->getDepth());
+    $this->assertEquals(0 + $baseDepth, $root_node->getDepth());
     $children = $this->treeStorage->findChildren($root_node->getNodeKey());
     $this->assertCount(1, $children);
     $first = reset($children);
     $this->assertEquals($child->id(), $first->getId());
     $this->assertEquals($child->id(), $first->getRevisionId());
-    $this->assertEquals(1, $first->getDepth());
+    $this->assertEquals(1 + $baseDepth, $first->getDepth());
   }
 
   /**
