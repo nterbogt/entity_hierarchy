@@ -17,7 +17,16 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected static $modules = ['views', 'entity_hierarchy_test_views'];
+  protected static $modules = [
+    'entity_hierarchy',
+    'entity_test',
+    'system',
+    'user',
+    'dbal',
+    'field',
+    'views',
+    'entity_hierarchy_test_views',
+  ];
 
   /**
    * {@inheritdoc}
@@ -32,12 +41,97 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests views integration.
    */
-  public function testViewsIntegration() {
-    $child = $this->createTestEntity($this->parent->id(), 'Child 1');
+  public function testViewsIntegrationDirectChildren() {
+    $children = $this->createChildEntities($this->parent->id(), 3);
+    $child = reset($children);
     $this->createChildEntities($child->id(), 5);
+    // Tree is as follows
+    // 1     : Parent
+    // - 4   : Child 3
+    // - 3   : Child 2
+    // - 2   : Child 1
+    // - - 9 : Child 5
+    // - - 8 : Child 4
+    // - - 7 : Child 3
+    // - - 6 : Child 2
+    // - - 5 : Child 1
+    // Test showing single hierarchy.
+    $expected = [
+      [
+        'name' => 'Child 3',
+        'id' => 4,
+      ],
+      [
+        'name' => 'Child 2',
+        'id' => 3,
+      ],
+      [
+        'name' => 'Child 1',
+        'id' => 2,
+      ],
+    ];
     $executable = Views::getView('entity_hierarchy_test_children_view');
-    $executable->preview();
-    $this->assertIdenticalResultset($executable, [], []);
+    $executable->preview('block_1', [$this->parent->id()]);
+    $this->assertCount(3, $executable->result);
+    $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
+  }
+
+  /**
+   * Tests views integration.
+   */
+  public function testViewsIntegrationIncludingGrandChildren() {
+    $children = $this->createChildEntities($this->parent->id(), 3);
+    $child = reset($children);
+    $this->createChildEntities($child->id(), 5);
+    // Tree is as follows
+    // 1     : Parent
+    // - 4   : Child 3
+    // - 3   : Child 2
+    // - 2   : Child 1
+    // - - 9 : Child 5
+    // - - 8 : Child 4
+    // - - 7 : Child 3
+    // - - 6 : Child 2
+    // - - 5 : Child 1
+    // Test showing single hierarchy.
+    $expected = [
+      [
+        'name' => 'Child 3',
+        'id' => 4,
+      ],
+      [
+        'name' => 'Child 2',
+        'id' => 3,
+      ],
+      [
+        'name' => 'Child 1',
+        'id' => 2,
+      ],
+      [
+        'name' => 'Child 5',
+        'id' => 9,
+      ],
+      [
+        'name' => 'Child 4',
+        'id' => 8,
+      ],
+      [
+        'name' => 'Child 3',
+        'id' => 7,
+      ],
+      [
+        'name' => 'Child 2',
+        'id' => 6,
+      ],
+      [
+        'name' => 'Child 1',
+        'id' => 5,
+      ],
+    ];
+    $executable = Views::getView('entity_hierarchy_test_children_view');
+    $executable->preview('block_2', [$this->parent->id()]);
+    $this->assertCount(8, $executable->result);
+    $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
   }
 
 }

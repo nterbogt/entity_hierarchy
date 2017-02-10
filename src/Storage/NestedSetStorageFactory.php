@@ -56,11 +56,42 @@ class NestedSetStorageFactory {
    *   Nested set for given field.
    */
   public function get($field_name, $entity_type_id) {
-    $table_name = sprintf('%snested_set_%s_%s', $this->tablePrefix, $field_name, $entity_type_id);
-    if (!isset($this->cache[$table_name])) {
+    $table_name = $this->getTableName($field_name, $entity_type_id);
+    return $this->fromTableName($table_name);
+  }
+
+  /**
+   * Gets a new nested set storage handler for the given table.
+   *
+   * @param string $table_name
+   *   Table name.
+   *
+   * @return \Drupal\entity_hierarchy\Storage\NestedSetStorage
+   *   Nested set for given field.
+   *
+   * @todo Remove this in favour of derivative argument plugins?
+   */
+  public function fromTableName($table_name) {
+     if (!isset($this->cache[$table_name])) {
       $this->cache[$table_name] = new NestedSetStorage($this->connection, $table_name);
     }
     return $this->cache[$table_name];
+  }
+
+  /**
+   * Gets table name for a given field name and entity type.
+   *
+   * @param string $field_name
+   *   Field name.
+   * @param string $entity_type_id
+   *   Entity Type ID.
+   * @param bool $withPrefix
+   *   (optional) TRUE to add prefix. Views data does not need prefix.
+   * @return string
+   *   Table name.
+   */
+  public function getTableName($field_name, $entity_type_id, $withPrefix = TRUE) {
+    return sprintf('%snested_set_%s_%s', $withPrefix ? $this->tablePrefix : '', $field_name, $entity_type_id);
   }
 
 }
