@@ -64,7 +64,7 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
 
     $id = $this->entity->id();
     $children = $hierarchy_manager->hierarchyLoadAllChildren($id);
-
+    $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
     if ($children) {
       $form['children'] = array(
         '#type' => 'table',
