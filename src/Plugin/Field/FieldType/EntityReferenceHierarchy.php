@@ -6,6 +6,7 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\entity_hierarchy\Storage\InsertPosition;
 use Drupal\entity_hierarchy\Storage\NestedSetStorage;
 use PNX\NestedSet\Node;
 
@@ -113,7 +114,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
   public function delete() {
     parent::delete();
     $storage = $this->getTreeStorage();
-    $nodeFactory = $this->getNestedSetNodeFactory();
+    $nodeFactory = $this->getNodeKeyFactory();
     $stubNode = $nodeFactory->fromEntity($this->getEntity());
     if ($existingNode = $storage->getNode($stubNode)) {
       // The NestedSet implementation handles moving children up a layer.
@@ -125,82 +126,46 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    * {@inheritdoc}
    */
   public function postSave($update) {
-    $entity = $this->get('entity')->getValue();
-    $nodeFactory = $this->getNestedSetNodeFactory();
-    $parentNode = $nodeFactory->fromEntity($entity);
-    $child = $this->getEntity();
-    $childStub = $nodeFactory->fromEntity($child);
+    // Get the key factory and tree storage services.
+    $nodeKeyFactory = $this->getNodeKeyFactory();
     $storage = $this->getTreeStorage();
-    $childNode = $storage->getNode($childStub) ?: $childStub;
-    if ($existingParent = $storage->getNode($parentNode)) {
-      if ($siblings = $this->findSiblings($storage, $existingParent, $childNode)) {
-        // We need to conserve order here.
-        $siblingEntities = $this->loadSiblingEntities($siblings);
-        $fieldDefinition = $this->getFieldDefinition();
-        $fieldName = $fieldDefinition->getName();
-        // @todo refactor this onto Drupal tree storage wrapper?
-        $weightMap = [];
-        foreach ($siblingEntities as $node) {
-          $siblingEntity = $siblingEntities->offsetGet($node);
-          $weightMap[$siblingEntity->{$fieldName}->weight][] = $node;
-        }
-        ksort($weightMap);
+
+    // Get the field name.
+    $fieldName = $this->getFieldDefinition()->getName();
+
+    // Get the parent/child entities and their node-keys in the nested set.
+    $parentEntity = $this->get('entity')->getValue();
+    $parentKey = $nodeKeyFactory->fromEntity($parentEntity);
+    $childEntity = $this->getEntity();
+    $childKey = $nodeKeyFactory->fromEntity($childEntity);
+
+    // Determine if this is a new node in the tree.
+    $isNewNode = FALSE;
+    if (!$childNode = $storage->getNode($childKey)) {
+      $isNewNode = TRUE;
+      // As we're going to be adding instead of moving, a key is all we require.
+      $childNode = $childKey;
+    }
+
+    // Does the parent already exist in the tree.
+    if ($existingParent = $storage->getNode($parentKey)) {
+      // If there are no siblings, we simply insert/move below.
+      $insertPosition = new InsertPosition($existingParent, $isNewNode, InsertPosition::DIRECTION_BELOW);
+
+      // But if there are siblings, we need to ascertain the correct position in
+      // the order.
+      if ($siblingEntities = $this->getSiblingEntities($storage, $existingParent, $childNode)) {
+        // Group the siblings by their weight.
+        $weightOrderedSiblings = $this->groupSiblingsByWeight($siblingEntities, $fieldName);
         $weight = $this->get('weight')->getValue();
-        if (isset($weightMap[$weight])) {
-          // There are already nodes at the same weight.
-          $position = end($weightMap[$weight]);
-          $method = 'addNodeBefore';
-        }
-        else {
-          // There are no nodes at this weight, we need to make space.
-          $firstGroup = reset($weightMap);
-          $position = reset($firstGroup);
-          $method = 'addNodeAfter';
-          $start = key($weightMap);
-          if ($weight < $start) {
-            // We're going to position before all existing nodes.
-            $method = 'addNodeBefore';
-          }
-          else {
-            foreach (array_keys($weightMap) as $weightPosition) {
-              if ($weight < $weightPosition) {
-                $method = 'addNodeBefore';
-                $position = reset($weightMap[$weightPosition]);
-              }
-            }
-            if ($method === 'addNodeAfter') {
-              // We're inserting at the end.
-              $lastGroup = end($weightMap);
-              $position = end($lastGroup);
-            }
-          }
-        }
-        // Not a new node, so we need to move.
-        if ($childNode !== $childStub) {
-          $method = str_replace('addNode', 'moveSubTree', $method);
-        }
-        call_user_func_array([$storage, $method], [$position, $childNode]);
+        $insertPosition = $this->getInsertPosition($weightOrderedSiblings, $weight, $isNewNode);
       }
-      else {
-        // No particular order needed here.
-        if ($childNode === $childStub) {
-          // New item to insert.
-          $storage->addNodeBelow($existingParent, $childNode);
-        }
-        else {
-          $storage->moveSubTreeBelow($existingParent, $childNode);
-        }
-      }
+      $insertPosition->performInsert($storage, $childNode);
+      return;
     }
-    else {
-      $parentNode = $storage->addRootNode($parentNode);
-      if ($childNode === $childStub) {
-        $storage->addNodeBelow($parentNode, $childNode);
-      }
-      else {
-        $storage->moveSubTreeBelow($parentNode, $childNode);
-      }
-    }
+    // We need to create a node for the parent in the tree.
+    $parentNode = $storage->addRootNode($parentKey);
+    (new InsertPosition($parentNode, $isNewNode, InsertPosition::DIRECTION_BELOW))->performInsert($storage, $childNode);
   }
 
   /**
@@ -216,7 +181,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
   /**
    * Returns the tree storage.
    *
-   * @return \PNX\NestedSet\NestedSetInterface
+   * @return \Drupal\entity_hierarchy\Storage\NestedSetStorage
    *   Tree storage.
    */
   protected function getTreeStorage() {
@@ -230,7 +195,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    * @return \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
    *   The factory.
    */
-  protected function getNestedSetNodeFactory() {
+  protected function getNodeKeyFactory() {
     return \Drupal::service('entity_hierarchy.nested_set_node_factory');
   }
 
@@ -252,8 +217,6 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    *
    * @return \SplObjectStorage
    *   Map of entities keyed by node.
-   *
-   * @todo move this to its own service or onto the tree storage wrapper?
    */
   protected function loadSiblingEntities(array $siblings) {
     $fieldDefinition = $this->getFieldDefinition();
@@ -282,13 +245,69 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    *   Existing parent node.
    * @param \PNX\NestedSet\Node|\PNX\NestedSet\NodeKey $childNode
    *   Child node.
-   * @return \PNX\NestedSet\Node[] Sibling nodes.
-   * Sibling nodes.
+   *
+   * @return \SplObjectStorage|bool
+   *   Map of entities keyed by node or FALSE if no siblings.
    */
-  protected function findSiblings(NestedSetStorage $storage, Node $parentNode, $childNode) {
-    return array_filter($storage->findChildren($parentNode->getNodeKey()), function (Node $node) use ($childNode) {
+  protected function getSiblingEntities(NestedSetStorage $storage, Node $parentNode, $childNode) {
+    if ($siblingNodes = array_filter($storage->findChildren($parentNode->getNodeKey()), function (Node $node) use ($childNode) {
       return [$childNode->getId(), $childNode->getRevisionId()] !== [$node->getId(), $node->getRevisionId()];
-    });
+    })) {
+      return $this->loadSiblingEntities($siblingNodes);
+    }
+    return FALSE;
+  }
+
+  /**
+   * @param $siblingEntities
+   * @param $fieldName
+   * @return array
+   */
+  public function groupSiblingsByWeight($siblingEntities, $fieldName): array {
+    $weightMap = [];
+    foreach ($siblingEntities as $node) {
+      $siblingEntity = $siblingEntities->offsetGet($node);
+      $weightMap[$siblingEntity->{$fieldName}->weight][] = $node;
+    }
+    ksort($weightMap);
+    return $weightMap;
+  }
+
+  /**
+   * Gets the insert position for the new child.
+   *
+   * @param array $weightOrderedSiblings
+   *   Sibling nodes, grouped by weight.
+   * @param int $weight
+   *   Desired weight amongst siblings of the new child.
+   * @param bool $isNewNode
+   *   TRUE if the node is brand new, FALSE if it needs to be moved from
+   *   elsewhere in the tree.
+   *
+   * @return \Drupal\entity_hierarchy\Storage\InsertPosition
+   *   Insert position.
+   */
+  public function getInsertPosition(array $weightOrderedSiblings, $weight, $isNewNode) {
+    if (isset($weightOrderedSiblings[$weight])) {
+      // There are already nodes at the same weight, insert it with them.
+      return new InsertPosition(end($weightOrderedSiblings[$weight]), $isNewNode);
+    }
+
+    // There are no nodes at this weight, we need to find the right position.
+    $firstGroup = reset($weightOrderedSiblings);
+    $start = key($weightOrderedSiblings);
+    if ($weight < $start) {
+      // We're going to position before all existing nodes.
+      return new InsertPosition(reset($firstGroup), $isNewNode);
+    }
+    foreach (array_keys($weightOrderedSiblings) as $weightPosition) {
+      if ($weight < $weightPosition) {
+        return new InsertPosition(reset($weightOrderedSiblings[$weightPosition]), $isNewNode);
+      }
+    }
+    // We're inserting at the end.
+    $lastGroup = end($weightOrderedSiblings);
+    return new InsertPosition(end($lastGroup), $isNewNode, InsertPosition::DIRECTION_AFTER);
   }
 
 }
