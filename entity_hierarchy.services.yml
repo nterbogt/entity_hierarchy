@@ -1,32 +1,8 @@
 services:
-  entity_hierarchy.event_subscriber:
-    class: Drupal\entity_hierarchy\EventSubscriber\NodeHierarchyEventSubscriber
-    arguments: ['@module_handler']
-    tags:
-      - { name: event_subscriber }
   entity_hierarchy.breadcrumb:
     class: Drupal\entity_hierarchy\HierarchyBreadcrumbBuilder
     tags:
       - { name: breadcrumb_builder, priority: 700 }
-  entity_hierarchy.manager:
-    class: Drupal\entity_hierarchy\HierarchyManager
-    arguments: ['@entity_type.manager', '@string_translation', '@config.factory', '@entity.query', '@entity_field.manager', '@entity_hierarchy.outline_storage']
-  entity_hierarchy.outline:
-    class: Drupal\entity_hierarchy\HierarchyOutline
-    arguments: ['@entity_hierarchy.manager']
-#  entity_hierarchy.export:
-#    class: Drupal\entity_hierarchy\HierarchyExport
-#    arguments: ['@entity.manager', '@entity_hierarchy.manager']
-  entity_hierarchy.outline_storage:
-    class: Drupal\entity_hierarchy\HierarchyOutlineStorage
-    arguments: ['@database']
-    tags:
-      - { name: backend_overridable }
-  access_check.entity_hierarchy.removable:
-    class: Drupal\entity_hierarchy\Access\HierarchyNodeIsRemovableAccessCheck
-    arguments: ['@entity_hierarchy.manager']
-    tags:
-      - { name: access_check, applies_to: _access_entity_hierarchy_removable }
   entity_hierarchy.nested_set_storage_factory:
     class: Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
     arguments: ['@dbal_connection', '@database']

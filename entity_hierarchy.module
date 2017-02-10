@@ -3,15 +3,12 @@
 /**
  * @file
  *
- * A module to make nodes hierarchical.
+ * A module to make entities hierarchical.
  */
 
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Entity;
-use Drupal\Core\Render\Element;
 use Drupal\node\Entity\Node;
-use Drupal\node\NodeTypeInterface;
 use Drupal\node\NodeInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
@@ -20,24 +17,10 @@ use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
  * Implements @see hook_help().
  */
 function entity_hierarchy_help($route_name, RouteMatchInterface $route_match) {
-  // TODO: improve help text
   switch ($route_name) {
     case 'help.page.entity_hierarchy':
-      return t('A module to create hierarchical entities.');
+      return t('A module to create hierarchical entities. To get started, add a field of type <em>Entity Reference Hierarchy</em> to your entity to keep track of parents.');
   }
-}
-
-/**
- * Implements @see hook_form_BASE_FORM_ID_alter() for node_form().
- */
-function entity_hierarchy_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  // Todo: entity_hierarchy_set_breadcrumbs($node, TRUE);
-  // Todo: unset entity reference field if user doesn't have permission
-  $node = $form_state->getFormObject()->getEntity();
-  $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
-  $children = $hierarchy_manager->hierarchyLoadAllChildren($node->id(), $node->getEntityType()->id());
-//  kint($children);
-//  kint($hierarchy_manager->hierarchyGetParentId($node->id(), $node->getType(), $node->getEntityType()->id()));
 }
 
 /**
@@ -53,6 +36,7 @@ function entity_hierarchy_form_node_form_alter(&$form, FormStateInterface $form_
  * @see \Drupal\entity_hierarchy\Form\NodehierarchyChildrenForm
  */
 function entity_hierarchy_entity_type_build(array &$entity_types) {
+  // @todo add support for all entity types.
   /** @type $entity_types \Drupal\Core\Entity\EntityTypeInterface[] */
   if (isset($entity_types['node'])) {
     $entity_types['node']
