@@ -1,9 +1,0 @@
-name: Entity Hierarchy Views
-type: module
-description: Provides views that may be embedded on hierarchy pages (e.g. to list all child pages by child weight).
-core: 8.x
-package: Entity Hierarchy
-dependencies:
-  - views
-  - entity_hierarchy
-configure: entity_hierarchy.settings
