@@ -259,11 +259,17 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
   }
 
   /**
-   * @param $siblingEntities
-   * @param $fieldName
+   * Group siblings by weight.
+   *
+   * @param \SplObjectStorage $siblingEntities
+   *   Sibling entities keyed by nested set nodes.
+   * @param string $fieldName
+   *   Field name to detect weight from.
+   *
    * @return array
+   *   Array of nested set nodes grouped by weight.
    */
-  public function groupSiblingsByWeight($siblingEntities, $fieldName): array {
+  public function groupSiblingsByWeight($siblingEntities, $fieldName) {
     $weightMap = [];
     foreach ($siblingEntities as $node) {
       $siblingEntity = $siblingEntities->offsetGet($node);
