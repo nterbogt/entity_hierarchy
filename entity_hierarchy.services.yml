@@ -1,8 +1,4 @@
 services:
-  entity_hierarchy.breadcrumb:
-    class: Drupal\entity_hierarchy\HierarchyBreadcrumbBuilder
-    tags:
-      - { name: breadcrumb_builder, priority: 700 }
   entity_hierarchy.nested_set_storage_factory:
     class: Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
     arguments: ['@dbal_connection', '@database']
