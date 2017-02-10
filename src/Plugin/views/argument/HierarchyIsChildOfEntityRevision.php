@@ -15,7 +15,8 @@ class HierarchyIsChildOfEntityRevision extends HierarchyIsChildOfEntity {
    * {@inheritdoc}
    */
   protected function loadParentEntity() {
-    return $this->entityTypeManager->getStorage($this->getEntityType())->loadRevision($this->argument);
+    $storage = $this->entityTypeManager->getStorage($this->getEntityType());
+    return $storage->loadRevision($this->argument) ?: $storage->load($this->argument) ;
   }
 
 }

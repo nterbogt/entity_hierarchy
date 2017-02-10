@@ -32,7 +32,8 @@ function entity_hierarchy_views_data() {
           'field' => 'id',
         ],
       ];
-      if ($revision_key = $entity_type->hasKey('revision')) {
+      if ($has_revisions = $entity_type->hasKey('revision')) {
+        $revision_key = $entity_type->getKey('revision');
         $data[$table_name]['table']['join'][$base_table]['left_field'] = $revision_key;
         $data[$table_name]['table']['join'][$base_table]['field'] = 'revision_id';
       }
@@ -48,7 +49,7 @@ function entity_hierarchy_views_data() {
         'help' => t('Limit to children of given entity'),
         'real field' => 'left_pos',
         'argument' => [
-          'id' => $revision_key ? 'entity_hierarchy_argument_is_child_of_entity_revision' : 'entity_hierarchy_argument_is_child_of_entity',
+          'id' => $has_revisions ? 'entity_hierarchy_argument_is_child_of_entity_revision' : 'entity_hierarchy_argument_is_child_of_entity',
         ],
       ];
       $data[$table_name]['depth'] = [
@@ -65,15 +66,15 @@ function entity_hierarchy_views_data() {
       $data[$base_table]['tree'] = [
         'title' => t('Entity hierarchy'),
         'help' => t('The hierarchy information'),
-        'real field' => $revision_key ?: $entity_type->getKey('id'),
+        'real field' => $has_revisions ?: $entity_type->getKey('id'),
         'group' => t('Entity hierarchy'),
         'relationship' => [
           'title' => 'Entity Hierarchy',
           'help' => 'Relate to hierarchy information',
           'id' => 'standard',
           'base' => $table_name,
-          'base field' => $revision_key ? 'revision_id' : 'id',
-          'field' => $revision_key ?: $entity_type->getKey('id'),
+          'base field' => $has_revisions ? 'revision_id' : 'id',
+          'field' => $has_revisions ?: $entity_type->getKey('id'),
         ],
       ];
     }
