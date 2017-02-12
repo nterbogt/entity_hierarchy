@@ -8,13 +8,22 @@
  * Implements hook_views_data().
  */
 function entity_hierarchy_views_data() {
+  // Adds the relationship from the entity-base table to any tree tables that
+  // exist by way of entity reference hierarchy fields.
   $data = [];
+  /** @var \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager */
   $entityTypeManager = \Drupal::service('entity_type.manager');
   /** @var \Drupal\Core\Entity\EntityFieldManager $fieldManager */
   $fieldManager = \Drupal::service('entity_field.manager');
   foreach ($fieldManager->getFieldMapByFieldType('entity_reference_hierarchy') as $entity_type_id => $fields) {
     /** @var \Drupal\Core\Entity\EntityTypeInterface $entity_type */
     $entity_type = $entityTypeManager->getDefinition($entity_type_id);
+    if (!$entityTypeManager->hasHandler($entity_type_id, 'views_data')) {
+      // If there is no existing views integration, we cannot do anything here.
+      continue;
+    }
+    /** @var \Drupal\views\EntityViewsDataInterface $views_handler */
+    $views_handler = $entityTypeManager->getHandler($entity_type_id, 'views_data');
     foreach ($fields as $field_name => $field_info) {
       $table_name = \Drupal::service('entity_hierarchy.nested_set_storage_factory')->getTableName($field_name, $entity_type_id, FALSE);
       $sample_bundle = reset($field_info['bundles']);
@@ -24,8 +33,9 @@ function entity_hierarchy_views_data() {
         '@entity_type' => $entity_type->getLabel(),
         '@field_name' => $sample_field->getLabel(),
       ]);
-      $base_table = $entity_type->getDataTable() ?: $entity_type->getBaseTable();
+      $base_table = $views_handler->getViewsTableForEntityType($entity_type);
 
+      // Relationship to the entity base table.
       $data[$table_name]['table']['join'] = [
         $base_table => [
           'left_field' => $entity_type->getKey('id'),
@@ -37,6 +47,9 @@ function entity_hierarchy_views_data() {
         $data[$table_name]['table']['join'][$base_table]['left_field'] = $revision_key;
         $data[$table_name]['table']['join'][$base_table]['field'] = 'revision_id';
       }
+
+      // @see \PNX\NestedSet\Storage\DbalNestedSetSchema::create()
+      // Sort for left position in tree.
       $data[$table_name]['left_pos'] = [
         'title' => t('Hierarchy order'),
         'help' => t('Sort in hierarchy order'),
@@ -44,6 +57,7 @@ function entity_hierarchy_views_data() {
           'id' => 'standard',
         ],
       ];
+      // Contextual filter for filtering to children of a given parent.
       $data[$table_name]['is_child'] = [
         'title' => t('Hierarchy: Is child of'),
         'help' => t('Limit to children of given entity'),
@@ -52,17 +66,21 @@ function entity_hierarchy_views_data() {
           'id' => $has_revisions ? 'entity_hierarchy_argument_is_child_of_entity_revision' : 'entity_hierarchy_argument_is_child_of_entity',
         ],
       ];
+      // Sorting and filtering on depth.
       $data[$table_name]['depth'] = [
         'title' => t('Hierarchy depth'),
         'help' => t('Depth in hierarchy'),
         'sort' => [
           'id' => 'standard',
         ],
+        'filter' => [
+          'id' => 'standard',
+        ],
         'argument' => [
           'id' => 'standard',
-          'numeric' => TRUE,
         ],
       ];
+      // Additional relationship from base table to field.
       $data[$base_table]['tree'] = [
         'title' => t('Entity hierarchy'),
         'help' => t('The hierarchy information'),

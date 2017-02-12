@@ -9,6 +9,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\entity_hierarchy\Storage\InsertPosition;
 use Drupal\entity_hierarchy\Storage\NestedSetStorage;
 use PNX\NestedSet\Node;
+use PNX\NestedSet\NodeKey;
 
 /**
  * Plugin implementation of the 'entity_reference_hierarchy' field type.
@@ -251,7 +252,10 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    */
   protected function getSiblingEntities(NestedSetStorage $storage, Node $parentNode, $childNode) {
     if ($siblingNodes = array_filter($storage->findChildren($parentNode->getNodeKey()), function (Node $node) use ($childNode) {
-      return [$childNode->getId(), $childNode->getRevisionId()] !== [$node->getId(), $node->getRevisionId()];
+      if ($childNode instanceof NodeKey) {
+        return $childNode !== $node->getNodeKey();
+      }
+      return $childNode->getNodeKey() !== $node->getNodeKey();
     })) {
       return $this->loadSiblingEntities($siblingNodes);
     }
