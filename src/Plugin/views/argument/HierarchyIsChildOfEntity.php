@@ -93,10 +93,12 @@ class HierarchyIsChildOfEntity extends ArgumentPluginBase {
   public function query($group_by = FALSE) {
     $this->ensureMyTable();
     // Load the actual entity.
+    $filtered = FALSE;
     if ($entity = $this->loadParentEntity()) {
       $stub = $this->nodeKeyFactory->fromEntity($entity);
       if ($node = $this->getTreeStorage()->getNode($stub)) {
         // Query between a range.
+        $filtered = TRUE;
         $expression = "$this->tableAlias.$this->realField BETWEEN :lower and :upper AND $this->tableAlias.$this->realField <> :lower";
         $arguments = [
           ':lower' => $node->getLeft(),
@@ -108,6 +110,12 @@ class HierarchyIsChildOfEntity extends ArgumentPluginBase {
         }
         $this->query->addWhereExpression(0, $expression, $arguments);
       }
+    }
+    // The parent entity doesn't exist, or isn't in the tree and hence has no
+    // children.
+    if (!$filtered) {
+      // Add a killswitch.
+      $this->query->addWhereExpression(0, '1 <> 1');
     }
   }
 
