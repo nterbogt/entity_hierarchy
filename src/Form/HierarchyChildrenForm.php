@@ -127,9 +127,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
       $child = $node->getId();
       $form['children'][$child]['#attributes']['class'][] = 'draggable';
       $form['children'][$child]['#weight'] = $weight;
-      $form['children'][$child]['title'] = [
-        '#markup' => $childEntity->label(),
-      ];
+      $form['children'][$child]['title'] = $childEntity->toLink()->toRenderable();
       $form['children'][$child]['weight'] = [
         '#type' => 'weight',
         '#title' => t('Weight for @title', ['@title' => $childEntity->label()]),

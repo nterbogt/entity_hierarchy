@@ -67,7 +67,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     // Access denied.
     $assert->statusCodeEquals(403);
     // Now login.
-    $this->drupalLogin($this->drupalCreateUser(['reorder entity_hierarchy children', 'access content']));
+    $this->drupalLogin($this->drupalCreateUser(['reorder entity_hierarchy children', 'view test entity']));
     $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
     $assert->statusCodeEquals(200);
     foreach ($entities as $entity) {
