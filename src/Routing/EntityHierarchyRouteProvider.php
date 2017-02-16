@@ -79,6 +79,7 @@ class EntityHierarchyRouteProvider implements EntityRouteProviderInterface, Enti
         // @todo implement this to remove the tab for no fields on this bundle.
         ->setRequirement('_entity_hierarchy_has_field', 'TRUE')
         ->setOption('_entity_hierarchy_entity_type', $entity_type_id)
+        ->setOption('_admin_route', TRUE)
         ->setOption('parameters', [
           $entity_type_id => ['type' => 'entity:' . $entity_type_id],
         ]);

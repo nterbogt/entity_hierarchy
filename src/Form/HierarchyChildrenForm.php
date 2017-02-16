@@ -2,23 +2,82 @@
 
 namespace Drupal\entity_hierarchy\Form;
 
+use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
+use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Url;
-use Drupal\node\Entity\Node;
+use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
+use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
 use Drupal\Core\Entity\ContentEntityForm;
-use Drupal\Core\Link;
+use PNX\NestedSet\Node;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Defines a form that is displayed when visiting the children tab.
+ * Defines a form for re-ordering children.
+ *
+ * @todo handle multiple fields.
  */
 class HierarchyChildrenForm extends ContentEntityForm {
 
   /**
    * The hierarchy being displayed.
    *
-   * @var \Drupal\node\NodeInterface
+   * @var \Drupal\Core\Entity\ContentEntityInterface
    */
   protected $entity;
+
+  /**
+   * Nested set storage factory.
+   *
+   * @var \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
+   */
+  protected $nestedSetStorageFactory;
+
+  /**
+   * Nested set node key factory.
+   *
+   * @var \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
+   */
+  protected $nodeKeyFactory;
+
+  /**
+   * Entity field manager.
+   *
+   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
+   */
+  protected $entityFieldManager;
+
+  /**
+   * Constructs a new HierarchyChildrenForm object.
+   *
+   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
+   *   Entity type manager.
+   * @param \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory $nestedSetStorageFactory
+   *   Nested set storage.
+   * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $nodeKeyFactory
+   *   Node key factory.
+   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
+   *   Entity field manager.
+   */
+  public function __construct($entity_manager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityFieldManagerInterface $entityFieldManager) {
+    parent::__construct($entity_manager);
+    $this->nestedSetStorageFactory = $nestedSetStorageFactory;
+    $this->nodeKeyFactory = $nodeKeyFactory;
+    $this->entityFieldManager = $entityFieldManager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('entity.manager'),
+      $container->get('entity_hierarchy.nested_set_storage_factory'),
+      $container->get('entity_hierarchy.nested_set_node_factory'),
+      $container->get('entity_field.manager')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -32,103 +91,102 @@ class HierarchyChildrenForm extends ContentEntityForm {
    * {@inheritdoc}
    */
   public function form(array $form, FormStateInterface $form_state) {
-    return [];
+    $cache = (new CacheableMetadata())->addCacheableDependency($this->entity);
 
-    $id = $this->entity->id();
-    $children = $hierarchy_manager->hierarchyLoadAllChildren($id);
+    /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $fields */
+    $fields = array_filter($this->entityFieldManager->getFieldDefinitions($this->entity->getEntityTypeId(), $this->entity->bundle()), function (FieldDefinitionInterface $field) {
+      return $field->getType() === 'entity_reference_hierarchy';
+    });
+    $field = reset($fields);
+    /** @var \PNX\NestedSet\Node[] $children */
+    /** @var \PNX\NestedSet\NestedSetInterface $storage */
+    $storage = $this->nestedSetStorageFactory->get($field->getName(), $this->entity->getEntityTypeId());
+    $children = $storage->findChildren($this->nodeKeyFactory->fromEntity($this->entity));
+    $childEntities = $this->loadAndAccessCheckEntitysForTreeNodes($children, $cache);
     $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
-    if ($children) {
-      $form['children'] = array(
-        '#type' => 'table',
-        '#header' => array(t('Child Title'), t('Type'), t('Weight') , t('Operations')),
-        '#tabledrag' => array(
-          array(
-            'action' => 'order',
-            'relationship' => 'sibling',
-            'group' => 'children-order-weight',
-          )),
-      );
-      // Add CSS to the form via .libraries.yml file
-      $form['#attached'] = array(
-        'library' => array('entity_hierarchy/entity_hierarchy.children'),
-      );
-    }
-    $type_names = node_type_get_names();
+    $form['children'] = [
+      '#type' => 'table',
+      '#header' => [t('Child'), t('Weight') , t('Operations')],
+      '#tabledrag' => [
+        [
+          'action' => 'order',
+          'relationship' => 'sibling',
+          'group' => 'children-order-weight',
+        ]
+      ],
+      '#empty' => $this->t('There are no children to reorder'),
+    ];
 
-    foreach ($children as $weight => $child) {
-      if ($node = Node::load($child)) {
-        $url = Url::fromRoute('entity.node.canonical', array('node'=>$node->id()));
-        $form['children'][$child]['#attributes']['class'][] = 'draggable';
-        $form['children'][$child]['#weight'] = $weight;
-        $form['children'][$child]['title'] = array(
-          '#markup' => $this->l(SafeMarkup::checkPlain($node->getTitle()), $url),
-        );
-        $form['children'][$child]['type'] = array(
-          '#markup' => SafeMarkup::checkPlain($type_names[$node->getType()]),
-        );
-        //
-        $form['children'][$child]['weight'] = array(
-          '#type' => 'weight',
-          '#title' => t('Weight for @title', array('@title' => $this->l($node->getTitle(), $url))),
-          '#title_display' => 'invisible',
-          '#default_value' => $weight,
-          // Classify the weight element for #tabledrag.
-          '#attributes' => array('class' => array('children-order-weight')),
-        );
-        // Operations column.
-        $form['children'][$child]['operations'] = array(
-          '#type' => 'operations',
-          '#links' => array(),
-        );
-        $form['children'][$child]['operations']['#links']['edit'] = array(
+    foreach ($children as $weight => $node) {
+      if (!$childEntities->contains($node)) {
+        // Doesn't exist or is access hidden.
+        continue;
+      }
+      /** @var \Drupal\Core\Entity\ContentEntityInterface $childEntity */
+      $childEntity = $childEntities->offsetGet($node);
+      $child = $node->getId();
+      $form['children'][$child]['#attributes']['class'][] = 'draggable';
+      $form['children'][$child]['#weight'] = $weight;
+      $form['children'][$child]['title'] = [
+        '#markup' => $childEntity->label(),
+      ];
+      $form['children'][$child]['weight'] = [
+        '#type' => 'weight',
+        '#title' => t('Weight for @title', ['@title' => $childEntity->label()]),
+        '#title_display' => 'invisible',
+        '#default_value' => $weight,
+        // Classify the weight element for #tabledrag.
+        '#attributes' => ['class' => ['children-order-weight']],
+      ];
+      // Operations column.
+      $form['children'][$child]['operations'] = [
+        '#type' => 'operations',
+        '#links' => [],
+      ];
+      if ($childEntity->access('update') && $childEntity->hasLinkTemplate('edit-form')) {
+        $form['children'][$child]['operations']['#links']['edit'] = [
           'title' => t('Edit'),
-          'url' => Url::fromRoute('entity.node.edit_form', array('node'=>$node->id())),
-        );
-        $form['children'][$child]['operations']['#links']['delete'] = array(
+          'url' => $childEntity->toUrl('edit-form'),
+        ];
+      }
+      if ($childEntity->access('delete') && $childEntity->hasLinkTemplate('delete-form')) {
+        $form['children'][$child]['operations']['#links']['delete'] = [
           'title' => t('Delete'),
-          'url' => Url::fromRoute('entity.node.delete_form', array('node'=>$node->id())),
-        );
-        // The link to the child tab
-        $form['children'][$child]['operations']['#links']['children'] = array(
-          'title' => t('Children'),
-          'url' => Url::fromRoute('entity.node.entity_hierarchy_children_form', array('node'=>$node->id())),
-        );
+          'url' => $childEntity->toUrl('delete-form'),
+        ];
       }
     }
 
-    if (!is_array($form['children'])){
-      // Todo: better use the #empty instead; see https://www.drupal.org/node/1876710
-      $form['no_children'] = array('#type' => 'markup', '#markup' => t('This node has no children.'));
-    }
-
-    // Build the add child links
-    // TODO: add using renderable array instead, then find suitable place for code
-    $current_user = \Drupal::currentUser();
-    if ($current_user->hasPermission('create child nodes') && ($current_user->hasPermission('create child of any parent')
-        || $node->access('update'))) {
-
-      $url = Url::fromRoute('<current>');
-      $curr_path = $url->toString();
-      $path = explode('/', $curr_path);
-      $nid = $path[2];
-      $node = Node::load($nid);
-      if (is_object($node)) {
-        $node_type = $node->getType();
-      }
-      foreach ($hierarchy_manager->hierarchyGetAllowedChildTypes($node->getType()) as $key => $type) {
-        if ($node->access('create')) {
-          $destination = (array) drupal_get_destination() + array('parent' => $nid);
-          $url = Url::fromRoute('node.add', array('node_type' => $key), array('query' => $destination));
-          $link = Link::fromTextAndUrl(t($type), $url);
-          $create_links[] = render(@$link->toRenderable());
-        }
-        if ($create_links) {
-          $out = '<div class="newchild">' . t('Create new child ') . implode(" | ", $create_links) . '</div>';
-        }
-        $form['newchild']['#suffix'] = $out;
-      }
-    }
+    $cache->applyTo($form);
     return $form;
+  }
+
+  /**
+   * Loads Drupal node entities for given tree nodes and checks access.
+   *
+   * @param \PNX\NestedSet\Node[] $nodes
+   *   Tree node to load entity for.
+   * @param \Drupal\Core\Cache\RefinableCacheableDependencyInterface $cache
+   *   Cache metadata.
+   *
+   * @return \SplObjectStorage
+   *   Map of entities keyed by node.
+   */
+  protected function loadAndAccessCheckEntitysForTreeNodes(array $nodes, RefinableCacheableDependencyInterface $cache) {
+    $entities = $this->entityTypeManager->getStorage($this->entity->getEntityTypeId())->loadMultiple(array_map(function (Node $node) {
+      return $node->getId();
+    }, $nodes));
+    $loadedEntities = new \SplObjectStorage();
+    foreach ($nodes as $node) {
+      $nodeId = $node->getId();
+      $entity = $entities[$nodeId] ?? FALSE;
+      if (!$entity || !$entity->access('view label')) {
+        continue;
+      }
+      $loadedEntities[$node] = $entity;
+      $cache->addCacheableDependency($entity);
+    }
+    return $loadedEntities;
   }
 
   /**
