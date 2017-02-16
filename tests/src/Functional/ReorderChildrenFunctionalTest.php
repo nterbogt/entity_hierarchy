@@ -73,6 +73,17 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     foreach ($entities as $entity) {
       $assert->linkExists($entity->label());
     }
+    // Now move Child 6 to the top.
+    $this->submitForm([
+      'children[' . $entities[$name]->id() . '][weight]' => -1,
+    ], 'Update child order');
+    $children = $this->treeStorage->findChildren($root_node->getNodeKey());
+    $this->assertCount(6, $children);
+    $this->assertEquals(array_map(function ($name) use ($entities) {
+      return $entities[$name]->id();
+    }, ['Child 6', 'Child 5', 'Child 4', 'Child 3', 'Child 2', 'Child 1']), array_map(function (Node $node) {
+      return $node->getId();
+    }, $children));
     // @todo test tab exists for appropriate bundles, but not for others.
   }
 
