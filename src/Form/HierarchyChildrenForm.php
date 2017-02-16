@@ -1,27 +1,17 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity_hierarchy\Form\NodehierarchyChildrenForm.
- */
-
 namespace Drupal\entity_hierarchy\Form;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\entity_hierarchy\HierarchyBase;
 use Drupal\node\Entity\Node;
-use Drupal\Core\Render\Element;
 use Drupal\Core\Entity\ContentEntityForm;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Link;
 
-
 /**
- * Defines a form that is displayed when visiting /node/{node}/children
+ * Defines a form that is displayed when visiting the children tab.
  */
-class NodeHierarchyChildrenForm extends ContentEntityForm {
+class HierarchyChildrenForm extends ContentEntityForm {
 
   /**
    * The hierarchy being displayed.
@@ -29,24 +19,6 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
    * @var \Drupal\node\NodeInterface
    */
   protected $entity;
-
-  /**
-   * HierarchyManager service.
-   *
-   * @var \Drupal\entity_hierarchy\HierarchyManagerInterface
-   */
-  protected $hierarchyManager;
-
-  /**
-   * Constructs a NodehierarchyChildrenForm object.
-   *
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface   $entity_manager
-   *   The entity manager.
-   *
-   */
-  public function __construct(EntityTypeManagerInterface $entity_manager) {
-    parent::__construct($entity_manager);
-  }
 
   /**
    * {@inheritdoc}
@@ -60,7 +32,7 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
    * {@inheritdoc}
    */
   public function form(array $form, FormStateInterface $form_state) {
-    $hierarchy_manager = \Drupal::service('entity_hierarchy.manager');
+    return [];
 
     $id = $this->entity->id();
     $children = $hierarchy_manager->hierarchyLoadAllChildren($id);
@@ -165,35 +137,20 @@ class NodeHierarchyChildrenForm extends ContentEntityForm {
   protected function actions(array $form, FormStateInterface $form_state) {
     $actions = parent::actions($form, $form_state);
     $actions['submit']['#value'] = $this->t('Update child order');
-    $actions['delete']['#value'] = $this->t('Remove all children');
+    unset ($actions['delete']);
     // Don't show the actions links if there are no children
     if (isset($form['no_children'])) {
       unset ($actions['submit']);
-      unset ($actions['delete']);
     }
     return $actions;
   }
 
   /**
    * {@inheritdoc}
-   *
-   * Here we are loading the weights/IDs from the values set using the tabledrag
-   * in the form() function above.
-   *
-   * We then create an object containing only the child weight and hierarchy ID,
-   * and write that to the database.
-   *
-   * We don't do any checking because no Save button will be shown if no
-   * children are present.
    */
   public function save(array $form, FormStateInterface $form_state) {
     $children = $form_state->getValue('children');
-    $hierarchyManager = \Drupal::service('entity_hierarchy.manager');
-    $id = $this->entity->id();
-    $hierarchy = new HierarchyBase($id);
-    foreach ($children as $hid => $child) {
-      $hierarchyManager->hierarchyUpdateWeight($hid, $child['weight']);
-    }
+    // Do something here.
   }
 
 }

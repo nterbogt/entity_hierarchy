@@ -72,6 +72,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     foreach ($entities as $entity) {
       $assert->linkExists($entity->label());
     }
+    // @todo test tab exists for appropriate bundles, but not for others.
   }
 
 }

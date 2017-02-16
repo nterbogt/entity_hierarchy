@@ -6,7 +6,10 @@
  * A module to make entities hierarchical.
  */
 
+use Drupal\Core\Entity\ContentEntityType;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\entity_hierarchy\Form\HierarchyChildrenForm;
+use Drupal\entity_hierarchy\Routing\EntityHierarchyRouteProvider;
 
 /**
  * Implements @see hook_help().
@@ -21,21 +24,26 @@ function entity_hierarchy_help($route_name, RouteMatchInterface $route_match) {
 /**
  * Implements @see hook_entity_type_build().
  *
- * Here we're adding a form controller class for a custom node form without
- * overriding the default node form.
- *
- * More specifically, we're adding a children form to a tab named children.
- * This routing information for this tab is set in the .routing.yml file, and
- * the .links.task.yml file.
- *
- * @see \Drupal\entity_hierarchy\Form\NodehierarchyChildrenForm
+ * @see \Drupal\entity_hierarchy\Form\HierarchyChildrenForm
  */
 function entity_hierarchy_entity_type_build(array &$entity_types) {
-  // @todo add support for all entity types.
-  /** @type $entity_types \Drupal\Core\Entity\EntityTypeInterface[] */
-  if (isset($entity_types['node'])) {
-    $entity_types['node']
-      ->setFormClass('entity_hierarchy_children', 'Drupal\entity_hierarchy\Form\NodehierarchyChildrenForm')
-      ->setLinkTemplate('entity_hierarchy-children-form', '/node/{node}/children');
+  // Adds the entity_hierarchy_reorder link template.
+  foreach ($entity_types as $entity_type_id => $entity_type) {
+
+    if (!$entity_type instanceof ContentEntityType || !$entity_type->hasLinkTemplate('canonical')) {
+      continue;
+    }
+    $providers = $entity_type->getRouteProviderClasses() ?: [];
+    if (empty($providers['entity_hierarchy'])) {
+      $providers['entity_hierarchy'] = EntityHierarchyRouteProvider::class;
+      $entity_types[$entity_type_id]->setHandlerClass('route_provider', $providers);
+    }
+
+    // We have to add this for every content entity-type, regardless of if it
+    // has hierarchy fields or not, because you cannot use the field manager
+    // during a hook_entity_type_build, as it will cause recursion.
+    $entity_types[$entity_type_id]
+      ->setFormClass('entity_hierarchy_reorder', HierarchyChildrenForm::class)
+      ->setLinkTemplate('entity_hierarchy_reorder', $entity_type->getLinkTemplate('canonical') . '/children');
   }
 }
