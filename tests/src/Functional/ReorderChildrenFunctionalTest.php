@@ -2,6 +2,8 @@
 
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
+use Drupal\entity_test\Entity\EntityTestRev;
+use Drupal\simpletest\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\entity_hierarchy\EntityHierarchyTestTrait;
 use PNX\NestedSet\Node;
@@ -14,6 +16,7 @@ use PNX\NestedSet\Node;
 class ReorderChildrenFunctionalTest extends BrowserTestBase {
 
   use EntityHierarchyTestTrait;
+  use BlockCreationTrait;
 
   const FIELD_NAME = 'parents';
   const ENTITY_TYPE = 'entity_test';
@@ -26,6 +29,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     'system',
     'user',
     'dbal',
+    'block',
     'field',
   ];
 
@@ -36,6 +40,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     parent::setUp();
     $this->setupEntityHierarchyField(static::ENTITY_TYPE, static::ENTITY_TYPE, static::FIELD_NAME);
     $this->additionalSetup();
+    $this->placeBlock('local_tasks_block');
   }
 
   /**
@@ -84,7 +89,15 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     }, ['Child 6', 'Child 5', 'Child 4', 'Child 3', 'Child 2', 'Child 1']), array_map(function (Node $node) {
       return $node->getId();
     }, $children));
-    // @todo test tab exists for appropriate bundles, but not for others.
+    $this->drupalGet($this->parent->toUrl());
+    $assert->linkExists('Children');
+    $different_test_entity = EntityTestRev::create(['type' => 'entity_test_rev', 'label' => 'No children here']);
+    $different_test_entity->save();
+    $this->drupalGet($different_test_entity->toUrl());
+    $assert->linkNotExists('Children');
+    $this->drupalGet($different_test_entity->toUrl('entity_hierarchy_reorder'));
+    // No field, should be access denied here.
+    $assert->statusCodeEquals(403);
   }
 
 }

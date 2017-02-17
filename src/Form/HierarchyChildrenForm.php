@@ -12,6 +12,7 @@ use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
 use Drupal\Core\Entity\ContentEntityForm;
 use PNX\NestedSet\Node;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Defines a form for re-ordering children.
@@ -96,6 +97,9 @@ class HierarchyChildrenForm extends ContentEntityForm {
     $fields = array_filter($this->entityFieldManager->getFieldDefinitions($this->entity->getEntityTypeId(), $this->entity->bundle()), function (FieldDefinitionInterface $field) {
       return $field->getType() === 'entity_reference_hierarchy';
     });
+    if (!$fields) {
+      throw new NotFoundHttpException();
+    }
     $fieldName = $form_state->getValue('fieldname') ?: reset($fields)->getName();
     if (count($fields) === 1) {
       $form['fieldname'] = [
