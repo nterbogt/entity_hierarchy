@@ -89,7 +89,7 @@ trait EntityHierarchyTestTrait {
    * @param int $parentId
    *   Parent ID.
    * @param int $count
-   *   (optional) Number to create. Defaults to 5
+   *   (optional) Number to create. Defaults to 5.
    *
    * @return \Drupal\Core\Entity\EntityInterface[]
    *   Child entities
@@ -107,9 +107,9 @@ trait EntityHierarchyTestTrait {
    * Creates a new test entity.
    *
    * @param int|null $parentId
-   *   Parent ID
+   *   Parent ID.
    * @param string $label
-   *   Entity label
+   *   Entity label.
    * @param int $weight
    *   Entity weight amongst sibling, if parent is set.
    *
@@ -141,7 +141,7 @@ trait EntityHierarchyTestTrait {
    * @return \Drupal\Core\Entity\EntityInterface
    *   Created entity.
    */
-  protected function doCreateTestEntity($values) {
+  protected function doCreateTestEntity(array $values) {
     $entity = EntityTest::create($values);
     return $entity;
   }
@@ -150,9 +150,9 @@ trait EntityHierarchyTestTrait {
    * Creates a new test entity.
    *
    * @param int|null $parentId
-   *   Parent ID
+   *   Parent ID.
    * @param string $label
-   *   Entity label
+   *   Entity label.
    * @param int $weight
    *   Entity weight amongst sibling, if parent is set.
    *

@@ -1,6 +1,7 @@
 <?php
 
 namespace Drupal\entity_hierarchy\Storage;
+
 use Doctrine\DBAL\Connection;
 use PNX\NestedSet\Storage\DbalNestedSet;
 use PNX\NestedSet\Storage\DbalNestedSetSchema;
@@ -32,7 +33,7 @@ class NestedSetStorage {
    * @param string $table_name
    *   Table name.
    */
-  function __construct(Connection $connection, $table_name) {
+  public function __construct(Connection $connection, $table_name) {
     $this->schema = new DbalNestedSetSchema($connection, $table_name);
     $this->proxy = new DbalNestedSet($connection, $table_name);
   }
@@ -61,11 +62,17 @@ class NestedSetStorage {
   }
 
   /**
-   * @param $name
-   * @param $arguments
+   * Calls proxied class.
+   *
+   * @param string $name
+   *   Method name.
+   * @param array $arguments
+   *   Method arguments.
+   *
    * @return mixed
+   *   Result of proxied call.
    */
-  protected function doCall($name, $arguments) {
+  protected function doCall($name, array $arguments) {
     return call_user_func_array([$this->proxy, $name], $arguments);
   }
 

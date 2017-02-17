@@ -72,7 +72,7 @@ class NestedSetStorageFactory {
    * @todo Remove this in favour of derivative argument plugins?
    */
   public function fromTableName($table_name) {
-     if (!isset($this->cache[$table_name])) {
+    if (!isset($this->cache[$table_name])) {
       $this->cache[$table_name] = new NestedSetStorage($this->connection, $table_name);
     }
     return $this->cache[$table_name];
@@ -87,6 +87,7 @@ class NestedSetStorageFactory {
    *   Entity Type ID.
    * @param bool $withPrefix
    *   (optional) TRUE to add prefix. Views data does not need prefix.
+   *
    * @return string
    *   Table name.
    */

@@ -44,7 +44,7 @@ class InsertPosition {
    * @param bool $insert
    *   TRUE if inserting rather than moving.
    * @param string $direction
-   *   Direction constants - one of Before/After/Below
+   *   Direction constants - one of Before/After/Below.
    */
   public function __construct(Node $reference, $insert = TRUE, $direction = self::DIRECTION_BEFORE) {
     $this->reference = $reference;

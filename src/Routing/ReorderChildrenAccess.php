@@ -5,10 +5,8 @@ namespace Drupal\entity_hierarchy\Routing;
 use Drupal\Core\Access\AccessCheckInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
-use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
-use Symfony\Cmf\Component\Routing\RouteObjectInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Route;
 

@@ -7,6 +7,8 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\Plugin\Field\FieldWidget\EntityReferenceAutocompleteWidget;
 
 /**
+ * Widget that uses autocomplete.
+ *
  * @FieldWidget(
  *   id = "entity_reference_hierarchy_autocomplete",
  *   label = @Translation("Autocomplete"),
@@ -19,7 +21,7 @@ use Drupal\Core\Field\Plugin\Field\FieldWidget\EntityReferenceAutocompleteWidget
 class EntityReferenceHierarchyAutocomplete extends EntityReferenceAutocompleteWidget {
 
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     $widget = array(
@@ -43,4 +45,5 @@ class EntityReferenceHierarchyAutocomplete extends EntityReferenceAutocompleteWi
 
     return $widget;
   }
+
 }

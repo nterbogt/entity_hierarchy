@@ -92,7 +92,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
       '#type' => 'textfield',
       '#title' => t('Weight Label'),
       '#default_value' => $this->getSetting('weight_label'),
-      '#description' => t('The weight of this child with respect to other children.')
+      '#description' => t('The weight of this child with respect to other children.'),
     ];
 
     return $elements;
@@ -275,7 +275,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    * @return array
    *   Array of nested set nodes grouped by weight.
    */
-  public function groupSiblingsByWeight($siblingEntities, $fieldName) {
+  public function groupSiblingsByWeight(\SplObjectStorage $siblingEntities, $fieldName) {
     $weightMap = [];
     foreach ($siblingEntities as $node) {
       $siblingEntity = $siblingEntities->offsetGet($node);

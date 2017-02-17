@@ -49,6 +49,7 @@ class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatt
       case 'attribute':
         $action = t('custom data-* attribute');
         break;
+
       case 'suffix':
         $action = t('suffix after title');
         break;
@@ -58,6 +59,9 @@ class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatt
     return $summary;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function viewElements(FieldItemListInterface $items, $langcode) {
     $elements = parent::viewElements($items, $langcode);
     $values = $items->getValue();
@@ -68,6 +72,7 @@ class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatt
           case 'attribute':
             $elements[$delta]['#attributes']['data-weight'] = $values[$delta]['weight'];
             break;
+
           case 'suffix':
             $elements[$delta]['#suffix'] = ' (' . $values[$delta]['weight'] . ')';
             break;
@@ -77,4 +82,5 @@ class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatt
 
     return $elements;
   }
+
 }

@@ -5,6 +5,7 @@ namespace Drupal\entity_hierarchy\Form;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
+use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
@@ -60,7 +61,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
    *   Entity field manager.
    */
-  public function __construct($entity_manager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityFieldManagerInterface $entityFieldManager) {
+  public function __construct(EntityManagerInterface $entity_manager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityFieldManagerInterface $entityFieldManager) {
     parent::__construct($entity_manager);
     $this->nestedSetStorageFactory = $nestedSetStorageFactory;
     $this->nodeKeyFactory = $nodeKeyFactory;
@@ -83,7 +84,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
    * {@inheritdoc}
    */
   public function getBaseFormId() {
-    // Don't show a parent form here
+    // Don't show a parent form here.
     return NULL;
   }
 
@@ -120,13 +121,13 @@ class HierarchyChildrenForm extends ContentEntityForm {
         '#description' => $this->t('Field to reorder children in.'),
         '#options' => array_map(function (FieldDefinitionInterface $field) {
           return $this->entity->getFieldDefinitions()[$field->getName()]->getLabel();
-      }, $fields),
+        }, $fields),
         '#default_value' => $fieldName,
       ];
       $form['select_field']['update'] = [
         '#type' => 'submit',
         '#value' => $this->t('Update'),
-        '#submit' => ['::updateField']
+        '#submit' => ['::updateField'],
       ];
     }
     /** @var \PNX\NestedSet\Node[] $children */
@@ -144,7 +145,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
           'action' => 'order',
           'relationship' => 'sibling',
           'group' => 'children-order-weight',
-        ]
+        ],
       ],
       '#empty' => $this->t('There are no children to reorder'),
     ];
@@ -238,10 +239,10 @@ class HierarchyChildrenForm extends ContentEntityForm {
   protected function actions(array $form, FormStateInterface $form_state) {
     $actions = parent::actions($form, $form_state);
     $actions['submit']['#value'] = $this->t('Update child order');
-    unset ($actions['delete']);
-    // Don't show the actions links if there are no children
+    unset($actions['delete']);
+    // Don't show the actions links if there are no children.
     if (isset($form['no_children'])) {
-      unset ($actions['submit']);
+      unset($actions['submit']);
     }
     return $actions;
   }
@@ -262,4 +263,3 @@ class HierarchyChildrenForm extends ContentEntityForm {
   }
 
 }
-

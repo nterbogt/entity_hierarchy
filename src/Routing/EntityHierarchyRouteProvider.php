@@ -59,7 +59,7 @@ class EntityHierarchyRouteProvider implements EntityRouteProviderInterface, Enti
    * Provides routes for entities.
    *
    * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
-   *   The entity type
+   *   The entity type.
    *
    * @return \Symfony\Component\Routing\RouteCollection|\Symfony\Component\Routing\Route[]
    *   Returns a route collection or an array of routes keyed by name, like
@@ -79,7 +79,7 @@ class EntityHierarchyRouteProvider implements EntityRouteProviderInterface, Enti
         ->setRequirement('_entity_access', "{$entity_type_id}.view")
         ->setRequirement('_permission', 'reorder entity_hierarchy children')
         ->setRequirement(self::ENTITY_HIERARCHY_HAS_FIELD, 'TRUE')
-        ->setOption(self::ENTITY_HIERARCHY_ENTITY_TYPE , $entity_type_id)
+        ->setOption(self::ENTITY_HIERARCHY_ENTITY_TYPE, $entity_type_id)
         ->setOption('_admin_route', TRUE)
         ->setOption('parameters', [
           $entity_type_id => ['type' => 'entity:' . $entity_type_id],

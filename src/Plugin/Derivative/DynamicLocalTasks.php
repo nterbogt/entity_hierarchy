@@ -17,7 +17,7 @@ class DynamicLocalTasks extends DeriverBase implements ContainerDeriverInterface
 
   use StringTranslationTrait;
   /**
-   * The base plugin ID
+   * The base plugin ID.
    *
    * @var string
    */
@@ -46,6 +46,7 @@ class DynamicLocalTasks extends DeriverBase implements ContainerDeriverInterface
    * @param \Drupal\Core\StringTranslation\TranslationInterface $string_translation
    *   The translation manager.
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
+   *   Entity field manager.
    */
   public function __construct($base_plugin_id, EntityTypeManagerInterface $entity_type_manager, TranslationInterface $string_translation, EntityFieldManagerInterface $entityFieldManager) {
     $this->entityTypeManager = $entity_type_manager;

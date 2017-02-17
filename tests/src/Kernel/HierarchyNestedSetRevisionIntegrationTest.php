@@ -2,14 +2,8 @@
 
 namespace Drupal\Tests\entity_hierarchy\Kernel;
 
-use Console_Table;
-use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestRev;
-use Drupal\field\Entity\FieldConfig;
-use Drupal\field\Entity\FieldStorageConfig;
-use Drupal\KernelTests\KernelTestBase;
 use PNX\NestedSet\Node;
 
 /**
@@ -42,7 +36,7 @@ class HierarchyNestedSetRevisionIntegrationTest extends HierarchyNestedSetIntegr
    * @return \Drupal\Core\Entity\EntityInterface
    *   Created entity.
    */
-  protected function doCreateTestEntity($values) {
+  protected function doCreateTestEntity(array $values) {
     // We use a different entity type here.
     $entity = EntityTestRev::create($values);
     return $entity;
@@ -72,7 +66,7 @@ class HierarchyNestedSetRevisionIntegrationTest extends HierarchyNestedSetIntegr
   /**
    * {@inheritdoc}
    */
-  protected function getChildren($parent_node) {
+  protected function getChildren(Node $parent_node) {
     $children = parent::getChildren($parent_node);
     // Limit to latest revisions only.
     $entity_storage = $this->container->get('entity_type.manager')->getStorage(static::ENTITY_TYPE);

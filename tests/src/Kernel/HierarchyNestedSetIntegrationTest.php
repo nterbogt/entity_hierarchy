@@ -203,7 +203,14 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     $children = $this->treeStorage->findChildren($this->parentStub);
     $this->assertEquals(array_map(function ($name) use ($entities) {
       return $entities[$name]->id();
-    }, ['Child 5', 'Child 4', 'Child 3', 'Once was a parent', 'Child 2', 'Child 1']), array_map(function (Node $node) {
+    }, [
+      'Child 5',
+      'Child 4',
+      'Child 3',
+      'Once was a parent',
+      'Child 2',
+      'Child 1',
+    ]), array_map(function (Node $node) {
       return $node->getId();
     }, $children));
   }
@@ -286,7 +293,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
    * @return \PNX\NestedSet\Node[]
    *   Children
    */
-  protected function getChildren($parent_node) {
+  protected function getChildren(Node $parent_node) {
     return $this->treeStorage->findChildren($parent_node->getNodeKey());
   }
 

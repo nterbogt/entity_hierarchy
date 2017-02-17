@@ -2,10 +2,6 @@
 
 namespace Drupal\Tests\entity_hierarchy\Kernel;
 
-use Drupal\Component\Utility\Unicode;
-use Drupal\entity_test\Entity\EntityTest;
-use Drupal\field\Entity\FieldConfig;
-use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\entity_hierarchy\EntityHierarchyTestTrait;
 
