@@ -75,7 +75,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     }
     // Now move Child 6 to the top.
     $this->submitForm([
-      'children[' . $entities[$name]->id() . '][weight]' => -1,
+      'children[' . $entities[$name]->id() . '][weight]' => -10,
     ], 'Update child order');
     $children = $this->treeStorage->findChildren($root_node->getNodeKey());
     $this->assertCount(6, $children);

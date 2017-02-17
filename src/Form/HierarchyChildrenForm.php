@@ -15,10 +15,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Defines a form for re-ordering children.
- *
- * @todo handle multiple fields.
  */
 class HierarchyChildrenForm extends ContentEntityForm {
+  const CHILD_ENTITIES_STORAGE = 'child_entities';
 
   /**
    * The hierarchy being displayed.
@@ -97,12 +96,41 @@ class HierarchyChildrenForm extends ContentEntityForm {
     $fields = array_filter($this->entityFieldManager->getFieldDefinitions($this->entity->getEntityTypeId(), $this->entity->bundle()), function (FieldDefinitionInterface $field) {
       return $field->getType() === 'entity_reference_hierarchy';
     });
-    $field = reset($fields);
+    $fieldName = $form_state->getValue('fieldname') ?: reset($fields)->getName();
+    if (count($fields) === 1) {
+      $form['fieldname'] = [
+        '#type' => 'value',
+        '#value' => $fieldName,
+      ];
+    }
+    else {
+      $form['select_field'] = [
+        '#type' => 'container',
+        '#attributes' => [
+          'class' => ['container-inline'],
+        ],
+      ];
+      $form['select_field']['fieldname'] = [
+        '#type' => 'select',
+        '#title' => $this->t('Field'),
+        '#description' => $this->t('Field to reorder children in.'),
+        '#options' => array_map(function (FieldDefinitionInterface $field) {
+          return $this->entity->getFieldDefinitions()[$field->getName()]->getLabel();
+      }, $fields),
+        '#default_value' => $fieldName,
+      ];
+      $form['select_field']['update'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Update'),
+        '#submit' => ['::updateField']
+      ];
+    }
     /** @var \PNX\NestedSet\Node[] $children */
     /** @var \PNX\NestedSet\NestedSetInterface $storage */
-    $storage = $this->nestedSetStorageFactory->get($field->getName(), $this->entity->getEntityTypeId());
+    $storage = $this->nestedSetStorageFactory->get($fieldName, $this->entity->getEntityTypeId());
     $children = $storage->findChildren($this->nodeKeyFactory->fromEntity($this->entity));
     $childEntities = $this->loadAndAccessCheckEntitysForTreeNodes($children, $cache);
+    $form_state->setTemporaryValue(self::CHILD_ENTITIES_STORAGE, $childEntities);
     $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
     $form['children'] = [
       '#type' => 'table',
@@ -130,9 +158,10 @@ class HierarchyChildrenForm extends ContentEntityForm {
       $form['children'][$child]['title'] = $childEntity->toLink()->toRenderable();
       $form['children'][$child]['weight'] = [
         '#type' => 'weight',
+        '#delta' => 50,
         '#title' => t('Weight for @title', ['@title' => $childEntity->label()]),
         '#title_display' => 'invisible',
-        '#default_value' => $weight,
+        '#default_value' => $childEntity->{$fieldName}->weight,
         // Classify the weight element for #tabledrag.
         '#attributes' => ['class' => ['children-order-weight']],
       ];
@@ -157,6 +186,18 @@ class HierarchyChildrenForm extends ContentEntityForm {
 
     $cache->applyTo($form);
     return $form;
+  }
+
+  /**
+   * Submit handler for update field button.
+   *
+   * @param array $form
+   *   Form array.
+   * @param \Drupal\Core\Form\FormStateInterface $formState
+   *   Form state.
+   */
+  public function updateField(array $form, FormStateInterface $formState) {
+    $formState->setRebuild(TRUE);
   }
 
   /**
@@ -206,7 +247,14 @@ class HierarchyChildrenForm extends ContentEntityForm {
    */
   public function save(array $form, FormStateInterface $form_state) {
     $children = $form_state->getValue('children');
-    // Do something here.
+    $childEntities = $form_state->getTemporaryValue(self::CHILD_ENTITIES_STORAGE);
+    $fieldName = $form_state->getValue('fieldname');
+    foreach ($childEntities as $node) {
+      $childEntity = $childEntities->offsetGet($node);
+      $childEntity->{$fieldName}->weight = $children[$node->getId()]['weight'];
+      $childEntity->save();
+    }
+    drupal_set_message($this->t('Updated child order.'));
   }
 
 }

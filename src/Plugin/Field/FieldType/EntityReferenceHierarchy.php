@@ -253,9 +253,11 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
   protected function getSiblingEntities(NestedSetStorage $storage, Node $parentNode, $childNode) {
     if ($siblingNodes = array_filter($storage->findChildren($parentNode->getNodeKey()), function (Node $node) use ($childNode) {
       if ($childNode instanceof NodeKey) {
-        return $childNode !== $node->getNodeKey();
+        // Exclude self and all revisions.
+        return $childNode->getId() !== $node->getNodeKey()->getId();
       }
-      return $childNode->getNodeKey() !== $node->getNodeKey();
+      // Exclude self and all revisions.
+      return $childNode->getNodeKey()->getId() !== $node->getNodeKey()->getId();
     })) {
       return $this->loadSiblingEntities($siblingNodes);
     }
