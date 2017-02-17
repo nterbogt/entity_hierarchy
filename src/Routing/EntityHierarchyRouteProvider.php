@@ -15,6 +15,8 @@ use Symfony\Component\Routing\RouteCollection;
  * Defines a class for providing route definitions for hierarchy entities.
  */
 class EntityHierarchyRouteProvider implements EntityRouteProviderInterface, EntityHandlerInterface {
+  const ENTITY_HIERARCHY_HAS_FIELD = '_entity_hierarchy_has_field';
+  const ENTITY_HIERARCHY_ENTITY_TYPE = '_entity_hierarchy_entity_type';
 
   /**
    * The entity type manager.
@@ -76,9 +78,8 @@ class EntityHierarchyRouteProvider implements EntityRouteProviderInterface, Enti
         ])
         ->setRequirement('_entity_access', "{$entity_type_id}.view")
         ->setRequirement('_permission', 'reorder entity_hierarchy children')
-        // @todo implement this to remove the tab for no fields on this bundle.
-        ->setRequirement('_entity_hierarchy_has_field', 'TRUE')
-        ->setOption('_entity_hierarchy_entity_type', $entity_type_id)
+        ->setRequirement(self::ENTITY_HIERARCHY_HAS_FIELD, 'TRUE')
+        ->setOption(self::ENTITY_HIERARCHY_ENTITY_TYPE , $entity_type_id)
         ->setOption('_admin_route', TRUE)
         ->setOption('parameters', [
           $entity_type_id => ['type' => 'entity:' . $entity_type_id],

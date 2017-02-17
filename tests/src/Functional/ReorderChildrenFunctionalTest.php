@@ -2,7 +2,9 @@
 
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
+use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestRev;
+use Drupal\field\Entity\FieldConfig;
 use Drupal\simpletest\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\entity_hierarchy\EntityHierarchyTestTrait;
@@ -96,7 +98,22 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     $this->drupalGet($different_test_entity->toUrl());
     $assert->linkNotExists('Children');
     $this->drupalGet($different_test_entity->toUrl('entity_hierarchy_reorder'));
-    // No field, should be access denied here.
+    // No field, should be not found here.
+    $assert->statusCodeEquals(403);
+    // Add a new bundle.
+    entity_test_create_bundle('someotherbundle');
+    // Edit the field and disable referencing someotherbundle.
+    $field = FieldConfig::load('entity_test.entity_test.parents');
+    $settings = $field->getSetting('handler_settings');
+    $settings['target_bundles'] = ['entity_test'];
+    $field->setSetting('handler_settings', $settings);
+    $field->save();
+    $another_different_test_entity = EntityTest::create(['type' => 'someotherbundle', 'label' => 'No children here either']);
+    $another_different_test_entity->save();
+    $this->drupalGet($another_different_test_entity->toUrl());
+    $assert->linkNotExists('Children');
+    $this->drupalGet($another_different_test_entity->toUrl('entity_hierarchy_reorder'));
+    // No field, should be not found here.
     $assert->statusCodeEquals(403);
   }
 

@@ -4,3 +4,8 @@ services:
     arguments: ['@dbal_connection', '@database']
   entity_hierarchy.nested_set_node_factory:
     class: Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
+  access_check.entity_hierarchy.has_fields:
+    class: Drupal\entity_hierarchy\Routing\ReorderChildrenAccess
+    arguments: ['@entity_field.manager', '@current_route_match']
+    tags:
+      - { name: access_check }
