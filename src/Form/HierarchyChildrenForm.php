@@ -223,7 +223,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
     $loadedEntities = new \SplObjectStorage();
     foreach ($nodes as $node) {
       $nodeId = $node->getId();
-      $entity = $entities[$nodeId] ?? FALSE;
+      $entity = isset($entities[$nodeId]) ? $entities[$nodeId] : FALSE;
       if (!$entity || !$entity->access('view label')) {
         continue;
       }
