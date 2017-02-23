@@ -80,4 +80,13 @@ class HierarchyNestedSetRevisionIntegrationTest extends HierarchyNestedSetIntegr
     return $children;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  protected function resaveParent() {
+    $this->parent->setNewRevision(TRUE);
+    $this->parent->save();
+    $this->parentStub = $this->nodeFactory->fromEntity($this->parent);
+  }
+
 }

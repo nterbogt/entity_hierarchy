@@ -29,23 +29,24 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     // Test for weight ordering of inserts.
     $entities = $this->createChildEntities($this->parent->id());
     $root_node = $this->treeStorage->getNode($this->parentStub);
-    $children = $this->getChildren($root_node);
-    $this->assertCount(5, $children);
-    $this->assertEquals(array_map(function ($name) use ($entities) {
-      return $entities[$name]->id();
-    }, ['Child 5', 'Child 4', 'Child 3', 'Child 2', 'Child 1']), array_map(function (Node $node) {
-      return $node->getId();
-    }, $children));
+    $this->assertChildOrder($root_node, $entities, [
+      'Child 5',
+      'Child 4',
+      'Child 3',
+      'Child 2',
+      'Child 1',
+    ]);
     // Now insert one in the middle.
     $name = 'Child 6';
     $entities[$name] = $this->createTestEntity($this->parent->id(), $name, -2);
-    $children = $this->getChildren($root_node);
-    $this->assertCount(6, $children);
-    $this->assertEquals(array_map(function ($name) use ($entities) {
-      return $entities[$name]->id();
-    }, ['Child 5', 'Child 4', 'Child 3', 'Child 6', 'Child 2', 'Child 1']), array_map(function (Node $node) {
-      return $node->getId();
-    }, $children));
+    $this->assertChildOrder($root_node, $entities, [
+      'Child 5',
+      'Child 4',
+      'Child 3',
+      'Child 6',
+      'Child 2',
+      'Child 1',
+    ]);
   }
 
   /**
@@ -167,13 +168,14 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     $this->assertSimpleParentChild($child);
     $child->set(static::FIELD_NAME, $parent2->id());
     $child->save();
-    $children = $this->treeStorage->findChildren($this->nodeFactory->fromEntity($parent2));
-    $this->assertCount(6, $children);
-    $this->assertEquals(array_map(function ($name) use ($child_entities) {
-      return $child_entities[$name]->id();
-    }, ['Child 5', 'Child 4', 'Child 3', 'Cousin 1', 'Child 2', 'Child 1']), array_map(function (Node $node) {
-      return $node->getId();
-    }, $children));
+    $this->assertChildOrder($this->treeStorage->getNode($this->nodeFactory->fromEntity($parent2)), $child_entities, [
+      'Child 5',
+      'Child 4',
+      'Child 3',
+      'Cousin 1',
+      'Child 2',
+      'Child 1',
+    ]);
   }
 
   /**
@@ -200,19 +202,58 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
       'weight' => -2,
     ];
     $child->save();
-    $children = $this->treeStorage->findChildren($this->parentStub);
-    $this->assertEquals(array_map(function ($name) use ($entities) {
-      return $entities[$name]->id();
-    }, [
+    $this->assertChildOrder($this->treeStorage->getNode($this->parentStub), $entities, [
       'Child 5',
       'Child 4',
       'Child 3',
       'Once was a parent',
       'Child 2',
       'Child 1',
-    ]), array_map(function (Node $node) {
-      return $node->getId();
-    }, $children));
+    ]);
+  }
+
+  /**
+   * Test saving the parent after adding children.
+   */
+  public function testNestedSetResaveParent() {
+    // Test for weight ordering of inserts.
+    $entities = $this->createChildEntities($this->parent->id());
+    $root_node = $this->treeStorage->getNode($this->parentStub);
+    $this->assertChildOrder($root_node, $entities, [
+      'Child 5',
+      'Child 4',
+      'Child 3',
+      'Child 2',
+      'Child 1',
+    ]);
+    // Now insert one in the middle.
+    $name = 'Child 6';
+    $entities[$name] = $this->createTestEntity($this->parent->id(), $name, -2);
+    $this->assertChildOrder($root_node, $entities, [
+      'Child 5',
+      'Child 4',
+      'Child 3',
+      'Child 6',
+      'Child 2',
+      'Child 1',
+    ]);
+    $this->resaveParent();
+    $this->assertChildOrder($this->treeStorage->getNode($this->parentStub), $entities, [
+      'Child 5',
+      'Child 4',
+      'Child 3',
+      'Child 6',
+      'Child 2',
+      'Child 1',
+    ]);
+  }
+
+  /**
+   * Re-saves the parent, with option to include new revision.
+   */
+  protected function resaveParent() {
+    $this->parent->save();
+    $this->parentStub = $this->nodeFactory->fromEntity($this->parent);
   }
 
   /**
@@ -295,6 +336,30 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
    */
   protected function getChildren(Node $parent_node) {
     return $this->treeStorage->findChildren($parent_node->getNodeKey());
+  }
+
+  /**
+   * Asserts children in given order.
+   *
+   * @param \PNX\NestedSet\Node $parent_node
+   *   Parent node.
+   * @param \Drupal\Core\Entity\EntityInterface[] $entities
+   *   Array of entities keyed by label.
+   * @param string[] $order
+   *   Array of titles in order.
+   *
+   * @return \PNX\NestedSet\Node[]
+   *   Children.
+   */
+  protected function assertChildOrder(Node $parent_node, array $entities, array $order) {
+    $children = $this->getChildren($parent_node);
+    $this->assertCount(count($order), $children);
+    $this->assertEquals(array_map(function ($name) use ($entities) {
+      return $entities[$name]->id();
+    }, $order), array_map(function (Node $node) {
+      return $node->getId();
+    }, $children));
+    return $children;
   }
 
 }
