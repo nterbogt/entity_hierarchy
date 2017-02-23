@@ -5,7 +5,6 @@ namespace Drupal\entity_hierarchy\Storage;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
-use PNX\NestedSet\NodeKey;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -42,6 +41,7 @@ class ParentEntityRevisionUpdater implements ContainerInjectionInterface {
    * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $nodeKeyFactory
    *   Node key factory.
    * @param \Drupal\entity_hierarchy\Information\ParentCandidateInterface $parentCandidate
+   *   Parent candidate service.
    */
   public function __construct(NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, ParentCandidateInterface $parentCandidate) {
     $this->nestedSetStorageFactory = $nestedSetStorageFactory;
@@ -89,8 +89,13 @@ class ParentEntityRevisionUpdater implements ContainerInjectionInterface {
       if (!$existingParent = $storage->getNode($newNodeKey)) {
         $existingParent = $storage->addRootNode($newNodeKey);
       }
-      foreach ($storage->findChildren($oldNodeKey) as $child) {
-        $storage->moveSubTreeBelow($existingParent, $storage->getNode($child->getNodeKey()));
+      // We process them in reverse because moveSubTreeBelow inserts the item as
+      // the first child of the parent. This means the first child is moved last
+      // and is returned to the first position.
+      foreach (array_reverse($storage->findChildren($oldNodeKey)) as $child) {
+        // We have to fetch the parent and child node fresh each time to allow
+        // for updates that happened in each call to moveSubTreeBelow.
+        $storage->moveSubTreeBelow($storage->getNode($existingParent->getNodeKey()), $storage->getNode($child->getNodeKey()));
       }
     }
   }

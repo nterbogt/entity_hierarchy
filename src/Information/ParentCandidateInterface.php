@@ -4,7 +4,6 @@ namespace Drupal\entity_hierarchy\Information;
 
 use Drupal\Core\Entity\EntityInterface;
 
-
 /**
  * Defines an interface for determining if an entity is a parent candidate.
  */

@@ -22,8 +22,6 @@ class ParentCandidate implements ParentCandidateInterface {
    *
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
    *   Entity field manager.
-   * @param \Drupal\Core\Routing\RouteMatchInterface $routeMatch
-   *   Route match.
    */
   public function __construct(EntityFieldManagerInterface $entityFieldManager) {
     $this->entityFieldManager = $entityFieldManager;
