@@ -5,10 +5,13 @@
  * A module to make entities hierarchical.
  */
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\ContentEntityType;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\entity_hierarchy\Form\HierarchyChildrenForm;
 use Drupal\entity_hierarchy\Routing\EntityHierarchyRouteProvider;
+use Drupal\entity_hierarchy\Storage\ParentEntityRevisionUpdater;
 
 /**
  * Implements @see hook_help().
@@ -44,5 +47,18 @@ function entity_hierarchy_entity_type_build(array &$entity_types) {
     $entity_types[$entity_type_id]
       ->setFormClass('entity_hierarchy_reorder', HierarchyChildrenForm::class)
       ->setLinkTemplate('entity_hierarchy_reorder', $entity_type->getLinkTemplate('canonical') . '/children');
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function entity_hierarchy_entity_update(EntityInterface $entity) {
+  if (!$entity instanceof ContentEntityInterface) {
+    return;
+  }
+  if (isset($entity->original)) {
+    \Drupal::service('class_resolver')->getInstanceFromDefinition(ParentEntityRevisionUpdater::class)
+      ->moveChildren($entity->original, $entity);
   }
 }
