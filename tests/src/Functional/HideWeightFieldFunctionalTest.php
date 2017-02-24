@@ -3,6 +3,7 @@
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
+use Drupal\entity_hierarchy\Plugin\Field\FieldWidget\EntityReferenceHierarchyAutocomplete;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\field\Entity\FieldConfig;
@@ -71,12 +72,12 @@ class HideWeightFieldFunctionalTest extends BrowserTestBase {
     // configuration entries are only created when an entity form display is
     // explicitly configured and saved.
     if (!$entity_form_display) {
-      $entity_form_display = EntityFormDisplay::create(array(
+      $entity_form_display = EntityFormDisplay::create([
         'targetEntityType' => $entity_type,
         'bundle' => $bundle,
         'mode' => $form_mode,
         'status' => TRUE,
-      ));
+      ]);
     }
 
     return $entity_form_display;
@@ -92,6 +93,13 @@ class HideWeightFieldFunctionalTest extends BrowserTestBase {
     $assert->fieldExists('parents[0][weight]');
     // Change the field to hide the weight field.
     $field = FieldConfig::load("entity_test.entity_test.parents");
+    $this->getEntityFormDisplay(self::ENTITY_TYPE, self::ENTITY_TYPE, 'default')
+      ->setComponent(self::FIELD_NAME, [
+        'type' => 'entity_reference_hierarchy_autocomplete',
+        'weight' => 20,
+        'settings' => ['hide_weight' => TRUE] + EntityReferenceHierarchyAutocomplete::defaultSettings(),
+      ])
+      ->save();
     $field->setSetting('hide_weight', TRUE);
     $field->save();
     $this->drupalGet('/entity_test/add');
