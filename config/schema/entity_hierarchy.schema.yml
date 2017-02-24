@@ -15,3 +15,11 @@ field.field_settings.entity_reference_hierarchy:
     weight_label:
       type: label
       label: 'Weight label'
+
+field.widget.settings.entity_reference_hierarchy_autocomplete:
+  type: field.widget.settings.entity_reference_autocomplete
+  label: 'Entity reference hierarchy autocomplete widget settings'
+  mapping:
+    hide_weight:
+      type: boolean
+      label: 'Hide weight field'
