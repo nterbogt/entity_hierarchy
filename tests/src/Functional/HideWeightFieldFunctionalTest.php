@@ -4,13 +4,9 @@ namespace Drupal\Tests\entity_hierarchy\Functional;
 
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\entity_hierarchy\Plugin\Field\FieldWidget\EntityReferenceHierarchyAutocomplete;
-use Drupal\entity_test\Entity\EntityTest;
-use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\field\Entity\FieldConfig;
-use Drupal\simpletest\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\entity_hierarchy\EntityHierarchyTestTrait;
-use PNX\NestedSet\Node;
 
 /**
  * Defines a class for testing the ability to hide the weight field.
@@ -67,8 +63,8 @@ class HideWeightFieldFunctionalTest extends BrowserTestBase {
     $entity_form_display = EntityFormDisplay::load($entity_type . '.' . $bundle . '.' . $form_mode);
 
     // If not found, create a fresh entity object. We do not preemptively create
-    // new entity form display configuration entries for each existing entity type
-    // and bundle whenever a new form mode becomes available. Instead,
+    // new entity form display configuration entries for each existing entity
+    // type and bundle whenever a new form mode becomes available. Instead,
     // configuration entries are only created when an entity form display is
     // explicitly configured and saved.
     if (!$entity_form_display) {

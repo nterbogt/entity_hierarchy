@@ -65,7 +65,7 @@ class EntityReferenceHierarchyAutocomplete extends EntityReferenceAutocompleteWi
     if ($this->getSetting(self::HIDE_WEIGHT)) {
       $widget['weight'] = [
         '#type' => 'value',
-        '#value' => isset($items[$delta]->weight) ? $items[$delta]->weight : 0
+        '#value' => isset($items[$delta]->weight) ? $items[$delta]->weight : 0,
       ];
     }
     else {
