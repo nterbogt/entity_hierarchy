@@ -78,6 +78,48 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   }
 
   /**
+   * Tests deleting parent node reparents children.
+   */
+  public function testDeleteParent() {
+    $child = $this->createTestEntity($this->parent->id());
+    $child2 = $this->createTestEntity($this->parent->id());
+    $this->createTestEntity($child->id());
+    $grandchild2 = $this->createTestEntity($child2->id());
+    $grandchildNodeKey = $this->nodeFactory->fromEntity($grandchild2);
+    $grandchild2_node = $this->treeStorage->getNode($grandchildNodeKey);
+    $this->assertEquals(2, $grandchild2_node->getDepth());
+    $root_node = $this->treeStorage->getNode($this->parentStub);
+    $children = $this->getChildren($root_node);
+    $this->assertCount(2, $children);
+    // Now we delete child2, grandchild2 should go up a layer.
+    $child2->delete();
+    $children = $this->getChildren($root_node);
+    $this->assertCount(2, $children);
+    $grandchild2_node = $this->treeStorage->getNode($grandchildNodeKey);
+    $this->assertEquals(1, $grandchild2_node->getDepth());
+    /** @var \Drupal\Core\Entity\EntityStorageInterface $storage */
+    $storage = $this->container->get('entity_type.manager')
+      ->getStorage(self::ENTITY_TYPE);
+    $storage->resetCache([$grandchild2->id()]);
+    $grandchild2 = $storage->load($grandchild2->id());
+    // Confirm field values were updated.
+    $this->assertEquals($this->parent->id(), $grandchild2->{self::FIELD_NAME}->target_id);
+    $this->parent->delete();
+    // Grandchild2 and child should now be parentless.
+    $grandchild2_node = $this->treeStorage->getNode($grandchildNodeKey);
+    $this->assertEquals(0, $grandchild2_node->getDepth());
+    /** @var \Drupal\Core\Entity\EntityStorageInterface $storage */
+    $storage = $this->container->get('entity_type.manager')
+      ->getStorage(self::ENTITY_TYPE);
+    $storage->resetCache([$grandchild2->id(), $child->id()]);
+    $grandchild2 = $storage->load($grandchild2->id());
+    $child = $storage->load($grandchild2->id());
+    // Confirm field values were updated.
+    $this->assertEquals(NULL, $grandchild2->{self::FIELD_NAME}->target_id);
+    $this->assertEquals(NULL, $child->{self::FIELD_NAME}->target_id);
+  }
+
+  /**
    * Tests deleting child node with grandchildren.
    */
   public function testDeleteChildWithGrandChildren() {
