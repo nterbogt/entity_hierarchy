@@ -45,7 +45,6 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     $this->placeBlock('local_tasks_block');
   }
 
-
   /**
    * Tests children reorder form.
    */
