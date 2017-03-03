@@ -45,8 +45,9 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     $this->placeBlock('local_tasks_block');
   }
 
+
   /**
-   * Tests ordered storage in nested set tables.
+   * Tests children reorder form.
    */
   public function testReordering() {
     $entities = $this->createChildEntities($this->parent->id());
@@ -102,7 +103,14 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     $assert->statusCodeEquals(403);
     // Add a new bundle.
     entity_test_create_bundle('someotherbundle');
-    // Edit the field and disable referencing someotherbundle.
+    $another_different_test_entity = EntityTest::create(['type' => 'someotherbundle', 'label' => 'No children here either']);
+    $another_different_test_entity->save();
+    $this->drupalGet($another_different_test_entity->toUrl());
+    // Link should show, because entity is valid target bundle.
+    $assert->linkExists('Children');
+    $this->drupalGet($another_different_test_entity->toUrl('entity_hierarchy_reorder'));
+    $assert->statusCodeEquals(200);
+    // Now edit the field and disable referencing someotherbundle.
     $field = FieldConfig::load('entity_test.entity_test.parents');
     $settings = $field->getSetting('handler_settings');
     $settings['target_bundles'] = ['entity_test'];
