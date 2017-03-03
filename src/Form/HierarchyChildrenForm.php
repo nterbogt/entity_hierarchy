@@ -3,14 +3,13 @@
 namespace Drupal\entity_hierarchy\Form;
 
 use Drupal\Core\Cache\CacheableMetadata;
-use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
+use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
 use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
 use Drupal\Core\Entity\ContentEntityForm;
-use PNX\NestedSet\Node;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -49,6 +48,13 @@ class HierarchyChildrenForm extends ContentEntityForm {
   protected $parentCandidate;
 
   /**
+   * Tree node mapper.
+   *
+   * @var \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface
+   */
+  protected $entityTreeNodeMapper;
+
+  /**
    * Constructs a new HierarchyChildrenForm object.
    *
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
@@ -59,12 +65,15 @@ class HierarchyChildrenForm extends ContentEntityForm {
    *   Node key factory.
    * @param \Drupal\entity_hierarchy\Information\ParentCandidateInterface $parentCandidate
    *   Parent candidate service.
+   * @param \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface $entityTreeNodeMapper
+   *   Tree node mapper.
    */
-  public function __construct(EntityManagerInterface $entity_manager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, ParentCandidateInterface $parentCandidate) {
+  public function __construct(EntityManagerInterface $entity_manager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, ParentCandidateInterface $parentCandidate, EntityTreeNodeMapperInterface $entityTreeNodeMapper) {
     parent::__construct($entity_manager);
     $this->nestedSetStorageFactory = $nestedSetStorageFactory;
     $this->nodeKeyFactory = $nodeKeyFactory;
     $this->parentCandidate = $parentCandidate;
+    $this->entityTreeNodeMapper = $entityTreeNodeMapper;
   }
 
   /**
@@ -75,7 +84,8 @@ class HierarchyChildrenForm extends ContentEntityForm {
       $container->get('entity.manager'),
       $container->get('entity_hierarchy.nested_set_storage_factory'),
       $container->get('entity_hierarchy.nested_set_node_factory'),
-      $container->get('entity_hierarchy.information.parent_candidate')
+      $container->get('entity_hierarchy.information.parent_candidate'),
+      $container->get('entity_hierarchy.entity_tree_node_mapper')
     );
   }
 
@@ -131,7 +141,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
     /** @var \PNX\NestedSet\NestedSetInterface $storage */
     $storage = $this->nestedSetStorageFactory->get($fieldName, $this->entity->getEntityTypeId());
     $children = $storage->findChildren($this->nodeKeyFactory->fromEntity($this->entity));
-    $childEntities = $this->loadAndAccessCheckEntitysForTreeNodes($children, $cache);
+    $childEntities = $this->entityTreeNodeMapper->loadAndAccessCheckEntitysForTreeNodes($this->entity->getEntityTypeId(), $children, $cache);
     $form_state->setTemporaryValue(self::CHILD_ENTITIES_STORAGE, $childEntities);
     $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
     $form['children'] = [
@@ -200,34 +210,6 @@ class HierarchyChildrenForm extends ContentEntityForm {
    */
   public function updateField(array $form, FormStateInterface $formState) {
     $formState->setRebuild(TRUE);
-  }
-
-  /**
-   * Loads Drupal node entities for given tree nodes and checks access.
-   *
-   * @param \PNX\NestedSet\Node[] $nodes
-   *   Tree node to load entity for.
-   * @param \Drupal\Core\Cache\RefinableCacheableDependencyInterface $cache
-   *   Cache metadata.
-   *
-   * @return \SplObjectStorage
-   *   Map of entities keyed by node.
-   */
-  protected function loadAndAccessCheckEntitysForTreeNodes(array $nodes, RefinableCacheableDependencyInterface $cache) {
-    $entities = $this->entityTypeManager->getStorage($this->entity->getEntityTypeId())->loadMultiple(array_map(function (Node $node) {
-      return $node->getId();
-    }, $nodes));
-    $loadedEntities = new \SplObjectStorage();
-    foreach ($nodes as $node) {
-      $nodeId = $node->getId();
-      $entity = isset($entities[$nodeId]) ? $entities[$nodeId] : FALSE;
-      if (!$entity || !$entity->access('view label')) {
-        continue;
-      }
-      $loadedEntities[$node] = $entity;
-      $cache->addCacheableDependency($entity);
-    }
-    return $loadedEntities;
   }
 
   /**

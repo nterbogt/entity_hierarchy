@@ -12,3 +12,6 @@ services:
     arguments: ['@entity_hierarchy.information.parent_candidate', '@current_route_match']
     tags:
       - { name: access_check }
+  entity_hierarchy.entity_tree_node_mapper:
+    class: Drupal\entity_hierarchy\Storage\EntityTreeNodeMapper
+    arguments: ['@entity_type.manager']
