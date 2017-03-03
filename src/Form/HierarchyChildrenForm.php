@@ -8,6 +8,7 @@ use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
 use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
 use Drupal\Core\Entity\ContentEntityForm;
@@ -43,11 +44,11 @@ class HierarchyChildrenForm extends ContentEntityForm {
   protected $nodeKeyFactory;
 
   /**
-   * Entity field manager.
+   * Parent candidate.
    *
-   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
+   * @var \Drupal\entity_hierarchy\Information\ParentCandidateInterface
    */
-  protected $entityFieldManager;
+  protected $parentCandidate;
 
   /**
    * Constructs a new HierarchyChildrenForm object.
@@ -58,14 +59,14 @@ class HierarchyChildrenForm extends ContentEntityForm {
    *   Nested set storage.
    * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $nodeKeyFactory
    *   Node key factory.
-   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
-   *   Entity field manager.
+   * @param \Drupal\entity_hierarchy\Information\ParentCandidateInterface $parentCandidate
+   *   Parent candidate service.
    */
-  public function __construct(EntityManagerInterface $entity_manager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityFieldManagerInterface $entityFieldManager) {
+  public function __construct(EntityManagerInterface $entity_manager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, ParentCandidateInterface $parentCandidate) {
     parent::__construct($entity_manager);
     $this->nestedSetStorageFactory = $nestedSetStorageFactory;
     $this->nodeKeyFactory = $nodeKeyFactory;
-    $this->entityFieldManager = $entityFieldManager;
+    $this->parentCandidate = $parentCandidate;
   }
 
   /**
@@ -76,7 +77,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
       $container->get('entity.manager'),
       $container->get('entity_hierarchy.nested_set_storage_factory'),
       $container->get('entity_hierarchy.nested_set_node_factory'),
-      $container->get('entity_field.manager')
+      $container->get('entity_hierarchy.information.parent_candidate')
     );
   }
 
@@ -95,13 +96,11 @@ class HierarchyChildrenForm extends ContentEntityForm {
     $cache = (new CacheableMetadata())->addCacheableDependency($this->entity);
 
     /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $fields */
-    $fields = array_filter($this->entityFieldManager->getFieldDefinitions($this->entity->getEntityTypeId(), $this->entity->bundle()), function (FieldDefinitionInterface $field) {
-      return $field->getType() === 'entity_reference_hierarchy';
-    });
+    $fields = $this->parentCandidate->getCandidateFields($this->entity);
     if (!$fields) {
       throw new NotFoundHttpException();
     }
-    $fieldName = $form_state->getValue('fieldname') ?: reset($fields)->getName();
+    $fieldName = $form_state->getValue('fieldname') ?: reset($fields);
     if (count($fields) === 1) {
       $form['fieldname'] = [
         '#type' => 'value',
@@ -119,8 +118,8 @@ class HierarchyChildrenForm extends ContentEntityForm {
         '#type' => 'select',
         '#title' => $this->t('Field'),
         '#description' => $this->t('Field to reorder children in.'),
-        '#options' => array_map(function (FieldDefinitionInterface $field) {
-          return $this->entity->getFieldDefinitions()[$field->getName()]->getLabel();
+        '#options' => array_map(function ($field_name) {
+          return $this->entity->getFieldDefinitions()[$field_name]->getLabel();
         }, $fields),
         '#default_value' => $fieldName,
       ];
