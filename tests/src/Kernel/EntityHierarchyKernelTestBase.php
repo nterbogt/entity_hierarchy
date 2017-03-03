@@ -2,13 +2,13 @@
 
 namespace Drupal\Tests\entity_hierarchy\Kernel;
 
-use Drupal\KernelTests\KernelTestBase;
+use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\Tests\entity_hierarchy\EntityHierarchyTestTrait;
 
 /**
  * Defines a base class for entity hierarchy tests.
  */
-abstract class EntityHierarchyKernelTestBase extends KernelTestBase {
+abstract class EntityHierarchyKernelTestBase extends EntityKernelTestBase {
 
   use EntityHierarchyTestTrait;
 
@@ -18,7 +18,7 @@ abstract class EntityHierarchyKernelTestBase extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected static $modules = [
+  public static $modules = [
     'entity_hierarchy',
     'entity_test',
     'system',

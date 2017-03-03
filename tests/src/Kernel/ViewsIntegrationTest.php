@@ -17,7 +17,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected static $modules = [
+  public static $modules = [
     'entity_hierarchy',
     'entity_test',
     'system',
@@ -35,7 +35,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
     parent::additionalSetup();
     $this->installConfig('entity_hierarchy_test_views');
     $this->installConfig('system');
-    $this->installSchema('system', ['router', 'sequences', 'key_value_expire']);
+    $this->installSchema('system', ['router', 'key_value_expire']);
   }
 
   /**

@@ -23,6 +23,15 @@ class AutocompleteHandlerTest extends EntityHierarchyKernelTestBase {
   protected $settings = [];
 
   /**
+   * {@inheritdoc}
+   */
+  protected function setUp() {
+    parent::setUp();
+    $user = $this->createUser([], ['view test entity']);
+    $this->container->get('account_switcher')->switchTo($user);
+  }
+
+  /**
    * Tests autocomplete handler.
    */
   public function testAutoCompleteHandler() {
@@ -32,9 +41,10 @@ class AutocompleteHandlerTest extends EntityHierarchyKernelTestBase {
     $results = $this->getAutocompleteResult('Great');
     $this->assertCount(1, $results);
     $result = reset($results);
+    $label = sprintf('Great Grandchild (%s ❭ Child ❭ Grandchild)', $this->parent->label());
     $this->assertEquals([
-      'value' => sprintf('Great Grandchild (%s)', $great_grandchild->id()),
-      'label' => sprintf('Great Grandchild (%s ❭ Child ❭ Grandchild)', $this->parent->id()),
+      'value' => sprintf('%s (%s)', $label, $great_grandchild->id()),
+      'label' => $label,
     ], $result);
   }
 
@@ -48,14 +58,14 @@ class AutocompleteHandlerTest extends EntityHierarchyKernelTestBase {
    *   The JSON value encoded in its appropriate PHP type.
    */
   protected function getAutocompleteResult($input) {
-    $request = Request::create('entity_reference_autocomplete/' . $this->entityType . '/entity_hierarchy');
+    $request = Request::create('entity_reference_autocomplete/' . self::ENTITY_TYPE . '/entity_hierarchy');
     $request->query->set('q', $input);
 
-    $selection_settings_key = Crypt::hmacBase64(serialize($this->settings) . $this->entityType . 'default', Settings::getHashSalt());
+    $selection_settings_key = Crypt::hmacBase64(serialize($this->settings) . self::ENTITY_TYPE . 'entity_hierarchy', Settings::getHashSalt());
     \Drupal::keyValue('entity_autocomplete')->set($selection_settings_key, $this->settings);
 
     $entity_reference_controller = EntityAutocompleteController::create($this->container);
-    $result = $entity_reference_controller->handleAutocomplete($request, $this->entityType, 'default', $selection_settings_key)->getContent();
+    $result = $entity_reference_controller->handleAutocomplete($request, self::ENTITY_TYPE, 'entity_hierarchy', $selection_settings_key)->getContent();
 
     return Json::decode($result);
   }
