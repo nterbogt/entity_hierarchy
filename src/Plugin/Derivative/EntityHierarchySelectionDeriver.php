@@ -48,7 +48,7 @@ class EntityHierarchySelectionDeriver extends DeriverBase implements ContainerDe
         $fields = $this->entityFieldManager->getFieldDefinitions($entity_type_id, reset($bundles['bundles']));
         $sample_field_name = $field_name;
         if (isset($fields[$field_name])) {
-          $sample_field_name = $field_name[$field_name]->getName();
+          $sample_field_name = $fields[$field_name]->getName();
         }
         $key = $entity_type_id;
         $this->derivatives[$key] = $base_plugin_definition;
