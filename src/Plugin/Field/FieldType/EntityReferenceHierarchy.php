@@ -127,7 +127,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
             continue;
           }
           $child_entity = $child_entities->offsetGet($child_node);
-          $child_entity->{$fieldName}->target_id = $parent ? $parent->getId() : NULL;
+          $child_entity->{$fieldName}->target_id = ($parent ? $parent->getId() : NULL);
           if ($child_entity->getEntityType()->hasKey('revision')) {
             // We don't want a new revision here.
             $child_entity->setNewRevision(FALSE);

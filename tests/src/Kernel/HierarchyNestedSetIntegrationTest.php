@@ -81,7 +81,6 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
    * Tests deleting parent node reparents children.
    */
   public function testDeleteParent() {
-    $this->markTestSkipped('There is something weird happening with entity storage here.');
     $child = $this->createTestEntity($this->parent->id());
     $child2 = $this->createTestEntity($this->parent->id());
     $this->createTestEntity($child->id());
@@ -99,7 +98,6 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     $load_function = self::ENTITY_TYPE . '_load';
     $grandchild2 = $load_function($grandchild2->id(), TRUE);
     $field_name = self::FIELD_NAME;
-    $this->assertNotNull($grandchild2);
     $this->assertEquals($this->parent->id(), $grandchild2->{$field_name}->target_id);
     $grandchildNodeKey = $this->nodeFactory->fromEntity($grandchild2);
     $grandchild2_node = $this->treeStorage->getNode($grandchildNodeKey);
