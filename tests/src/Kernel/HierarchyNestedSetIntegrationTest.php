@@ -98,6 +98,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     $load_function = self::ENTITY_TYPE . '_load';
     $grandchild2 = $load_function($grandchild2->id(), TRUE);
     $field_name = self::FIELD_NAME;
+    $this->assertNotNull($grandchild2);
     $this->assertEquals($this->parent->id(), $grandchild2->{$field_name}->target_id);
     $grandchildNodeKey = $this->nodeFactory->fromEntity($grandchild2);
     $grandchild2_node = $this->treeStorage->getNode($grandchildNodeKey);
