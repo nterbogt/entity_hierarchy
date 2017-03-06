@@ -118,7 +118,25 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     $nodeFactory = $this->getNodeKeyFactory();
     $stubNode = $nodeFactory->fromEntity($this->getEntity());
     if ($existingNode = $storage->getNode($stubNode)) {
-      // The NestedSet implementation handles moving children up a layer.
+      if ($children = $storage->findChildren($stubNode)) {
+        $parent = $storage->findParent($stubNode);
+        $fieldName = $this->getFieldDefinition()->getName();
+        $child_entities = \Drupal::service('entity_hierarchy.entity_tree_node_mapper')->loadEntitiesForTreeNodesWithoutAccessChecks($this->getEntity()->getEntityTypeId(), $children);
+        foreach ($child_entities as $child_node) {
+          if (!$child_entities->offsetExists($child_node)) {
+            continue;
+          }
+          $child_entity = $child_entities->offsetGet($child_node);
+          $child_entity->{$fieldName}->target_id = $parent ? $parent->getId() : NULL;
+          if ($child_entity->getEntityType()->hasKey('revision')) {
+            // We don't want a new revision here.
+            $child_entity->setNewRevision(FALSE);
+          }
+          $child_entity->save();
+        }
+        // Refresh this node, as left and right would have changed.
+        $existingNode = $storage->getNode($stubNode);
+      }
       $storage->deleteNode($existingNode);
     }
   }
@@ -278,6 +296,9 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
   public function groupSiblingsByWeight(\SplObjectStorage $siblingEntities, $fieldName) {
     $weightMap = [];
     foreach ($siblingEntities as $node) {
+      if (!$siblingEntities->offsetExists($node)) {
+        continue;
+      }
       $siblingEntity = $siblingEntities->offsetGet($node);
       $weightMap[$siblingEntity->{$fieldName}->weight][] = $node;
     }

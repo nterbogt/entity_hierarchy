@@ -31,7 +31,7 @@ class EntityTreeNodeMapper implements EntityTreeNodeMapperInterface {
   /**
    * {@inheritdoc}
    */
-  public function loadAndAccessCheckEntitysForTreeNodes($entity_type_id, array $nodes, RefinableCacheableDependencyInterface $cache = NULL) {
+  public function loadEntitiesForTreeNodesWithoutAccessChecks($entity_type_id, array $nodes, RefinableCacheableDependencyInterface $cache = NULL) {
     $entities = $this->entityTypeManager->getStorage($entity_type_id)->loadMultiple(array_map(function (Node $node) {
       return $node->getId();
     }, $nodes));
@@ -39,7 +39,7 @@ class EntityTreeNodeMapper implements EntityTreeNodeMapperInterface {
     foreach ($nodes as $node) {
       $nodeId = $node->getId();
       $entity = isset($entities[$nodeId]) ? $entities[$nodeId] : FALSE;
-      if (!$entity || !$entity->access('view label')) {
+      if (!$entity) {
         continue;
       }
       $loadedEntities[$node] = $entity;
@@ -48,6 +48,23 @@ class EntityTreeNodeMapper implements EntityTreeNodeMapperInterface {
       }
     }
     return $loadedEntities;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function loadAndAccessCheckEntitysForTreeNodes($entity_type_id, array $nodes, RefinableCacheableDependencyInterface $cache = NULL) {
+    $entities = $this->loadEntitiesForTreeNodesWithoutAccessChecks($entity_type_id, $nodes, $cache);
+    foreach ($nodes as $node) {
+      if (!$entities->offsetExists($node)) {
+        continue;
+      }
+      if (($entity = $entities->offsetGet($node)) && !$entity->access('view label')) {
+        // Check access.
+        $entities->offsetUnset($node);
+      }
+    }
+    return $entities;
   }
 
 }

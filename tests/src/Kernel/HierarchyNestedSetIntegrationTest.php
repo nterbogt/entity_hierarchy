@@ -91,22 +91,25 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     $root_node = $this->treeStorage->getNode($this->parentStub);
     $children = $this->getChildren($root_node);
     $this->assertCount(2, $children);
+    /** @var \Drupal\Core\Entity\EntityStorageInterface $storage */
+    $storage = $this->container->get('entity_type.manager')
+      ->getStorage(self::ENTITY_TYPE);
+    $this->assertCount(5, $storage->loadMultiple());
     // Now we delete child2, grandchild2 should go up a layer.
     $child2->delete();
+    $this->assertCount(4, $storage->loadMultiple());
     $children = $this->getChildren($root_node);
     $this->assertCount(2, $children);
     $grandchild2_node = $this->treeStorage->getNode($grandchildNodeKey);
     $this->assertEquals(1, $grandchild2_node->getDepth());
-    /** @var \Drupal\Core\Entity\EntityStorageInterface $storage */
-    $storage = $this->container->get('entity_type.manager')
-      ->getStorage(self::ENTITY_TYPE);
     $storage->resetCache([$grandchild2->id()]);
     $grandchild2 = $storage->load($grandchild2->id());
     // Confirm field values were updated.
     $this->assertEquals($this->parent->id(), $grandchild2->{self::FIELD_NAME}->target_id);
-    $this->parent->delete();
+    $storage->delete([$this->parent]);
     // Grandchild2 and child should now be parentless.
-    $grandchild2_node = $this->treeStorage->getNode($grandchildNodeKey);
+    $this->assertCount(3, $storage->loadMultiple());
+    $grandchild2_node = $this->treeStorage->getNode($this->nodeFactory->fromEntity($grandchild2));
     $this->assertEquals(0, $grandchild2_node->getDepth());
     /** @var \Drupal\Core\Entity\EntityStorageInterface $storage */
     $storage = $this->container->get('entity_type.manager')

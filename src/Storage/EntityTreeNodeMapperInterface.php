@@ -10,6 +10,21 @@ use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 interface EntityTreeNodeMapperInterface {
 
   /**
+   * Loads Drupal entities for given tree nodes.
+   *
+   * @param string $entity_type_id
+   *   Entity Type ID.
+   * @param \PNX\NestedSet\Node[] $nodes
+   *   Tree node to load entity for.
+   * @param \Drupal\Core\Cache\RefinableCacheableDependencyInterface $cache
+   *   (optional) Cache metadata.
+   *
+   * @return \SplObjectStorage
+   *   Map of entities keyed by node.
+   */
+  public function loadEntitiesForTreeNodesWithoutAccessChecks($entity_type_id, array $nodes, RefinableCacheableDependencyInterface $cache = NULL);
+
+  /**
    * Loads Drupal entities for given tree nodes and checks access.
    *
    * @param string $entity_type_id

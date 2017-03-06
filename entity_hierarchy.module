@@ -5,11 +5,14 @@
  * A module to make entities hierarchical.
  */
 
+use Drupal\Core\Entity\ContentEntityDeleteForm;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\ContentEntityType;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\entity_hierarchy\Form\HierarchyChildrenForm;
+use Drupal\entity_hierarchy\Information\ChildEntityWarningBuilder;
 use Drupal\entity_hierarchy\Routing\EntityHierarchyRouteProvider;
 use Drupal\entity_hierarchy\Storage\ParentEntityRevisionUpdater;
 
@@ -60,5 +63,21 @@ function entity_hierarchy_entity_update(EntityInterface $entity) {
   if (isset($entity->original)) {
     \Drupal::service('class_resolver')->getInstanceFromDefinition(ParentEntityRevisionUpdater::class)
       ->moveChildren($entity->original, $entity);
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function entity_hierarchy_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_state->getFormObject() instanceof ContentEntityDeleteForm) {
+    if ($children = \Drupal::service('class_resolver')->getInstanceFromDefinition(ChildEntityWarningBuilder::class)->buildChildEntityWarnings($form_state->getFormObject()->getEntity())) {
+      foreach ($children as $ix => $child) {
+        $form['children'][$ix] = [
+          'title' => ['#markup' => $child->getWarning()],
+          'items' => $child->getList(),
+        ];
+      }
+    }
   }
 }

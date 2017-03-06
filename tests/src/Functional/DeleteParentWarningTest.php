@@ -2,9 +2,6 @@
 
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
-use Drupal\Core\Entity\Entity\EntityFormDisplay;
-use Drupal\entity_hierarchy\Plugin\Field\FieldWidget\EntityReferenceHierarchyAutocomplete;
-use Drupal\field\Entity\FieldConfig;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\entity_hierarchy\EntityHierarchyTestTrait;
 
@@ -57,9 +54,9 @@ class DeleteParentWarningTest extends BrowserTestBase {
     // Now test one with a grandparent.
     $this->drupalGet($first_child->toUrl('delete-form'));
     $assert = $this->assertSession();
-    $assert->pageTextContains(sprintf('This Test entity has 3 children, deleting this item will change their parent to be %s.', $first_child->label()));
+    $assert->pageTextContains(sprintf('This Test entity has 3 children, deleting this item will change their parent to be %s.', $this->parent->label()));
     foreach ($grandchildren as $entity) {
-      $assert->assert($entity->label());
+      $assert->pageTextContains($entity->label());
     }
   }
 
