@@ -1,0 +1,125 @@
+<?php
+
+namespace Drupal\entity_hierarchy\Storage;
+
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+
+/**
+ * Defines a class for rebuilding the tree.
+ */
+class TreeRebuilder {
+
+  /**
+   * Entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * Constructs a new TreeRebuilder object.
+   *
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   Entity type manager.
+   */
+  public function __construct(EntityTypeManagerInterface $entityTypeManager) {
+    $this->entityTypeManager = $entityTypeManager;
+  }
+
+  /**
+   * Gets rebuild tasks suitable for usage with batch_set().
+   *
+   * @param string $field_name
+   *   Field name to rebuild.
+   * @param string $entity_type_id
+   *   Entity Type to rebuild.
+   *
+   * @return array
+   *   Batch definition.
+   */
+  public function getRebuildTasks($field_name, $entity_type_id) {
+    $batch = [
+      'title' => new TranslatableMarkup('Rebuilding tree for field @field, @entity_type_id ...', [
+        '@field' => $field_name,
+        '@entity_type_id' => $entity_type_id,
+      ]),
+      'operations' => [
+        [[static::class, 'removeTable'], [$field_name, $entity_type_id]],
+      ],
+      'finished' => [static::class, 'batchFinished'],
+    ];
+    foreach ($this->entityTypeManager->getStorage($entity_type_id)->getQuery()->exists($field_name)->execute() as $entity_id) {
+      $batch['operations'][] = [
+        [static::class, 'rebuildTree'],
+        [$field_name, $entity_type_id, $entity_id],
+      ];
+    }
+    return $batch;
+  }
+
+  /**
+   * Batch callback to remove table.
+   *
+   * @param string $field_name
+   *   Field name.
+   * @param string $entity_type_id
+   *   Entity Type ID.
+   */
+  public static function removeTable($field_name, $entity_type_id) {
+    \Drupal::database()->schema()->dropTable(\Drupal::service('entity_hierarchy.nested_set_storage_factory')->getTableName($field_name, $entity_type_id, FALSE));
+  }
+
+  /**
+   * Batch callback to rebuild the tree.
+   *
+   * @param string $field_name
+   *   Field name.
+   * @param string $entity_type_id
+   *   Entity type ID.
+   * @param mixed $entity_id
+   *   Entity ID.
+   * @param array $context
+   *   Batch context.
+   */
+  //@codingStandardsIgnoreStart
+  public static function rebuildTree($field_name, $entity_type_id, $entity_id, &$context) {
+    //@codingStandardsIgnoreEnd
+    $entity = \Drupal::entityTypeManager()->getStorage($entity_type_id)->load($entity_id);
+    $entity->get($field_name)->postSave(TRUE);
+    $context['results'][] = $entity_id;
+  }
+
+  /**
+   * Finished callback.
+   *
+   * @param bool $success
+   *   TRUE if succeeded.
+   * @param int $results
+   *   Results.
+   * @param array $operations
+   *   Operations.
+   */
+  //@codingStandardsIgnoreStart
+  public static function batchFinished($success, $results, $operations) {
+    //@codingStandardsIgnoreEnd
+    if ($success) {
+      // Here we do something meaningful with the results.
+      $message = new TranslatableMarkup('Finished rebuilding tree, @count items were processed.', [
+        '@count' => count($results),
+      ]);
+      drupal_set_message($message);
+    }
+    else {
+      // An error occurred.
+      // $operations contains the operations that remained unprocessed.
+      $error_operation = reset($operations);
+      $message = new TranslatableMarkup('An error occurred while processing %error_operation with arguments: @arguments', [
+        '%error_operation' => implode('::', $error_operation[0]),
+        '@arguments' => print_r($error_operation[1], TRUE),
+      ]);
+      drupal_set_message($message, 'error');
+    }
+  }
+
+}

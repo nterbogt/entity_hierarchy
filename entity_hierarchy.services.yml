@@ -15,3 +15,6 @@ services:
   entity_hierarchy.entity_tree_node_mapper:
     class: Drupal\entity_hierarchy\Storage\EntityTreeNodeMapper
     arguments: ['@entity_type.manager']
+  entity_hierarchy.tree_rebuilder:
+    class: Drupal\entity_hierarchy\Storage\TreeRebuilder
+    arguments: ['@entity_type.manager']
