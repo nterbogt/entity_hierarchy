@@ -112,20 +112,6 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
   /**
    * {@inheritdoc}
    */
-  public function delete() {
-    parent::delete();
-    $storage = $this->getTreeStorage();
-    $nodeFactory = $this->getNodeKeyFactory();
-    $stubNode = $nodeFactory->fromEntity($this->getEntity());
-    if ($existingNode = $storage->getNode($stubNode)) {
-      // The NestedSet implementation handles moving children up a layer.
-      $storage->deleteNode($existingNode);
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function postSave($update) {
     // Get the key factory and tree storage services.
     $nodeKeyFactory = $this->getNodeKeyFactory();
@@ -159,7 +145,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
         // Group the siblings by their weight.
         $weightOrderedSiblings = $this->groupSiblingsByWeight($siblingEntities, $fieldName);
         $weight = $this->get('weight')->getValue();
-        $insertPosition = $this->getInsertPosition($weightOrderedSiblings, $weight, $isNewNode);
+        $insertPosition = $this->getInsertPosition($weightOrderedSiblings, $weight, $isNewNode) ?: $insertPosition;
       }
       $insertPosition->performInsert($storage, $childNode);
       return;
@@ -278,8 +264,12 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
   public function groupSiblingsByWeight(\SplObjectStorage $siblingEntities, $fieldName) {
     $weightMap = [];
     foreach ($siblingEntities as $node) {
-      $siblingEntity = $siblingEntities->offsetGet($node);
-      $weightMap[$siblingEntity->{$fieldName}->weight][] = $node;
+      if (!$siblingEntities->offsetExists($node)) {
+        continue;
+      }
+      if ($siblingEntity = $siblingEntities->offsetGet($node)) {
+        $weightMap[$siblingEntity->{$fieldName}->weight][] = $node;
+      }
     }
     ksort($weightMap);
     return $weightMap;
@@ -296,8 +286,8 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    *   TRUE if the node is brand new, FALSE if it needs to be moved from
    *   elsewhere in the tree.
    *
-   * @return \Drupal\entity_hierarchy\Storage\InsertPosition
-   *   Insert position.
+   * @return \Drupal\entity_hierarchy\Storage\InsertPosition|bool
+   *   Insert position, FALSE if the siblings no longer exist.
    */
   public function getInsertPosition(array $weightOrderedSiblings, $weight, $isNewNode) {
     if (isset($weightOrderedSiblings[$weight])) {
@@ -319,6 +309,9 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     }
     // We're inserting at the end.
     $lastGroup = end($weightOrderedSiblings);
+    if (!$lastGroup) {
+      return FALSE;
+    }
     return new InsertPosition(end($lastGroup), $isNewNode, InsertPosition::DIRECTION_AFTER);
   }
 
