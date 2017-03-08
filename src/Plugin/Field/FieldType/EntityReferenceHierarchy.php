@@ -112,38 +112,6 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
   /**
    * {@inheritdoc}
    */
-  public function delete() {
-    parent::delete();
-    $storage = $this->getTreeStorage();
-    $nodeFactory = $this->getNodeKeyFactory();
-    $stubNode = $nodeFactory->fromEntity($this->getEntity());
-    if ($existingNode = $storage->getNode($stubNode)) {
-      if ($children = $storage->findChildren($stubNode)) {
-        $parent = $storage->findParent($stubNode);
-        $fieldName = $this->getFieldDefinition()->getName();
-        $childEntities = \Drupal::service('entity_hierarchy.entity_tree_node_mapper')->loadEntitiesForTreeNodesWithoutAccessChecks($this->getEntity()->getEntityTypeId(), $children);
-        foreach ($childEntities as $child_node) {
-          if (!$childEntities->offsetExists($child_node)) {
-            continue;
-          }
-          $child_entity = $childEntities->offsetGet($child_node);
-          $child_entity->{$fieldName}->target_id = ($parent ? $parent->getId() : NULL);
-          if ($child_entity->getEntityType()->hasKey('revision')) {
-            // We don't want a new revision here.
-            $child_entity->setNewRevision(FALSE);
-          }
-          $child_entity->save();
-        }
-        // Refresh this node, as left and right would have changed.
-        $existingNode = $storage->getNode($stubNode);
-      }
-      $storage->deleteNode($existingNode);
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function postSave($update) {
     // Get the key factory and tree storage services.
     $nodeKeyFactory = $this->getNodeKeyFactory();
@@ -177,7 +145,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
         // Group the siblings by their weight.
         $weightOrderedSiblings = $this->groupSiblingsByWeight($siblingEntities, $fieldName);
         $weight = $this->get('weight')->getValue();
-        $insertPosition = $this->getInsertPosition($weightOrderedSiblings, $weight, $isNewNode);
+        $insertPosition = $this->getInsertPosition($weightOrderedSiblings, $weight, $isNewNode) ?: $insertPosition;
       }
       $insertPosition->performInsert($storage, $childNode);
       return;
@@ -299,8 +267,9 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
       if (!$siblingEntities->offsetExists($node)) {
         continue;
       }
-      $siblingEntity = $siblingEntities->offsetGet($node);
-      $weightMap[$siblingEntity->{$fieldName}->weight][] = $node;
+      if ($siblingEntity = $siblingEntities->offsetGet($node)) {
+        $weightMap[$siblingEntity->{$fieldName}->weight][] = $node;
+      }
     }
     ksort($weightMap);
     return $weightMap;
@@ -317,8 +286,8 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    *   TRUE if the node is brand new, FALSE if it needs to be moved from
    *   elsewhere in the tree.
    *
-   * @return \Drupal\entity_hierarchy\Storage\InsertPosition
-   *   Insert position.
+   * @return \Drupal\entity_hierarchy\Storage\InsertPosition|bool
+   *   Insert position, FALSE if the siblings no longer exist.
    */
   public function getInsertPosition(array $weightOrderedSiblings, $weight, $isNewNode) {
     if (isset($weightOrderedSiblings[$weight])) {
@@ -340,6 +309,9 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     }
     // We're inserting at the end.
     $lastGroup = end($weightOrderedSiblings);
+    if (!$lastGroup) {
+      return FALSE;
+    }
     return new InsertPosition(end($lastGroup), $isNewNode, InsertPosition::DIRECTION_AFTER);
   }
 

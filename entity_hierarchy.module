@@ -14,6 +14,7 @@ use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\entity_hierarchy\Form\HierarchyChildrenForm;
 use Drupal\entity_hierarchy\Information\ChildEntityWarningBuilder;
 use Drupal\entity_hierarchy\Routing\EntityHierarchyRouteProvider;
+use Drupal\entity_hierarchy\Storage\ParentEntityDeleteUpdater;
 use Drupal\entity_hierarchy\Storage\ParentEntityRevisionUpdater;
 
 /**
@@ -64,6 +65,17 @@ function entity_hierarchy_entity_update(EntityInterface $entity) {
     \Drupal::service('class_resolver')->getInstanceFromDefinition(ParentEntityRevisionUpdater::class)
       ->moveChildren($entity->original, $entity);
   }
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function entity_hierarchy_entity_delete(EntityInterface $entity) {
+  if (!$entity instanceof ContentEntityInterface) {
+    return;
+  }
+  \Drupal::service('class_resolver')->getInstanceFromDefinition(ParentEntityDeleteUpdater::class)
+    ->moveChildren($entity);
 }
 
 /**
