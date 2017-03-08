@@ -31,5 +31,9 @@ class RebuildTest extends EntityHierarchyKernelTestBase {
       ->condition('id', 2)
       ->execute();
     $this->assertNotEquals($expected, $this->treeStorage->getTree());
+    $rebuild_tasks = $this->container->get('entity_hierarchy.tree_rebuilder')->getRebuildTasks();
+    batch_set($rebuild_tasks + ['progressive' => FALSE]);
+    batch_process();
+    $this->assertEquals($expected, $this->treeStorage->getTree());
   }
 }
