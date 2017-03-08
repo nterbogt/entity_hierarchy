@@ -121,12 +121,12 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
       if ($children = $storage->findChildren($stubNode)) {
         $parent = $storage->findParent($stubNode);
         $fieldName = $this->getFieldDefinition()->getName();
-        $child_entities = \Drupal::service('entity_hierarchy.entity_tree_node_mapper')->loadEntitiesForTreeNodesWithoutAccessChecks($this->getEntity()->getEntityTypeId(), $children);
-        foreach ($child_entities as $child_node) {
-          if (!$child_entities->offsetExists($child_node)) {
+        $childEntities = \Drupal::service('entity_hierarchy.entity_tree_node_mapper')->loadEntitiesForTreeNodesWithoutAccessChecks($this->getEntity()->getEntityTypeId(), $children);
+        foreach ($childEntities as $child_node) {
+          if (!$childEntities->offsetExists($child_node)) {
             continue;
           }
-          $child_entity = $child_entities->offsetGet($child_node);
+          $child_entity = $childEntities->offsetGet($child_node);
           $child_entity->{$fieldName}->target_id = ($parent ? $parent->getId() : NULL);
           if ($child_entity->getEntityType()->hasKey('revision')) {
             // We don't want a new revision here.
