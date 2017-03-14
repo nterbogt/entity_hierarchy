@@ -2,6 +2,7 @@
 
 namespace Drupal\entity_hierarchy_workbench_access\Plugin\AccessControlHierarchy;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -69,13 +70,16 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    *   Key factory.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   Entity type manager.
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
+   *   Config factory.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityFieldManagerInterface $entityFieldManager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTypeManagerInterface $entityTypeManager) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityFieldManagerInterface $entityFieldManager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->entityFieldManager = $entityFieldManager;
     $this->nestedSetStorageFactory = $nestedSetStorageFactory;
     $this->nodeKeyFactory = $nodeKeyFactory;
     $this->entityTypeManager = $entityTypeManager;
+    $this->configFactory = $configFactory;
   }
 
   /**
@@ -89,7 +93,8 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       $container->get('entity_field.manager'),
       $container->get('entity_hierarchy.nested_set_storage_factory'),
       $container->get('entity_hierarchy.nested_set_node_factory'),
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('config.factory')
     );
   }
 
@@ -130,19 +135,32 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       $field_name = $this->pluginDefinition['field_name'];
       $tree_storage = $this->nestedSetStorageFactory->get($field_name, $entity_type_id);
       $query = $this->entityTypeManager->getStorage($entity_type_id)->getQuery();
-      if ($parents && $bundle = $entity_type->getKey('bundle')) {
-        $query->condition($bundle, $parents, 'IN');
+      $tree = [];
+      $or = $query->orConditionGroup();
+      $boolean_fields = $this->configFactory->get('workbench_access.settings')
+        ->get('parents');
+      foreach ($boolean_fields as $boolean_field) {
+        $or->condition($boolean_field, 1);
+        $tree[$boolean_field] = [];
+      }
+      if ($boolean_fields) {
+        $query->condition($or);
       }
       $valid_ids = $query->execute();
-      $tree = [];
+      if (!$valid_ids) {
+        return $tree;
+      }
       $parents = [];
       $current_depth = 0;
       $aggregate = $this->entityTypeManager->getStorage($entity_type_id)->getAggregateQuery();
       $aggregate->groupBy($entity_type->getKey('label'))
-        ->groupBy($entity_type->getKey('id'))
-        ->condition($entity_type->getKey('id'), $valid_ids, 'IN');
-      $labels = $aggregate->execute();
-      $labels = array_combine(array_column($labels, $entity_type->getKey('id')), array_column($labels, $entity_type->getKey('label')));
+        ->groupBy($entity_type->getKey('id'));
+      foreach ($boolean_fields as $boolean_field) {
+        $aggregate->groupBy($boolean_field);
+      }
+      $aggregate->condition($entity_type->getKey('id'), $valid_ids, 'IN');
+      $details = $aggregate->execute();
+      $labels = array_combine(array_column($details, $entity_type->getKey('id')), array_column($details, $entity_type->getKey('label')));
       /** @var \PNX\NestedSet\Node $node */
       foreach ($tree_storage->getTree() as $weight => $node) {
         $id = $node->getId();
@@ -173,6 +191,23 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       $this->tree = $tree;
     }
     return $this->tree;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function options() {
+    $entity_type_id = $this->pluginDefinition['entity'];
+    $booleans = $this->entityFieldManager->getFieldMapByFieldType('boolean');
+    $options = [];
+    if (isset($booleans[$entity_type_id])) {
+      foreach ($booleans[$entity_type_id] as $field_name => $info) {
+        $sample_bundle = reset($info['bundles']);
+        $fields = $this->entityFieldManager->getFieldDefinitions($entity_type_id, $sample_bundle);
+        $options[$field_name] = $fields[$field_name]->getLabel();
+      }
+    }
+    return $options;
   }
 
 }

@@ -76,7 +76,7 @@ class WorkbenchAccessControlDeriver extends DeriverBase implements ContainerDeri
       /** @var \Drupal\Core\Entity\EntityTypeInterface $entity_type */
       $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
       foreach ($fields as $field_name => $bundles) {
-        $this->derivatives["$entity_type_id.$field_name"] = [
+        $this->derivatives["{$entity_type_id}__{$field_name}"] = [
           'label' => $this->t('@entity_type (@field)', [
             '@entity_type' => $entity_type->getLabel(),
             '@field' => $field_name,
