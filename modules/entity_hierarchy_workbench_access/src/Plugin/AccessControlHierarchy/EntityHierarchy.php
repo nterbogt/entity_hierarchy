@@ -4,7 +4,9 @@ namespace Drupal\entity_hierarchy_workbench_access\Plugin\AccessControlHierarchy
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
 use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
@@ -160,6 +162,12 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       }
       $aggregate->condition($entity_type->getKey('id'), $valid_ids, 'IN');
       $details = $aggregate->execute();
+      $boolean_parents = array_combine(array_column($details, $entity_type->getKey('id')), array_map(function ($item) use ($entity_type) {
+        // Remove the label/id fields.
+        unset($item[$entity_type->getKey('label')], $item[$entity_type->getKey('id')]);
+        // Return just the boolean fields that were checked.
+        return array_keys(array_filter($item));
+      }, $details));
       $labels = array_combine(array_column($details, $entity_type->getKey('id')), array_column($details, $entity_type->getKey('label')));
       /** @var \PNX\NestedSet\Node $node */
       foreach ($tree_storage->getTree() as $weight => $node) {
@@ -179,14 +187,15 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
           array_pop($parents);
           $parents[] = $node->getDepth();
         }
-        $tree_id = reset($parents);
-        $tree[$tree_id][$id] = [
-          'label' => isset($labels[$id]) ? $labels[$id] : 'N/A',
-          'depth' => $node->getDepth(),
-          'parents' => [],
-          'weight' => $weight,
-          'description' => '',
-        ];
+        foreach ($boolean_parents[$id] as $parent) {
+          $tree[$parent][$id] = [
+            'label' => isset($labels[$id]) ? $labels[$id] : 'N/A',
+            'depth' => $node->getDepth(),
+            'parents' => [],
+            'weight' => $weight,
+            'description' => '',
+          ];
+        }
       }
       $this->tree = $tree;
     }
@@ -208,6 +217,31 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       }
     }
     return $options;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEntityValues(EntityInterface $entity, $field) {
+    $values = [];
+    $nodeKey = $this->nodeKeyFactory->fromEntity($entity);
+    foreach ($entity->get($field) as $item) {
+      if ($item->isEmpty()) {
+        continue;
+      }
+      $property_name = $item->mainPropertyName();
+      $values[] = $item->{$property_name};
+      if ($item instanceof EntityReferenceItem) {
+        $nodeKey = $this->nodeKeyFactory->fromEntity($item->entity);
+      }
+    }
+    $storage = $this->nestedSetStorageFactory->get($this->pluginDefinition['field_name'], $this->pluginDefinition['entity']);
+    $ancestors = $storage->findAncestors($nodeKey);
+    foreach ($ancestors as $ancestor) {
+      $values[] = $ancestor->getId();
+    }
+
+    return $values;
   }
 
 }
