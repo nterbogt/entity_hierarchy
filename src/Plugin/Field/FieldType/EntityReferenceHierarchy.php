@@ -122,6 +122,15 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
 
     // Get the parent/child entities and their node-keys in the nested set.
     $parentEntity = $this->get('entity')->getValue();
+    if (!$parentEntity) {
+      // Parent entity has been deleted.
+      // If this node was in the tree, it needs to be moved to a root node.
+      $stubNode = $nodeKeyFactory->fromEntity($this->getEntity());
+      if (($existingNode = $storage->getNode($stubNode)) && $existingNode->getDepth() > 0) {
+        $storage->moveSubTreeToRoot($existingNode);
+      }
+      return;
+    }
     $parentKey = $nodeKeyFactory->fromEntity($parentEntity);
     $childEntity = $this->getEntity();
     $childKey = $nodeKeyFactory->fromEntity($childEntity);
