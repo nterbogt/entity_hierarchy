@@ -6,3 +6,5 @@ type: module
 dependencies:
   - drupal:node
   - dbal:dbal
+test_dependencies:
+  - workbench_access:workbench_access

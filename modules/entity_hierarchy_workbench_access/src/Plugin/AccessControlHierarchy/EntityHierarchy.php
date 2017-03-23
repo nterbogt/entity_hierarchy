@@ -122,6 +122,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    * {@inheritdoc}
    */
   public function alterOptions($field, WorkbenchAccessManagerInterface $manager) {
+    // @todo We need to limit the allowed options here...
     return $field;
   }
 
