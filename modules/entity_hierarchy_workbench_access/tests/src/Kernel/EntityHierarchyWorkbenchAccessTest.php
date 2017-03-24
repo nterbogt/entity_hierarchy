@@ -233,6 +233,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
    *   Account to check access with.
    */
   protected function checkAccess(array $allowed, array $disallowed, AccountInterface $editor) {
+    $this->container->get('account_switcher')->switchTo($editor);
     foreach ($allowed as $entity) {
       $this->assertTrue($entity->access('update', $editor));
       $this->assertTrue($entity->access('delete', $editor));
