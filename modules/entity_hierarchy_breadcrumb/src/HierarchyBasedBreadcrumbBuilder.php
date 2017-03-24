@@ -9,7 +9,6 @@ use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Routing\AdminContext;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
 use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
 use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
