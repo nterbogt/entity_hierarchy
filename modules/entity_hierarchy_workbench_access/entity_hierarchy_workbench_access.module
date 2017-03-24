@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Main module functions.
+ */
+
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\entity_hierarchy_workbench_access\Plugin\AccessControlHierarchy\EntityHierarchy;

@@ -28,6 +28,8 @@ class ValidEntityHierarchySection extends Constraint implements ConstraintValida
   public $message = 'You are not allowed to create content in this section.';
 
   /**
+   * Context.
+   *
    * @var \Symfony\Component\Validator\ExecutionContextInterface
    */
   protected $context;
