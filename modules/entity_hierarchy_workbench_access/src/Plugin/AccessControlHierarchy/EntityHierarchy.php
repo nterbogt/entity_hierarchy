@@ -224,7 +224,8 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    * {@inheritdoc}
    */
   public function getEntityValues(EntityInterface $entity, $field) {
-    $values = [];
+    // We start with our own ID.
+    $values = [$entity->id()];
     $nodeKey = $this->nodeKeyFactory->fromEntity($entity);
     foreach ($entity->get($field) as $item) {
       if ($item->isEmpty()) {

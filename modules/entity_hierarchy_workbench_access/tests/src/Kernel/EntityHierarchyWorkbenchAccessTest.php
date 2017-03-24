@@ -3,13 +3,14 @@
 namespace Drupal\Tests\entity_hierarchy_workbench_access\Kernel;
 
 use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\node\Entity\Node;
 use Drupal\simpletest\ContentTypeCreationTrait;
 use Drupal\Tests\entity_hierarchy\Kernel\EntityHierarchyKernelTestBase;
-use Drupal\Tests\workbench_access\Functional\WorkbenchAccessTestTrait;
+use Drupal\workbench_access\WorkbenchAccessManagerInterface;
 
 /**
  * Tests interaction between entity_hierarchy and workbench_access.
@@ -18,6 +19,7 @@ use Drupal\Tests\workbench_access\Functional\WorkbenchAccessTestTrait;
  */
 class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
 
+  const BOOLEAN_FIELD = 'use_as_editorial_section';
   use ContentTypeCreationTrait;
   const FIELD_NAME = 'parents';
   const ENTITY_TYPE = 'node';
@@ -61,6 +63,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     EntityKernelTestBase::setUp();
     $this->installEntitySchema(static::ENTITY_TYPE);
     $this->installConfig(['node', 'workbench_access']);
+    $this->installSchema('node', ['node_access']);
     module_load_install('workbench_access');
     workbench_access_install();
     $this->parentNodeType = $this->setUpContentType('section');
@@ -74,18 +77,21 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     $this->nodeFactory = $this->container->get('entity_hierarchy.nested_set_node_factory');
 
     // Setup a boolean field on both node types.
-    $this->setupBooleanEditorialField(static::ENTITY_TYPE, $this->childNodeType->id(), 'use_as_editorial_section');
-    $this->setupBooleanEditorialField(static::ENTITY_TYPE, $this->parentNodeType->id(), 'use_as_editorial_section', FALSE);
+    $this->setupBooleanEditorialField(static::ENTITY_TYPE, $this->childNodeType->id(), self::BOOLEAN_FIELD);
+    $this->setupBooleanEditorialField(static::ENTITY_TYPE, $this->parentNodeType->id(), self::BOOLEAN_FIELD, FALSE);
 
     // Configure workbench access scheme.
     $config = $this->container->get('config.factory')->getEditable('workbench_access.settings');
-    $config->set('scheme', 'taxonomy');
-    $config->set('parents', [$vocab->id() => $vocab->id()]);
-    $fields['node'][$node_type->id()] = WORKBENCH_ACCESS_FIELD;
+    $config->set('scheme', sprintf('entity_hierarchy:%s__%s', self::ENTITY_TYPE, self::FIELD_NAME));
+    $config->set('parents', [static::BOOLEAN_FIELD => static::BOOLEAN_FIELD]);
+    $fields['node'] = [
+      $this->childNodeType->id() => self::FIELD_NAME,
+      $this->parentNodeType->id() => 'nid',
+    ];
     $config->set('fields', $fields);
     $config->save();
   }
-  
+
   /**
    * Creates a new boolean field for flagging entity as section.
    *
@@ -155,13 +161,86 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     // Get UID 1 out of the way.
     $this->createUser();
     // Create a section.
+    $section1 = Node::create([
+      'type' => $this->parentNodeType->id(),
+      'title' => 'Section',
+      self::BOOLEAN_FIELD => TRUE,
+      'status' => TRUE,
+    ]);
+    $section1->save();
     // With some children.
+    $children_of_section1 = $this->createChildEntities($section1->id());
+    // Make the last child also a section.
+    $last_child = end($children_of_section1);
+    $last_child->{self::BOOLEAN_FIELD} = TRUE;
+    $last_child->save();
+    $grandchildren = $this->createChildEntities($last_child->id(), 1);
     // Create a different section.
+    $section2 = Node::create([
+      'type' => $this->parentNodeType->id(),
+      'title' => 'Section',
+      self::BOOLEAN_FIELD => TRUE,
+      'status' => TRUE,
+    ]);
+    $section2->save();
     // With some children.
+    $children_of_section2 = $this->createChildEntities($section2->id());
     // Create an editor.
+    $editor1 = $this->createUser([], [
+      sprintf('create %s content', $this->childNodeType->id()),
+      sprintf('delete any %s content', $this->childNodeType->id()),
+      sprintf('edit any %s content', $this->childNodeType->id()),
+      sprintf('create %s content', $this->parentNodeType->id()),
+      sprintf('delete any %s content', $this->parentNodeType->id()),
+      sprintf('edit any %s content', $this->parentNodeType->id()),
+      'access content',
+    ]);
     // Assign them to first section.
+    $editor1->{WorkbenchAccessManagerInterface::FIELD_NAME} = [$section1->id()];
+    $editor1->save();
     // They should be able to edit/delete from first section and children.
     // But not from different section and children.
+    $allowed = array_merge([$section1], $children_of_section1, $grandchildren);
+    $disallowed = array_merge([$section2], $children_of_section2);
+    $this->checkAccess($allowed, $disallowed, $editor1);
+    // Now create a user with rights to a sub-section.
+    $editor2 = $this->createUser([], [
+      sprintf('create %s content', $this->childNodeType->id()),
+      sprintf('delete any %s content', $this->childNodeType->id()),
+      sprintf('edit any %s content', $this->childNodeType->id()),
+      sprintf('create %s content', $this->parentNodeType->id()),
+      sprintf('delete any %s content', $this->parentNodeType->id()),
+      sprintf('edit any %s content', $this->parentNodeType->id()),
+      'access content',
+    ]);
+    // Assign them to child section.
+    $editor2->{WorkbenchAccessManagerInterface::FIELD_NAME} = [$last_child->id()];
+    $editor2->save();
+    $allowed = [$last_child, reset($grandchildren)];
+    array_pop($children_of_section1);
+    $disallowed = array_merge($disallowed, $children_of_section1, [$section1]);
+    $this->checkAccess($allowed, $disallowed, $editor2);
+  }
+
+  /**
+   * Checks access.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface[] $allowed
+   *   Entities that should have access to.
+   * @param \Drupal\Core\Entity\EntityInterface[] $disallowed
+   *   Entities that should not have access to.
+   * @param \Drupal\Core\Session\AccountInterface $editor
+   *   Account to check access with.
+   */
+  protected function checkAccess(array $allowed, array $disallowed, AccountInterface $editor) {
+    foreach ($allowed as $entity) {
+      $this->assertTrue($entity->access('update', $editor));
+      $this->assertTrue($entity->access('delete', $editor));
+    }
+    foreach ($disallowed as $entity) {
+      $this->assertFalse($entity->access('update', $editor));
+      $this->assertFalse($entity->access('delete', $editor));
+    }
   }
 
 }

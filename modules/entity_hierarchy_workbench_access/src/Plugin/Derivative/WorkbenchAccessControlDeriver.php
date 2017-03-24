@@ -13,7 +13,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Defines a class for deriving workbench access plugins for hierarchies.
  */
-class WorkbenchAccessControlDeriver extends DeriverBase implements ContainerDeriverInterface  {
+class WorkbenchAccessControlDeriver extends DeriverBase implements ContainerDeriverInterface {
 
   use StringTranslationTrait;
   /**
