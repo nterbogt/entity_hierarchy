@@ -236,10 +236,24 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     foreach ($allowed as $entity) {
       $this->assertTrue($entity->access('update', $editor));
       $this->assertTrue($entity->access('delete', $editor));
+      // Check can nominate as parent.
+      $new_child = Node::create([
+        'type' => $this->childNodeType->id(),
+        'title' => 'A new child',
+        self::FIELD_NAME => $entity->id(),
+      ]);
+      $this->assertEmpty($new_child->validate());
     }
     foreach ($disallowed as $entity) {
       $this->assertFalse($entity->access('update', $editor));
       $this->assertFalse($entity->access('delete', $editor));
+      // Check cannot nominate as parent.
+      $new_child = Node::create([
+        'type' => $this->childNodeType->id(),
+        'title' => 'A new child',
+        self::FIELD_NAME => $entity->id(),
+      ]);
+      $this->assertNotEmpty($new_child->validate());
     }
   }
 
