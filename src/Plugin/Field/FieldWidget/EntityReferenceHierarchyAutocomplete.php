@@ -5,6 +5,7 @@ namespace Drupal\entity_hierarchy\Plugin\Field\FieldWidget;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\Plugin\Field\FieldWidget\EntityReferenceAutocompleteWidget;
+use Symfony\Component\Validator\ConstraintViolationInterface;
 
 /**
  * Widget that uses autocomplete.
@@ -20,6 +21,13 @@ use Drupal\Core\Field\Plugin\Field\FieldWidget\EntityReferenceAutocompleteWidget
  */
 class EntityReferenceHierarchyAutocomplete extends EntityReferenceAutocompleteWidget {
   const HIDE_WEIGHT = 'hide_weight';
+
+  /**
+   * {@inheritdoc}
+   */
+  public function errorElement(array $element, ConstraintViolationInterface $error, array $form, FormStateInterface $form_state) {
+    return isset($element[0]['target_id']) ? $element[0]['target_id'] : FALSE;
+  }
 
   /**
    * {@inheritdoc}
