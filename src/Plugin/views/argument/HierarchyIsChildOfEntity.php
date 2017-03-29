@@ -64,6 +64,8 @@ class HierarchyIsChildOfEntity extends ArgumentPluginBase {
    *   Entity type manager.
    * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $nodeKeyFactory
    *   Node key factory.
+   * @param \Drupal\Core\Database\Connection $database
+   *   Database connection.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, NestedSetStorageFactory $nestedSetStorageFactory, EntityTypeManagerInterface $entityTypeManager, NestedSetNodeKeyFactory $nodeKeyFactory, Connection $database) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
@@ -167,7 +169,7 @@ class HierarchyIsChildOfEntity extends ArgumentPluginBase {
     $options = parent::defineOptions();
 
     // Allow filtering depth as well.
-    $options['depth'] = array('default' => 0);
+    $options['depth'] = ['default' => 0];
 
     return $options;
   }

@@ -12,7 +12,6 @@ use Symfony\Component\Validator\ExecutionContextInterface;
  * @Constraint(
  *   id = "ValidHierarchySection",
  *   label = @Translation("Valid hierarchy selection", context = "Validation"),
- *   type = "entity:comment"
  * )
  */
 class ValidEntityHierarchySection extends Constraint implements ConstraintValidatorInterface {

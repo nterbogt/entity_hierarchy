@@ -110,10 +110,10 @@ class EntityHierarchy extends DefaultSelection {
     $result = $query->execute();
 
     if (empty($result)) {
-      return array();
+      return [];
     }
 
-    $options = array();
+    $options = [];
     $entities = $this->entityManager->getStorage($target_type)->loadMultiple($result);
 
     // We assume target and definition are one and the same, as there is no

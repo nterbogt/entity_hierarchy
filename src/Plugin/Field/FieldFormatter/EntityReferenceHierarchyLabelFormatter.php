@@ -25,7 +25,7 @@ class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatt
    */
   public function settingsForm(array $form, FormStateInterface $form_state) {
     $elements = parent::settingsForm($form, $form_state);
-    $elements['weight_output'] = array(
+    $elements['weight_output'] = [
       '#type' => 'radios',
       '#options' => [
         'suffix' => t('After title'),
@@ -34,7 +34,7 @@ class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatt
       '#title' => t('Output weigh'),
       '#default_value' => $this->getSetting('weight_output'),
       '#required' => TRUE,
-    );
+    ];
 
     return $elements;
   }
@@ -54,7 +54,7 @@ class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatt
         $action = t('suffix after title');
         break;
     }
-    $summary[] = t('Show weight as @action', array('@action' => $action));
+    $summary[] = t('Show weight as @action', ['@action' => $action]);
 
     return $summary;
   }

@@ -26,24 +26,24 @@ class EntityReferenceHierarchySelect extends OptionsWidgetBase {
    */
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     $element = parent::formElement($items, $delta, $element, $form, $form_state);
-    $element += array(
+    $element += [
       '#type' => 'select',
       '#options' => $this->getOptions($items->getEntity()),
       '#default_value' => isset($items[$delta]->target_id) ? $items[$delta]->target_id : '',
-    );
+    ];
 
-    $widget = array(
+    $widget = [
       '#attributes' => ['class' => ['form--inline', 'clearfix']],
       '#theme_wrappers' => ['container'],
-    );
+    ];
 
     $widget['target_id'] = $element;
-    $widget['weight'] = array(
+    $widget['weight'] = [
       '#type' => 'number',
       '#size' => '4',
       '#default_value' => isset($items[$delta]) ? $items[$delta]->weight : 1,
       '#weight' => 10,
-    );
+    ];
     kint($widget);
 
     if ($this->fieldDefinition->getFieldStorageDefinition()->isMultiple()) {
@@ -92,7 +92,7 @@ class EntityReferenceHierarchySelect extends OptionsWidgetBase {
   public static function validateElement(array $element, FormStateInterface $form_state) {
     if ($element['#value'] == '_none') {
       if ($element['#required'] && $element['#value'] == '_none') {
-        $form_state->setError($element, t('@name field is required.', array('@name' => $element['#title'])));
+        $form_state->setError($element, t('@name field is required.', ['@name' => $element['#title']]));
       }
       else {
         $form_state->setValueForElement($element, NULL);

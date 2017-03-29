@@ -54,10 +54,10 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    */
   public static function schema(FieldStorageDefinitionInterface $field_definition) {
     $schema = parent::schema($field_definition);
-    $schema['columns']['weight'] = array(
+    $schema['columns']['weight'] = [
       'type' => 'int',
       'unsigned' => FALSE,
-    );
+    ];
     return $schema;
   }
 
@@ -65,11 +65,11 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    * {@inheritdoc}
    */
   public static function defaultFieldSettings() {
-    return array(
+    return [
       'weight_label' => t('Weight'),
       'weight_min' => self::HIERARCHY_MIN_CHILD_WEIGHT,
       'weight_max' => self::HIERARCHY_MAX_CHILD_WEIGHT,
-    ) + parent::defaultFieldSettings();
+    ] + parent::defaultFieldSettings();
   }
 
   /**
@@ -106,7 +106,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     // list of field-types with options for each destination entity type.
     // Too much work, we'll just make people fill that out later.
     // Also, keeps the field type dropdown from getting too cluttered.
-    return array();
+    return [];
   }
 
   /**

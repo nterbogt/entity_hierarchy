@@ -9,19 +9,19 @@
  * Implements hook_drush_command().
  */
 function entity_hierarchy_drush_command() {
-  $items = array();
+  $items = [];
 
-  $items['entity-hierarchy-rebuild-tree'] = array(
+  $items['entity-hierarchy-rebuild-tree'] = [
     'description' => 'Rebuild tree.',
-    'arguments' => array(
+    'arguments' => [
       'field_name' => dt('Field machine name'),
       'entity_type_id' => dt('Entity type id'),
-    ),
-    'options' => array(),
-    'examples' => array(
+    ],
+    'options' => [],
+    'examples' => [
       'drush entity-hierarchy-rebuild-tree field_parents node' => 'Rebuild tree for node field named field_parents.',
-    ),
-  );
+    ],
+  ];
   return $items;
 }
 
