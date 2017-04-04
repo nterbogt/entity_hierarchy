@@ -19,8 +19,7 @@ function entity_hierarchy_workbench_access_entity_bundle_field_info_alter(&$fiel
     // Workbench access only supports node at present.
     return;
   }
-  $node_type = NodeType::load($bundle);
-  if (!$node_type->getThirdPartySetting('workbench_access', 'workbench_access_status', FALSE)) {
+  if (($node_type = NodeType::load($bundle)) && (!$node_type->getThirdPartySetting('workbench_access', 'workbench_access_status', FALSE))) {
     // No access controls for this node type.
     return;
   }
