@@ -11,6 +11,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
 use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
 use Drupal\workbench_access\AccessControlHierarchyBase;
+use Drupal\workbench_access\UserSectionStorageInterface;
 use Drupal\workbench_access\WorkbenchAccessManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -64,24 +65,20 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    *   Plugin ID.
    * @param mixed $plugin_definition
    *   Definition.
+   * @param \Drupal\workbench_access\UserSectionStorageInterface $userSectionStorage
+   *   User section storage.
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
    *   Entity Field manager.
    * @param \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory $nestedSetStorageFactory
    *   Storage factory.
    * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $nodeKeyFactory
    *   Key factory.
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
-   *   Entity type manager.
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
-   *   Config factory.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityFieldManagerInterface $entityFieldManager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition);
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, UserSectionStorageInterface $userSectionStorage, EntityFieldManagerInterface $entityFieldManager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $userSectionStorage, $configFactory, $entityTypeManager);
     $this->entityFieldManager = $entityFieldManager;
     $this->nestedSetStorageFactory = $nestedSetStorageFactory;
     $this->nodeKeyFactory = $nodeKeyFactory;
-    $this->entityTypeManager = $entityTypeManager;
-    $this->configFactory = $configFactory;
   }
 
   /**
@@ -92,6 +89,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       $configuration,
       $plugin_id,
       $plugin_definition,
+      $container->get('workbench_access.user_section_storage'),
       $container->get('entity_field.manager'),
       $container->get('entity_hierarchy.nested_set_storage_factory'),
       $container->get('entity_hierarchy.nested_set_node_factory'),
@@ -121,7 +119,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
   /**
    * {@inheritdoc}
    */
-  public function alterOptions($field, WorkbenchAccessManagerInterface $manager) {
+  public function alterOptions($field, WorkbenchAccessManagerInterface $manager,  array $user_sections = []) {
     // @todo We need to limit the allowed options here...
     return $field;
   }
@@ -131,8 +129,6 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    */
   public function getTree() {
     if (!isset($this->tree)) {
-      $config = $this->config('workbench_access.settings');
-      $parents = $config->get('parents');
       $entity_type_id = $this->pluginDefinition['entity'];
       $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
       $field_name = $this->pluginDefinition['field_name'];
@@ -140,8 +136,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       $query = $this->entityTypeManager->getStorage($entity_type_id)->getQuery();
       $tree = [];
       $or = $query->orConditionGroup();
-      $boolean_fields = $this->configFactory->get('workbench_access.settings')
-        ->get('parents');
+      $boolean_fields = $this->config->get('parents');
       foreach ($boolean_fields as $boolean_field) {
         $or->condition($boolean_field, 1);
         $tree[$boolean_field] = [];

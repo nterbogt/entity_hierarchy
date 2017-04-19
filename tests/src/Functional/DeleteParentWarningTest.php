@@ -3,7 +3,7 @@
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
 use Drupal\Tests\BrowserTestBase;
-use Drupal\Tests\entity_hierarchy\EntityHierarchyTestTrait;
+use Drupal\Tests\entity_hierarchy\Traits\EntityHierarchyTestTrait;
 
 /**
  * Defines a class for testing the warnings on delete form.

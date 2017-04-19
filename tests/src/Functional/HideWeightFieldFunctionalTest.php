@@ -6,7 +6,7 @@ use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\entity_hierarchy\Plugin\Field\FieldWidget\EntityReferenceHierarchyAutocomplete;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\Tests\BrowserTestBase;
-use Drupal\Tests\entity_hierarchy\EntityHierarchyTestTrait;
+use Drupal\Tests\entity_hierarchy\Traits\EntityHierarchyTestTrait;
 
 /**
  * Defines a class for testing the ability to hide the weight field.

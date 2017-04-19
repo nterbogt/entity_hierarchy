@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\entity_hierarchy;
+namespace Drupal\Tests\entity_hierarchy\Traits;
 
 use Drupal\Component\Utility\Unicode;
 use Drupal\entity_test\Entity\EntityTest;

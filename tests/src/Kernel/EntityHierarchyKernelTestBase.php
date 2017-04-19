@@ -3,7 +3,7 @@
 namespace Drupal\Tests\entity_hierarchy\Kernel;
 
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
-use Drupal\Tests\entity_hierarchy\EntityHierarchyTestTrait;
+use Drupal\Tests\entity_hierarchy\Traits\EntityHierarchyTestTrait;
 
 /**
  * Defines a base class for entity hierarchy tests.
