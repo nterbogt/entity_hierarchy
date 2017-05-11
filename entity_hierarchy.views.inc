@@ -67,6 +67,15 @@ function entity_hierarchy_views_data() {
           'id' => $has_revisions ? 'entity_hierarchy_argument_is_child_of_entity_revision' : 'entity_hierarchy_argument_is_child_of_entity',
         ],
       ];
+      // Contextual filter for filtering to parent of a given child.
+      $data[$table_name]['is_parent'] = [
+        'title' => t('Hierarchy: Is Parent of'),
+        'help' => t('Limit to parent of given entity'),
+        'real field' => 'left_pos',
+        'argument' => [
+          'id' => $has_revisions ? 'entity_hierarchy_argument_is_parent_of_entity_revision' : 'entity_hierarchy_argument_is_parent_of_entity',
+        ],
+      ];
       // Sorting and filtering on depth.
       $data[$table_name]['depth'] = [
         'title' => t('Hierarchy depth'),

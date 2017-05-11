@@ -73,6 +73,10 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    *   Storage factory.
    * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $nodeKeyFactory
    *   Key factory.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   Entity type manager.
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
+   *   Config factory.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, UserSectionStorageInterface $userSectionStorage, EntityFieldManagerInterface $entityFieldManager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $userSectionStorage, $configFactory, $entityTypeManager);
@@ -119,7 +123,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
   /**
    * {@inheritdoc}
    */
-  public function alterOptions($field, WorkbenchAccessManagerInterface $manager,  array $user_sections = []) {
+  public function alterOptions($field, WorkbenchAccessManagerInterface $manager, array $user_sections = []) {
     // @todo We need to limit the allowed options here...
     return $field;
   }

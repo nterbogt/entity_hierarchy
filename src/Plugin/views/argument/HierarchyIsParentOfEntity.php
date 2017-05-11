@@ -2,14 +2,16 @@
 
 namespace Drupal\entity_hierarchy\Plugin\views\argument;
 
+use Drupal\Core\Form\FormStateInterface;
+
 /**
- * Argument to limit to children of an entity.
+ * Argument to limit to parent of an entity.
  *
  * @ingroup views_argument_handlers
  *
- * @ViewsArgument("entity_hierarchy_argument_is_child_of_entity")
+ * @ViewsArgument("entity_hierarchy_argument_is_parent_of_entity")
  */
-class HierarchyIsChildOfEntity extends EntityHierarchyArgumentPluginBase {
+class HierarchyIsParentOfEntity extends EntityHierarchyArgumentPluginBase {
 
   /**
    * Set up the query for this argument.
@@ -23,16 +25,15 @@ class HierarchyIsChildOfEntity extends EntityHierarchyArgumentPluginBase {
     if ($entity = $this->loadEntity()) {
       $stub = $this->nodeKeyFactory->fromEntity($entity);
       if ($node = $this->getTreeStorage()->getNode($stub)) {
-        // Query between a range.
+        // Child comes between our left and right.
         $filtered = TRUE;
-        $expression = "$this->tableAlias.$this->realField BETWEEN :lower and :upper AND $this->tableAlias.$this->realField <> :lower";
+        $expression = "$this->tableAlias.$this->realField < :child_left AND $this->tableAlias.right_pos > :child_left";
         $arguments = [
-          ':lower' => $node->getLeft(),
-          ':upper' => $node->getRight(),
+          ':child_left' => $node->getLeft(),
         ];
         if ($depth = $this->options['depth']) {
           $expression .= " AND $this->tableAlias.depth <= :depth";
-          $arguments[':depth'] = $node->getDepth() + $depth;
+          $arguments[':depth'] = $node->getDepth() - $depth;
         }
         $this->query->addWhereExpression(0, $expression, $arguments);
       }
@@ -43,6 +44,14 @@ class HierarchyIsChildOfEntity extends EntityHierarchyArgumentPluginBase {
       // Add a killswitch.
       $this->query->addWhereExpression(0, '1 <> 1');
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
+    parent::buildOptionsForm($form, $form_state);
+    $form['depth']['#description'] = $this->t('Filter to parent that are at most this many levels higher than their parent. E.g. for immediate parent, select 1.');
   }
 
 }
