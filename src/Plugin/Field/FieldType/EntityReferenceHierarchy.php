@@ -21,6 +21,7 @@ use PNX\NestedSet\NodeKey;
  *   category = @Translation("Reference"),
  *   default_widget = "entity_reference_hierarchy_autocomplete",
  *   default_formatter = "entity_reference_hierarchy_label",
+ *   cardinality = 1,
  *   list_class = "\Drupal\entity_hierarchy\Plugin\Field\FieldType\EntityReferenceHierarchyFieldItemList"
  * )
  */
