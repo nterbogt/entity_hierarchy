@@ -114,6 +114,9 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    * {@inheritdoc}
    */
   public function postSave($update) {
+    if (\Drupal::state()->get('entity_hierarchy_disable_writes', FALSE)) {
+      return;
+    }
     // Get the key factory and tree storage services.
     $nodeKeyFactory = $this->getNodeKeyFactory();
     $storage = $this->getTreeStorage();
