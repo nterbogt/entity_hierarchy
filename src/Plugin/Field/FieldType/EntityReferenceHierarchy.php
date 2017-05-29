@@ -59,6 +59,8 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
       'type' => 'int',
       'unsigned' => FALSE,
     ];
+    // Add weight index.
+    $schema['indexes']['weight'] = ['weight'];
     return $schema;
   }
 
