@@ -2,6 +2,7 @@
 
 namespace Drupal\entity_hierarchy\Storage;
 
+use Drupal\Component\Graph\Graph;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 
@@ -49,7 +50,24 @@ class TreeRebuilder {
       ],
       'finished' => [static::class, 'batchFinished'],
     ];
-    foreach ($this->entityTypeManager->getStorage($entity_type_id)->getQuery()->exists($field_name)->execute() as $entity_id) {
+    $entityType = $this->entityTypeManager->getDefinition($entity_type_id);
+    $idKey = $entityType->getKey('id');
+    $query = $this->entityTypeManager->getStorage($entity_type_id)
+      ->getAggregateQuery()
+      ->groupBy("$field_name.target_id")
+      ->groupBy("$field_name.weight")
+      ->groupBy($idKey)
+      ->sort("$field_name.target_id")
+      ->sort("$field_name.weight")
+      ->exists($field_name);
+    $items = [];
+    foreach ($query->execute() as $entity_id => $item) {
+      $items[$item[$idKey]]['edges'][$item["{$field_name}_target_id"]] = TRUE;
+    }
+    $graph = new Graph($items);
+    $sorted = $graph->searchAndSort();
+    uasort($sorted, ['Drupal\Component\Utility\SortArray', 'sortByWeightElement']);
+    foreach ($sorted as $entity_id => $entry) {
       $batch['operations'][] = [
         [static::class, 'rebuildTree'],
         [$field_name, $entity_type_id, $entity_id],
