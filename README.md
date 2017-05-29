@@ -2,7 +2,8 @@
 
 ## Migration performance
 
-Writing to the nested set tables is expensive, by design. Expensive writes but cheap reads.
+Writing to the nested set tables is expensive, by design. Expensive writes but
+cheap reads.
 
 We recommend disabling it during migration as follows.
 
