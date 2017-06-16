@@ -20,4 +20,15 @@ interface ParentCandidateInterface {
    */
   public function getCandidateFields(EntityInterface $entity);
 
+  /**
+   * Gets all bundles that allow referencing this entity as a parent.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   Entity to get parent candidate bundles for.
+   *
+   * @return array
+   *   Bundles that support this entity as parent.
+   */
+  public function getCandidateBundles(EntityInterface $entity);
+
 }

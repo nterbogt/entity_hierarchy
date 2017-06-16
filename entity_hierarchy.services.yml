@@ -6,7 +6,7 @@ services:
     class: Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
   entity_hierarchy.information.parent_candidate:
     class: Drupal\entity_hierarchy\Information\ParentCandidate
-    arguments: ['@entity_field.manager']
+    arguments: ['@entity_field.manager', '@entity_type.bundle.info']
   access_check.entity_hierarchy.has_fields:
     class: Drupal\entity_hierarchy\Routing\ReorderChildrenAccess
     arguments: ['@entity_hierarchy.information.parent_candidate', '@current_route_match']

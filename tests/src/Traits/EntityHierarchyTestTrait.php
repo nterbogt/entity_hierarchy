@@ -63,16 +63,19 @@ trait EntityHierarchyTestTrait {
    *   Field name.
    */
   protected function setupEntityHierarchyField($entity_type_id, $bundle, $field_name) {
-    $storage = FieldStorageConfig::create([
-      'entity_type' => $entity_type_id,
-      'field_name' => $field_name,
-      'id' => "$entity_type_id.$field_name",
-      'type' => 'entity_reference_hierarchy',
-      'settings' => [
-        'target_type' => $entity_type_id,
-      ],
-    ]);
-    $storage->save();
+    if (!FieldStorageConfig::load("$entity_type_id.$field_name")) {
+      $storage = FieldStorageConfig::create([
+        'entity_type' => $entity_type_id,
+        'field_name' => $field_name,
+        'id' => "$entity_type_id.$field_name",
+        'type' => 'entity_reference_hierarchy',
+        'settings' => [
+          'target_type' => $entity_type_id,
+        ],
+      ]);
+      $storage->save();
+    }
+
     $config = FieldConfig::create([
       'field_name' => $field_name,
       'entity_type' => $entity_type_id,

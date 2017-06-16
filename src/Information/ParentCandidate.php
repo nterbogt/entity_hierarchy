@@ -4,6 +4,7 @@ namespace Drupal\entity_hierarchy\Information;
 
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 
 /**
  * Defines a class for determining if an entity is a parent candidate.
@@ -18,13 +19,23 @@ class ParentCandidate implements ParentCandidateInterface {
   protected $entityFieldManager;
 
   /**
+   * Bundle info.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface
+   */
+  protected $bundleInfo;
+
+  /**
    * Constructs a new ReorderChildrenAccess object.
    *
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
    *   Entity field manager.
+   * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $bundleInfo
+   *   Bundle Info.
    */
-  public function __construct(EntityFieldManagerInterface $entityFieldManager) {
+  public function __construct(EntityFieldManagerInterface $entityFieldManager, EntityTypeBundleInfoInterface $bundleInfo) {
     $this->entityFieldManager = $entityFieldManager;
+    $this->bundleInfo = $bundleInfo;
   }
 
   /**
@@ -52,6 +63,20 @@ class ParentCandidate implements ParentCandidateInterface {
       }
     }
     return $valid_fields;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCandidateBundles(EntityInterface $entity) {
+    $fields = $this->entityFieldManager->getFieldMap()[$entity->getEntityTypeId()];
+    $bundles = [];
+    foreach ($this->getCandidateFields($entity) as $field_name) {
+      $bundles = array_merge($bundles, $fields[$field_name]['bundles']);
+    }
+    $bundles = array_unique($bundles);
+    $bundleInfo = $this->bundleInfo->getBundleInfo($entity->getEntityTypeId());
+    return array_intersect_key($bundleInfo, array_flip($bundles));
   }
 
 }

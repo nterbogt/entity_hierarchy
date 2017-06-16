@@ -2,6 +2,8 @@
 
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
+use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\field\Entity\FieldConfig;
@@ -122,6 +124,38 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     $this->drupalGet($another_different_test_entity->toUrl('entity_hierarchy_reorder'));
     // No field, should be not found here.
     $assert->statusCodeEquals(403);
+  }
+
+  /**
+   * Tests add child links.
+   */
+  public function testAddChildLinks() {
+    $bundles = [
+      'bundle1' => 'Bundle 1',
+      'bundle2' => 'Bundle 2',
+      'bundle3' => 'Bundle 3',
+      'entity_test' => 'Base bundle',
+    ];
+    foreach ($bundles as $id => $name) {
+      entity_test_create_bundle($id, $name);
+    }
+
+    // Login.
+    $this->drupalLogin($this->drupalCreateUser(['reorder entity_hierarchy children', 'view test entity']));
+    $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
+    $assert = $this->assertSession();
+    $assert->statusCodeEquals(200);
+
+    $expected_links = [];
+    foreach ($bundles as $id => $name) {
+      $expected_links[] = Link::fromTextAndUrl(sprintf('Create new %s', $name), Url::fromRoute('entity.entity_test.add_form', ['type' => $id]));
+      $assert->linkExists(sprintf('Create new %s', $name));
+      $assert->linkByHrefExists(Url::fromRoute('entity.entity_test.add_form', [
+        'type' => $id,
+      ], [
+        'query' => [self::FIELD_NAME => $this->parent->id()],
+      ])->toString());
+    }
   }
 
 }
