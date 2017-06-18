@@ -71,12 +71,21 @@ class ParentCandidate implements ParentCandidateInterface {
   public function getCandidateBundles(EntityInterface $entity) {
     $fields = $this->entityFieldManager->getFieldMap()[$entity->getEntityTypeId()];
     $bundles = [];
-    foreach ($this->getCandidateFields($entity) as $field_name) {
-      $bundles = array_merge($bundles, $fields[$field_name]['bundles']);
-    }
-    $bundles = array_unique($bundles);
     $bundleInfo = $this->bundleInfo->getBundleInfo($entity->getEntityTypeId());
-    return array_intersect_key($bundleInfo, array_flip($bundles));
+    foreach ($this->getCandidateFields($entity) as $field_name) {
+      $valid_bundles = [];
+      foreach ($fields[$field_name]['bundles'] as $bundle) {
+        /** @var \Drupal\Core\Field\FieldDefinitionInterface $field */
+        $field = $this->entityFieldManager->getFieldDefinitions($entity->getEntityTypeId(), $bundle)[$field_name];
+        $settings = $field->getSetting('handler_settings');
+        if (!isset($settings['target_bundles']) || in_array($entity->bundle(), $settings['target_bundles'], TRUE)) {
+          // No target bundles means any can be referenced.
+          $valid_bundles[$bundle] = $bundle;
+        }
+      }
+      $bundles[$field_name] = array_intersect_key($bundleInfo, $valid_bundles);
+    }
+    return $bundles;
   }
 
 }

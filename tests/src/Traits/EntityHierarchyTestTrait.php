@@ -76,14 +76,16 @@ trait EntityHierarchyTestTrait {
       $storage->save();
     }
 
-    $config = FieldConfig::create([
-      'field_name' => $field_name,
-      'entity_type' => $entity_type_id,
-      'bundle' => $bundle,
-      'id' => "$entity_type_id.$bundle.$field_name",
-      'label' => Unicode::ucfirst($field_name),
-    ]);
-    $config->save();
+    if (!FieldConfig::load("$entity_type_id.$bundle.$field_name")) {
+      $config = FieldConfig::create([
+        'field_name' => $field_name,
+        'entity_type' => $entity_type_id,
+        'bundle' => $bundle,
+        'id' => "$entity_type_id.$bundle.$field_name",
+        'label' => Unicode::ucfirst($field_name),
+      ]);
+      $config->save();
+    }
   }
 
   /**

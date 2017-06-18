@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\entity_hierarchy\Kernel;
 
+use Drupal\Core\Url;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\field\Entity\FieldConfig;
@@ -50,8 +51,25 @@ class ParentCandidateTest extends EntityHierarchyKernelTestBase {
     $this->setupEntityHierarchyField(self::ENTITY_TYPE, 'fooey', self::FIELD_NAME);
     $this->setupEntityHierarchyField(self::ENTITY_TYPE, 'bar', self::FIELD_NAME);
     $bundles = $parentCandidate->getCandidateBundles($this->parent);
-    $this->assertEquals(['entity_test', 'fooey', 'bar'], array_keys($bundles));
-    $this->assertEquals(['label' => 'Fooey'], $bundles['fooey']);
+    $this->assertEquals([
+      'entity_test',
+      'fooey',
+      'bar'
+    ], array_keys($bundles[self::FIELD_NAME]));
+    $this->assertEquals(['label' => 'Fooey'], $bundles[self::FIELD_NAME]['fooey']);
+
+    // Add a bundle limit - prevent fooey bundle from referencing the
+    // entity_test bundle.
+    $field = FieldConfig::load('entity_test.fooey.parents');
+    $settings = $field->getSetting('handler_settings');
+    $settings['target_bundles'] = ['bar'];
+    $field->setSetting('handler_settings', $settings);
+    $field->save();
+    $bundles = $parentCandidate->getCandidateBundles($this->parent);
+    $this->assertEquals([
+      'entity_test',
+      'bar'
+    ], array_keys($bundles[self::FIELD_NAME]));
   }
 
 }

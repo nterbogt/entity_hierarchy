@@ -5,6 +5,7 @@ namespace Drupal\entity_hierarchy\Form;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
 use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
@@ -146,7 +147,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
     $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
     $form['children'] = [
       '#type' => 'table',
-      '#header' => [t('Child'), t('Weight') , t('Operations')],
+      '#header' => [t('Child'), t('Weight'), t('Operations')],
       '#tabledrag' => [
         [
           'action' => 'order',
@@ -167,7 +168,8 @@ class HierarchyChildrenForm extends ContentEntityForm {
       $child = $node->getId();
       $form['children'][$child]['#attributes']['class'][] = 'draggable';
       $form['children'][$child]['#weight'] = $weight;
-      $form['children'][$child]['title'] = $childEntity->toLink()->toRenderable();
+      $form['children'][$child]['title'] = $childEntity->toLink()
+        ->toRenderable();
       $form['children'][$child]['weight'] = [
         '#type' => 'weight',
         '#delta' => 50,
@@ -197,6 +199,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
     }
 
     $cache->applyTo($form);
+
     return $form;
   }
 
@@ -222,6 +225,31 @@ class HierarchyChildrenForm extends ContentEntityForm {
     // Don't show the actions links if there are no children.
     if (isset($form['no_children'])) {
       unset($actions['submit']);
+    }
+    $fields = $this->parentCandidate->getCandidateFields($this->entity);
+    $fieldName = $form_state->getValue('fieldname') ?: reset($fields);
+    if ($this->entity->hasLinkTemplate('add-form') && ($childBundles = $this->parentCandidate->getCandidateBundles($this->entity)) && isset($childBundles[$fieldName])) {
+      $actions['add_child'] = [
+        '#type' => 'dropbutton',
+        '#links' => [],
+      ];
+      foreach ($childBundles[$fieldName] as $id => $info) {
+        $routeName = "entity.{$this->entity->getEntityTypeId()}.add_form";
+        $entityType = $this->entity->getEntityType();
+        if ($alternateAddRoute = $entityType->get('add-route')) {
+          $routeName = $alternateAddRoute;
+        }
+        $actions['add_child']['#links'][$id] = [
+          'title' => $this->t('Create new @bundle', ['@bundle' => $info['label']]),
+          'url' => Url::fromRoute($routeName, [
+            $entityType->getBundleEntityType() ?: $entityType->getKey('bundle') => $id,
+          ], [
+            'query' => [
+              $fieldName => $this->entity->id(),
+            ]
+          ])
+        ];
+      }
     }
     return $actions;
   }

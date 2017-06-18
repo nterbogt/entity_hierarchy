@@ -134,10 +134,11 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'bundle1' => 'Bundle 1',
       'bundle2' => 'Bundle 2',
       'bundle3' => 'Bundle 3',
-      'entity_test' => 'Base bundle',
+      'entity_test' => 'Entity Test Bundle',
     ];
     foreach ($bundles as $id => $name) {
       entity_test_create_bundle($id, $name);
+      $this->setupEntityHierarchyField('entity_test', $id, self::FIELD_NAME);
     }
 
     // Login.
@@ -146,9 +147,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     $assert = $this->assertSession();
     $assert->statusCodeEquals(200);
 
-    $expected_links = [];
     foreach ($bundles as $id => $name) {
-      $expected_links[] = Link::fromTextAndUrl(sprintf('Create new %s', $name), Url::fromRoute('entity.entity_test.add_form', ['type' => $id]));
       $assert->linkExists(sprintf('Create new %s', $name));
       $assert->linkByHrefExists(Url::fromRoute('entity.entity_test.add_form', [
         'type' => $id,

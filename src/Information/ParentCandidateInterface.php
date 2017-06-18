@@ -27,7 +27,7 @@ interface ParentCandidateInterface {
    *   Entity to get parent candidate bundles for.
    *
    * @return array
-   *   Bundles that support this entity as parent.
+   *   Bundles that support this entity as parent, keyed by field name.
    */
   public function getCandidateBundles(EntityInterface $entity);
 

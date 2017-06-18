@@ -52,6 +52,11 @@ function entity_hierarchy_entity_type_build(array &$entity_types) {
       ->setFormClass('entity_hierarchy_reorder', HierarchyChildrenForm::class)
       ->setLinkTemplate('entity_hierarchy_reorder', $entity_type->getLinkTemplate('canonical') . '/children');
   }
+  if (isset($entity_types['node'])) {
+    // Node doesn't define an add-form template.
+    $entity_types['node']->setLinkTemplate('add-form', '/node/add/{node_type}');
+    $entity_types['node']->set('add-route', 'node.add');
+  }
 }
 
 /**
