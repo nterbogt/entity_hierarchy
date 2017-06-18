@@ -3,6 +3,7 @@
 namespace Drupal\Tests\entity_hierarchy\Traits;
 
 use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
@@ -166,6 +167,58 @@ trait EntityHierarchyTestTrait {
    */
   protected function doCreateChildTestEntity($parentId, $label, $weight) {
     return $this->createTestEntity($parentId, $label, $weight);
+  }
+
+  /**
+   * Sets up entity form display.
+   *
+   * @param string $entity_type
+   *   Entity type ID.
+   * @param string $bundle
+   *   Bundle ID.
+   * @param string $field_name
+   *   Field name.
+   */
+  protected function setupEntityFormDisplay($entity_type, $bundle, $field_name) {
+    $this->getEntityFormDisplay($entity_type, $bundle, 'default')
+      ->setComponent($field_name, [
+        'type' => 'entity_reference_hierarchy_autocomplete',
+        'weight' => 20,
+      ])
+      ->save();
+  }
+
+  /**
+   * Gets entity form display.
+   *
+   * @param string $entity_type
+   *   Entity type ID.
+   * @param string $bundle
+   *   Bundle.
+   * @param string $form_mode
+   *   Form mode.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface
+   *   Form display.
+   */
+  protected function getEntityFormDisplay($entity_type, $bundle, $form_mode) {
+    $entity_form_display = EntityFormDisplay::load($entity_type . '.' . $bundle . '.' . $form_mode);
+
+    // If not found, create a fresh entity object. We do not preemptively create
+    // new entity form display configuration entries for each existing entity
+    // type and bundle whenever a new form mode becomes available. Instead,
+    // configuration entries are only created when an entity form display is
+    // explicitly configured and saved.
+    if (!$entity_form_display) {
+      $entity_form_display = EntityFormDisplay::create([
+        'targetEntityType' => $entity_type,
+        'bundle' => $bundle,
+        'mode' => $form_mode,
+        'status' => TRUE,
+      ]);
+    }
+
+    return $entity_form_display;
   }
 
 }

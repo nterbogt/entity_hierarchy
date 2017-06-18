@@ -38,45 +38,7 @@ class HideWeightFieldFunctionalTest extends BrowserTestBase {
     parent::setUp();
     $this->setupEntityHierarchyField(static::ENTITY_TYPE, static::ENTITY_TYPE, static::FIELD_NAME);
     $this->additionalSetup();
-    $this->getEntityFormDisplay(self::ENTITY_TYPE, self::ENTITY_TYPE, 'default')
-      ->setComponent(self::FIELD_NAME, [
-        'type' => 'entity_reference_hierarchy_autocomplete',
-        'weight' => 20,
-      ])
-      ->save();
-  }
-
-  /**
-   * Gets entity form display.
-   *
-   * @param string $entity_type
-   *   Entity type ID.
-   * @param string $bundle
-   *   Bundle.
-   * @param string $form_mode
-   *   Form mode.
-   *
-   * @return \Drupal\Core\Entity\EntityInterface
-   *   Form display.
-   */
-  protected function getEntityFormDisplay($entity_type, $bundle, $form_mode) {
-    $entity_form_display = EntityFormDisplay::load($entity_type . '.' . $bundle . '.' . $form_mode);
-
-    // If not found, create a fresh entity object. We do not preemptively create
-    // new entity form display configuration entries for each existing entity
-    // type and bundle whenever a new form mode becomes available. Instead,
-    // configuration entries are only created when an entity form display is
-    // explicitly configured and saved.
-    if (!$entity_form_display) {
-      $entity_form_display = EntityFormDisplay::create([
-        'targetEntityType' => $entity_type,
-        'bundle' => $bundle,
-        'mode' => $form_mode,
-        'status' => TRUE,
-      ]);
-    }
-
-    return $entity_form_display;
+    $this->setupEntityFormDisplay(self::ENTITY_TYPE, self::ENTITY_TYPE, self::FIELD_NAME);
   }
 
   /**
