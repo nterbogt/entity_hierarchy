@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
-use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestRev;
@@ -62,7 +61,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 4',
       'Child 3',
       'Child 2',
-      'Child 1'
+      'Child 1',
     ]), array_map(function (Node $node) {
       return $node->getId();
     }, $children));
@@ -79,7 +78,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 3',
       'Child 6',
       'Child 2',
-      'Child 1'
+      'Child 1',
     ]), array_map(function (Node $node) {
       return $node->getId();
     }, $children));
@@ -91,7 +90,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     // Now login.
     $this->drupalLogin($this->drupalCreateUser([
       'reorder entity_hierarchy children',
-      'view test entity'
+      'view test entity',
     ]));
     $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
     $assert->statusCodeEquals(200);
@@ -112,7 +111,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 4',
       'Child 3',
       'Child 2',
-      'Child 1'
+      'Child 1',
     ]), array_map(function (Node $node) {
       return $node->getId();
     }, $children));
@@ -120,7 +119,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     $assert->linkExists('Children');
     $different_test_entity = EntityTestRev::create([
       'type' => 'entity_test_rev',
-      'label' => 'No children here'
+      'label' => 'No children here',
     ]);
     $different_test_entity->save();
     $this->drupalGet($different_test_entity->toUrl());
@@ -132,7 +131,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     entity_test_create_bundle('someotherbundle');
     $another_different_test_entity = EntityTest::create([
       'type' => 'someotherbundle',
-      'label' => 'No children here either'
+      'label' => 'No children here either',
     ]);
     $another_different_test_entity->save();
     $this->drupalGet($another_different_test_entity->toUrl());
@@ -148,7 +147,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     $field->save();
     $another_different_test_entity = EntityTest::create([
       'type' => 'someotherbundle',
-      'label' => 'No children here either'
+      'label' => 'No children here either',
     ]);
     $another_different_test_entity->save();
     $this->drupalGet($another_different_test_entity->toUrl());

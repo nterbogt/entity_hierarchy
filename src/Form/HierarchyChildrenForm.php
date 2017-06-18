@@ -246,8 +246,8 @@ class HierarchyChildrenForm extends ContentEntityForm {
           ], [
             'query' => [
               $fieldName => $this->entity->id(),
-            ]
-          ])
+            ],
+          ]),
         ];
       }
     }

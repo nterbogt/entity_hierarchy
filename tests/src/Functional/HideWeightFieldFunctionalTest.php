@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
-use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\entity_hierarchy\Plugin\Field\FieldWidget\EntityReferenceHierarchyAutocomplete;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\Tests\BrowserTestBase;

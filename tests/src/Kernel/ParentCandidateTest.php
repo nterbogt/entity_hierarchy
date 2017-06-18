@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\entity_hierarchy\Kernel;
 
-use Drupal\Core\Url;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\field\Entity\FieldConfig;
@@ -54,7 +53,7 @@ class ParentCandidateTest extends EntityHierarchyKernelTestBase {
     $this->assertEquals([
       'entity_test',
       'fooey',
-      'bar'
+      'bar',
     ], array_keys($bundles[self::FIELD_NAME]));
     $this->assertEquals(['label' => 'Fooey'], $bundles[self::FIELD_NAME]['fooey']);
 
@@ -68,7 +67,7 @@ class ParentCandidateTest extends EntityHierarchyKernelTestBase {
     $bundles = $parentCandidate->getCandidateBundles($this->parent);
     $this->assertEquals([
       'entity_test',
-      'bar'
+      'bar',
     ], array_keys($bundles[self::FIELD_NAME]));
   }
 
