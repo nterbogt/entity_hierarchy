@@ -5,7 +5,6 @@ namespace Drupal\entity_hierarchy\Form;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Url;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
 use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
@@ -228,26 +227,19 @@ class HierarchyChildrenForm extends ContentEntityForm {
     }
     $fields = $this->parentCandidate->getCandidateFields($this->entity);
     $fieldName = $form_state->getValue('fieldname') ?: reset($fields);
-    if ($this->entity->hasLinkTemplate('add-form') && ($childBundles = $this->parentCandidate->getCandidateBundles($this->entity)) && isset($childBundles[$fieldName])) {
+    $entityType = $this->entity->getEntityType();
+    if ($entityType->hasHandlerClass('entity_hierarchy') && ($childBundles = $this->parentCandidate->getCandidateBundles($this->entity)) && isset($childBundles[$fieldName])) {
       $actions['add_child'] = [
         '#type' => 'dropbutton',
         '#links' => [],
       ];
+      $handlerClass = $entityType->getHandlerClass('entity_hierarchy');
+      /** @var \Drupal\entity_hierarchy\Handler\EntityHierarchyHandlerInterface $handler */
+      $handler = new $handlerClass();
       foreach ($childBundles[$fieldName] as $id => $info) {
-        $routeName = "entity.{$this->entity->getEntityTypeId()}.add_form";
-        $entityType = $this->entity->getEntityType();
-        if ($alternateAddRoute = $entityType->get('add-route')) {
-          $routeName = $alternateAddRoute;
-        }
         $actions['add_child']['#links'][$id] = [
           'title' => $this->t('Create new @bundle', ['@bundle' => $info['label']]),
-          'url' => Url::fromRoute($routeName, [
-            $entityType->getBundleEntityType() ?: $entityType->getKey('bundle') => $id,
-          ], [
-            'query' => [
-              $fieldName => $this->entity->id(),
-            ],
-          ]),
+          'url' => $handler->getAddChildUrl($entityType, $this->entity, $id, $fieldName),
         ];
       }
     }

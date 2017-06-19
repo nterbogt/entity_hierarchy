@@ -13,6 +13,8 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\entity_hierarchy\Form\HierarchyChildrenForm;
+use Drupal\entity_hierarchy\Handler\EntityHierarchyHandler;
+use Drupal\entity_hierarchy\Handler\NodeEntityHierarchyHandler;
 use Drupal\entity_hierarchy\Information\ChildEntityWarningBuilder;
 use Drupal\entity_hierarchy\Routing\EntityHierarchyRouteProvider;
 use Drupal\entity_hierarchy\Storage\ParentEntityDeleteUpdater;
@@ -34,6 +36,7 @@ function entity_hierarchy_help($route_name, RouteMatchInterface $route_match) {
  * @see \Drupal\entity_hierarchy\Form\HierarchyChildrenForm
  */
 function entity_hierarchy_entity_type_build(array &$entity_types) {
+  /** @var \Drupal\Core\Entity\EntityTypeInterface[] $entity_types */
   // Adds the entity_hierarchy_reorder link template.
   foreach ($entity_types as $entity_type_id => $entity_type) {
 
@@ -51,12 +54,11 @@ function entity_hierarchy_entity_type_build(array &$entity_types) {
     // during a hook_entity_type_build, as it will cause recursion.
     $entity_types[$entity_type_id]
       ->setFormClass('entity_hierarchy_reorder', HierarchyChildrenForm::class)
+      ->setHandlerClass('entity_hierarchy', EntityHierarchyHandler::class)
       ->setLinkTemplate('entity_hierarchy_reorder', $entity_type->getLinkTemplate('canonical') . '/children');
   }
   if (isset($entity_types['node'])) {
-    // Node doesn't define an add-form template.
-    $entity_types['node']->setLinkTemplate('add-form', '/node/add/{node_type}');
-    $entity_types['node']->set('add-route', 'node.add');
+    $entity_types['node']->setHandlerClass('entity_hierarchy', NodeEntityHierarchyHandler::class);
   }
 }
 
