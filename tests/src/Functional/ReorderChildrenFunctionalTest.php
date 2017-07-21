@@ -97,6 +97,8 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     foreach ($entities as $entity) {
       $assert->linkExists($entity->label());
     }
+    $assert->pageTextContains('Type');
+    $assert->pageTextContains('Entity Test Bundle');
     // Now move Child 6 to the top.
     $this->submitForm([
       'children[' . $entities[$name]->id() . '][weight]' => -10,
