@@ -146,7 +146,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
     $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
     $form['children'] = [
       '#type' => 'table',
-      '#header' => [t('Child'), t('Weight'), t('Operations')],
+      '#header' => [t('Child'), t('Type'), t('Weight'), t('Operations')],
       '#tabledrag' => [
         [
           'action' => 'order',
@@ -156,6 +156,8 @@ class HierarchyChildrenForm extends ContentEntityForm {
       ],
       '#empty' => $this->t('There are no children to reorder'),
     ];
+
+    $bundles = FALSE;
 
     foreach ($children as $weight => $node) {
       if (!$childEntities->contains($node)) {
@@ -169,6 +171,10 @@ class HierarchyChildrenForm extends ContentEntityForm {
       $form['children'][$child]['#weight'] = $weight;
       $form['children'][$child]['title'] = $childEntity->toLink()
         ->toRenderable();
+      if (!$bundles) {
+        $bundles = $this->entityTypeBundleInfo->getBundleInfo($childEntity->getEntityTypeId());
+      }
+      $form['children'][$child]['type'] = ['#markup' => $bundles[$childEntity->bundle()]['label']];
       $form['children'][$child]['weight'] = [
         '#type' => 'weight',
         '#delta' => 50,
