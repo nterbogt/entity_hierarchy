@@ -61,12 +61,26 @@ class TreeRebuilder {
       ->sort("$field_name.weight")
       ->exists($field_name);
     $items = [];
+    $weights = [];
     foreach ($query->execute() as $entity_id => $item) {
       $items[$item[$idKey]]['edges'][$item["{$field_name}_target_id"]] = TRUE;
+      $weights[$item[$idKey]] = $item["{$field_name}_weight"];
     }
     $graph = new Graph($items);
     $sorted = $graph->searchAndSort();
-    uasort($sorted, ['Drupal\Component\Utility\SortArray', 'sortByWeightElement']);
+    $max_id = max(array_keys($items));
+    $max_length = strlen((string) $max_id);
+    foreach ($sorted as $id => $item) {
+      $path = array_map(function ($item) use ($max_length) {
+        return str_pad($item, $max_length, '0', STR_PAD_LEFT);
+      }, array_keys($item['paths']));
+      $sorted[$id]['materialized_path'] = implode('.', array_reverse($path)) . '.' . str_pad($id, $max_length, '0', STR_PAD_LEFT);
+      $sorted[$id]['parent_path'] = implode('.', array_reverse($path));
+      $sorted[$id]['sibling_weight'] = $weights[$id];
+    }
+    // We sort a few times because we're using different fields to sort and a
+    // single sort doesn't compare all items equally.
+    uasort($sorted, [$this, 'sortItems']);
     foreach ($sorted as $entity_id => $entry) {
       $batch['operations'][] = [
         [static::class, 'rebuildTree'],
@@ -86,6 +100,28 @@ class TreeRebuilder {
    */
   public static function removeTable($field_name, $entity_type_id) {
     \Drupal::database()->schema()->dropTable(\Drupal::service('entity_hierarchy.nested_set_storage_factory')->getTableName($field_name, $entity_type_id, FALSE));
+  }
+
+  protected function sortItems($a, $b) {
+    $a_path = (string) $a['materialized_path'];
+    $b_path = (string) $b['materialized_path'];
+    $a_parent = (string) $a['parent_path'];
+    $b_parent = (string) $b['parent_path'];
+    $a_weight = $a['sibling_weight'];
+    $b_weight = $b['sibling_weight'];
+    // If both have the same parent, sort on weight.
+    if ($a_parent === $b_parent) {
+      // Sort on weight.
+      if ($a_weight == $b_weight) {
+        return 0;
+      }
+      return ($a_weight < $b_weight) ? -1 : 1;
+    }
+    if ($a_path === $b_path) {
+      return 0;
+    }
+    // Sort on materialized path.
+    return ($a_path < $b_path) ? -1 : 1;
   }
 
   /**
