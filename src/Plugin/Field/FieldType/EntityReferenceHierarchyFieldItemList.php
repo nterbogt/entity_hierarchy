@@ -46,4 +46,14 @@ class EntityReferenceHierarchyFieldItemList extends EntityReferenceFieldItemList
     return \Drupal::service('entity_hierarchy.nested_set_storage_factory')->get($fieldDefinition->getName(), $fieldDefinition->getTargetEntityTypeId());
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getConstraints() {
+    $constraints = parent::getConstraints();
+    $constraint_manager = $this->getTypedDataManager()->getValidationConstraintManager();
+    $constraints[] = $constraint_manager->create('ValidHierarchyReference', []);
+    return $constraints;
+  }
+
 }
