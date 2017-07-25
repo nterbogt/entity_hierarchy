@@ -76,8 +76,8 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 5',
       'Child 4',
       'Child 3',
-      'Child 6',
       'Child 2',
+      'Child 6',
       'Child 1',
     ]), array_map(function (Node $node) {
       return $node->getId();

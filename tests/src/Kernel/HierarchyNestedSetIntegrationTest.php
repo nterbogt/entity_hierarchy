@@ -43,8 +43,8 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
       'Child 5',
       'Child 4',
       'Child 3',
-      'Child 6',
       'Child 2',
+      'Child 6',
       'Child 1',
     ]);
   }
@@ -211,8 +211,8 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
       'Child 5',
       'Child 4',
       'Child 3',
-      'Cousin 1',
       'Child 2',
+      'Cousin 1',
       'Child 1',
     ]);
   }
@@ -245,8 +245,8 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
       'Child 5',
       'Child 4',
       'Child 3',
-      'Once was a parent',
       'Child 2',
+      'Once was a parent',
       'Child 1',
     ]);
   }
@@ -272,8 +272,8 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
       'Child 5',
       'Child 4',
       'Child 3',
-      'Child 6',
       'Child 2',
+      'Child 6',
       'Child 1',
     ]);
     $this->resaveParent();
@@ -281,8 +281,8 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
       'Child 5',
       'Child 4',
       'Child 3',
-      'Child 6',
       'Child 2',
+      'Child 6',
       'Child 1',
     ]);
   }

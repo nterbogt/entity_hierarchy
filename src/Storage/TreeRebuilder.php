@@ -2,7 +2,7 @@
 
 namespace Drupal\entity_hierarchy\Storage;
 
-use Drupal\Component\Graph\Graph;
+use Drupal\Component\Utility\Number;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 
@@ -60,27 +60,8 @@ class TreeRebuilder {
       ->sort("$field_name.target_id")
       ->sort("$field_name.weight")
       ->exists($field_name);
-    $items = [];
-    $weights = [];
-    foreach ($query->execute() as $entity_id => $item) {
-      $items[$item[$idKey]]['edges'][$item["{$field_name}_target_id"]] = TRUE;
-      $weights[$item[$idKey]] = $item["{$field_name}_weight"];
-    }
-    $graph = new Graph($items);
-    $sorted = $graph->searchAndSort();
-    $max_id = max(array_keys($items));
-    $max_length = strlen((string) $max_id);
-    foreach ($sorted as $id => $item) {
-      $path = array_map(function ($item) use ($max_length) {
-        return str_pad($item, $max_length, '0', STR_PAD_LEFT);
-      }, array_keys($item['paths']));
-      $sorted[$id]['materialized_path'] = implode('.', array_reverse($path)) . '.' . str_pad($id, $max_length, '0', STR_PAD_LEFT);
-      $sorted[$id]['parent_path'] = implode('.', array_reverse($path));
-      $sorted[$id]['sibling_weight'] = $weights[$id];
-    }
-    // We sort a few times because we're using different fields to sort and a
-    // single sort doesn't compare all items equally.
-    uasort($sorted, [$this, 'sortItems']);
+    $records = $query->execute();
+    $sorted = $this->treeSort($field_name, $records, $idKey);
     foreach ($sorted as $entity_id => $entry) {
       $batch['operations'][] = [
         [static::class, 'rebuildTree'],
@@ -99,28 +80,29 @@ class TreeRebuilder {
    *   Entity Type ID.
    */
   public static function removeTable($field_name, $entity_type_id) {
-    \Drupal::database()->schema()->dropTable(\Drupal::service('entity_hierarchy.nested_set_storage_factory')->getTableName($field_name, $entity_type_id, FALSE));
+    \Drupal::database()
+      ->schema()
+      ->dropTable(\Drupal::service('entity_hierarchy.nested_set_storage_factory')
+        ->getTableName($field_name, $entity_type_id, FALSE));
   }
 
-  protected function sortItems($a, $b) {
+  /**
+   * Sort callback.
+   *
+   * @param array $a
+   *   Item.
+   * @param array $b
+   *   Item.
+   *
+   * @return int
+   *   Sort order.
+   */
+  protected function sortItems(array $a, array $b) {
     $a_path = (string) $a['materialized_path'];
     $b_path = (string) $b['materialized_path'];
-    $a_parent = (string) $a['parent_path'];
-    $b_parent = (string) $b['parent_path'];
-    $a_weight = $a['sibling_weight'];
-    $b_weight = $b['sibling_weight'];
-    // If both have the same parent, sort on weight.
-    if ($a_parent === $b_parent) {
-      // Sort on weight.
-      if ($a_weight == $b_weight) {
-        return 0;
-      }
-      return ($a_weight < $b_weight) ? -1 : 1;
-    }
     if ($a_path === $b_path) {
       return 0;
     }
-    // Sort on materialized path.
     return ($a_path < $b_path) ? -1 : 1;
   }
 
@@ -139,8 +121,11 @@ class TreeRebuilder {
   //@codingStandardsIgnoreStart
   public static function rebuildTree($field_name, $entity_type_id, $entity_id, &$context) {
     //@codingStandardsIgnoreEnd
-    $entity = \Drupal::entityTypeManager()->getStorage($entity_type_id)->load($entity_id);
+    $entity = \Drupal::entityTypeManager()
+      ->getStorage($entity_type_id)
+      ->load($entity_id);
     $entity->get($field_name)->postSave(TRUE);
+    self::debug(sprintf('Rebuilt %s', $entity_id));
     $context['results'][] = $entity_id;
   }
 
@@ -173,6 +158,113 @@ class TreeRebuilder {
         '@arguments' => print_r($error_operation[1], TRUE),
       ]);
       drupal_set_message($message, 'error');
+    }
+  }
+
+  /**
+   * Sorts tree.
+   *
+   * @param string $field_name
+   *   Field name of parent field.
+   * @param array $records
+   *   Records to sort.
+   * @param string $idKey
+   *   Field name of ID.
+   *
+   * @return array
+   *   Sorted records.
+   */
+  protected function treeSort($field_name, array $records, $idKey) {
+    $items = [];
+    $weights = [];
+    $sets = [];
+    foreach ($records as $ix => $item) {
+      $parent = $item["{$field_name}_target_id"];
+      $sets[$parent][] = $item[$idKey];
+      $items[$item[$idKey]] = $parent;
+    }
+    // Add in root items.
+    foreach (array_keys($sets) as $parent) {
+      if (!isset($items[$parent])) {
+        $items[$parent] = 0;
+        $sets[0][] = $parent;
+      }
+    }
+    $flipped_sets = array_map(function (array $items) {
+      return array_flip($items);
+    }, $sets);
+    foreach ($items as $id => $parent) {
+      $flipped = $flipped_sets[$parent];
+      if (isset($weights[$id])) {
+        // We've already done this one via a child.
+        continue;
+      }
+      $weights[$id] = [$flipped[$id]];
+      if (!isset($weights[$parent]) && isset($items[$parent])) {
+        $this->buildThread($weights, $items, $parent, $items[$parent], $flipped_sets);
+      }
+      if (isset($weights[$parent])) {
+        self::debug(sprintf('Added %s, (total items: %d)', $id, count($weights)));
+        $weights[$id] = array_merge($weights[$parent], $weights[$id]);
+      }
+    }
+    $sorted = array_map(function (array $item) {
+      return [
+        'materialized_path' => implode('.', array_map([
+          Number::class,
+          'intToAlphadecimal',
+        ], $item)),
+      ];
+    }, $weights);
+
+    // Sort.
+    uasort($sorted, [$this, 'sortItems']);
+
+    // Remove root items.
+    return array_diff_key($sorted, array_flip($sets[0]));
+  }
+
+  /**
+   * Build thread for a given item ID and parent.
+   *
+   * @param array $weights
+   *   Existing thread weights.
+   * @param array $items
+   *   All items.
+   * @param int $id
+   *   Item ID.
+   * @param int $parent
+   *   Parent ID.
+   * @param array $flipped_sets
+   *   Items grouped by parent ID, ordered by weight.
+   */
+  protected function buildThread(array &$weights, array $items, $id, $parent, array $flipped_sets) {
+    $flipped = $flipped_sets[$parent];
+    $weights[$id] = [$flipped[$id]];
+    if (isset($items[$parent])) {
+      $next_parent = $items[$parent];
+      $flipped = $flipped_sets[$next_parent];
+      $weights[$parent] = [$flipped[$parent]];
+      if (!isset($weights[$next_parent]) && isset($items[$next_parent])) {
+        $this->buildThread($weights, $items, $next_parent, $items[$next_parent], $flipped_sets);
+      }
+      if (isset($weights[$next_parent])) {
+        self::debug(sprintf('Added %s, (total items: %d)', $parent, count($weights)));
+        $weights[$parent] = array_merge($weights[$next_parent], $weights[$parent]);
+      }
+      $weights[$id] = array_merge($weights[$parent], $weights[$id]);
+    }
+  }
+
+  /**
+   * Outputs a debug message.
+   *
+   * @param string $message
+   *   Message to output.
+   */
+  protected static function debug($message) {
+    if (function_exists('drush_log')) {
+      drush_log($message);
     }
   }
 

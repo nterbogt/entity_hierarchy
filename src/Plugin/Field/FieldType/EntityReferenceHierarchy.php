@@ -156,7 +156,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
 
       // But if there are siblings, we need to ascertain the correct position in
       // the order.
-      if ($siblingEntities = $this->getSiblingEntities($storage, $existingParent, $childNode)) {
+      if ($siblingEntities = $this->getSiblingEntityWeights($storage, $existingParent, $childNode)) {
         // Group the siblings by their weight.
         $weightOrderedSiblings = $this->groupSiblingsByWeight($siblingEntities, $fieldName);
         $weight = $this->get('weight')->getValue();
@@ -218,21 +218,34 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    *   Target siblings.
    *
    * @return \SplObjectStorage
-   *   Map of entities keyed by node.
+   *   Map of weights keyed by node.
    */
-  protected function loadSiblingEntities(array $siblings) {
+  protected function loadSiblingEntityWeights(array $siblings) {
     $fieldDefinition = $this->getFieldDefinition();
     $entityType = $this->entityTypeDefinition();
     $entityTypeId = $fieldDefinition->getTargetEntityTypeId();
     $entityStorage = $this->entityTypeStorage($entityTypeId);
     $siblingEntities = new \SplObjectStorage();
+    $key = $entityType->hasKey('revision') ? $entityType->getKey('revision') : $entityType->getKey('id');
+    $parentField = $fieldDefinition->getName();
+    $query = $entityStorage->getAggregateQuery();
+    if ($entityType->hasKey('revision')) {
+      $query->allRevisions();
+    }
+    $ids = array_map(function (Node $item) {
+      return $item->getRevisionId();
+    }, $siblings);
+    $entities = $query
+      ->groupBy($key)
+      ->groupBy($parentField . '.weight')
+      ->condition($key, $ids, 'IN')
+      ->execute();
+    $entities = array_combine(array_column($entities, $key), array_column($entities, $parentField . '_weight'));
     foreach ($siblings as $node) {
-      if ($entityType->hasKey('revision')) {
-        $siblingEntities[$node] = $entityStorage->loadRevision($node->getRevisionId());
+      if (!isset($entities[$node->getRevisionId()])) {
+        continue;
       }
-      else {
-        $siblingEntities[$node] = $entityStorage->load($node->getId());
-      }
+      $siblingEntities[$node] = $entities[$node->getRevisionId()];
     }
 
     return $siblingEntities;
@@ -249,9 +262,9 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    *   Child node.
    *
    * @return \SplObjectStorage|bool
-   *   Map of entities keyed by node or FALSE if no siblings.
+   *   Map of weights keyed by node or FALSE if no siblings.
    */
-  protected function getSiblingEntities(NestedSetStorage $storage, Node $parentNode, $childNode) {
+  protected function getSiblingEntityWeights(NestedSetStorage $storage, Node $parentNode, $childNode) {
     if ($siblingNodes = array_filter($storage->findChildren($parentNode->getNodeKey()), function (Node $node) use ($childNode) {
       if ($childNode instanceof NodeKey) {
         // Exclude self and all revisions.
@@ -260,7 +273,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
       // Exclude self and all revisions.
       return $childNode->getNodeKey()->getId() !== $node->getNodeKey()->getId();
     })) {
-      return $this->loadSiblingEntities($siblingNodes);
+      return $this->loadSiblingEntityWeights($siblingNodes);
     }
     return FALSE;
   }
@@ -282,8 +295,8 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
       if (!$siblingEntities->offsetExists($node)) {
         continue;
       }
-      if ($siblingEntity = $siblingEntities->offsetGet($node)) {
-        $weightMap[$siblingEntity->{$fieldName}->weight][] = $node;
+      if ($weight = $siblingEntities->offsetGet($node)) {
+        $weightMap[$weight][] = $node;
       }
     }
     ksort($weightMap);
@@ -307,7 +320,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
   public function getInsertPosition(array $weightOrderedSiblings, $weight, $isNewNode) {
     if (isset($weightOrderedSiblings[$weight])) {
       // There are already nodes at the same weight, insert it with them.
-      return new InsertPosition(end($weightOrderedSiblings[$weight]), $isNewNode);
+      return new InsertPosition(end($weightOrderedSiblings[$weight]), $isNewNode, InsertPosition::DIRECTION_AFTER);
     }
 
     // There are no nodes at this weight, we need to find the right position.
