@@ -245,7 +245,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
       if (!isset($entities[$node->getRevisionId()])) {
         continue;
       }
-      $siblingEntities[$node] = $entities[$node->getRevisionId()];
+      $siblingEntities[$node] = (int) $entities[$node->getRevisionId()];
     }
 
     return $siblingEntities;
@@ -295,9 +295,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
       if (!$siblingEntities->offsetExists($node)) {
         continue;
       }
-      if ($weight = $siblingEntities->offsetGet($node)) {
-        $weightMap[$weight][] = $node;
-      }
+      $weightMap[$siblingEntities->offsetGet($node)][] = $node;
     }
     ksort($weightMap);
     return $weightMap;
