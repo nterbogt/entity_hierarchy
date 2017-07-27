@@ -26,7 +26,13 @@ class EntityReferenceHierarchyAutocomplete extends EntityReferenceAutocompleteWi
    * {@inheritdoc}
    */
   public function errorElement(array $element, ConstraintViolationInterface $error, array $form, FormStateInterface $form_state) {
-    return isset($element[0]['target_id']) ? $element[0]['target_id'] : FALSE;
+    if (isset($element[0]['target_id'])) {
+      return $element[0]['target_id'];
+    }
+    if (isset($element['target_id'])) {
+      return $element['target_id'];
+    }
+    return FALSE;
   }
 
   /**
