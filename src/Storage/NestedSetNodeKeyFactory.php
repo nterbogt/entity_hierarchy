@@ -22,7 +22,9 @@ class NestedSetNodeKeyFactory {
   public function fromEntity(ContentEntityInterface $entity) {
     $id = $entity->id();
     if (!$revision_id = $entity->getRevisionId()) {
-      $revision_id = $id;
+      if (!$revision_id = $entity->getLoadedRevisionId()) {
+        $revision_id = $id;
+      }
     }
     return new NodeKey($id, $revision_id);
   }

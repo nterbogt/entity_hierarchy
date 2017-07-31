@@ -108,10 +108,10 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
     }
 
     $this_entity = $value->getEntity();
+    $thisNode = $this->keyFactory->fromEntity($this_entity);
     $target_type = $this_entity->getEntityTypeId();
     /** @var \PNX\NestedSet\Storage\DbalNestedSet $storage */
     $storage = $this->nestedSetStorageFactory->get($value->getFieldDefinition()->getFieldStorageDefinition()->getName(), $target_type);
-    $thisNode = $this->keyFactory->fromEntity($this_entity);
     $children = array_map(function (Node $node) {
       return $node->getId();
     }, $storage->findDescendants($thisNode));
