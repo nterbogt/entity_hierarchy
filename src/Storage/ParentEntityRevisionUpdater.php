@@ -35,16 +35,11 @@ class ParentEntityRevisionUpdater extends ParentEntityReactionBase {
     foreach ($fields as $field_name) {
       /** @var \Pnx\NestedSet\NestedSetInterface $storage */
       $storage = $this->nestedSetStorageFactory->get($field_name, $newRevision->getEntityTypeId());
-      if (!$existingParent = $storage->getNode($newNodeKey)) {
-        $existingParent = $storage->addRootNode($newNodeKey);
+      if (!$newParent = $storage->getNode($newNodeKey)) {
+        $newParent = $storage->addRootNode($newNodeKey);
       }
-      // We process them in reverse because moveSubTreeBelow inserts the item as
-      // the first child of the parent. This means the first child is moved last
-      // and is returned to the first position.
-      foreach (array_reverse($storage->findChildren($oldNodeKey)) as $child) {
-        // We have to fetch the parent and child node fresh each time to allow
-        // for updates that happened in each call to moveSubTreeBelow.
-        $storage->moveSubTreeBelow($storage->getNode($existingParent->getNodeKey()), $storage->getNode($child->getNodeKey()));
+      if ($storage->findChildren($oldNodeKey)) {
+        $storage->adoptChildren($storage->getNode($oldNodeKey), $newParent);
       }
     }
   }
