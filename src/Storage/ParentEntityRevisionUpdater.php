@@ -33,6 +33,7 @@ class ParentEntityRevisionUpdater extends ParentEntityReactionBase {
     $oldNodeKey = $this->nodeKeyFactory->fromEntity($oldRevision);
     $newNodeKey = $this->nodeKeyFactory->fromEntity($newRevision);
     foreach ($fields as $field_name) {
+      $this->lockTree($field_name, $newRevision->getEntityTypeId());
       /** @var \Pnx\NestedSet\NestedSetInterface $storage */
       $storage = $this->nestedSetStorageFactory->get($field_name, $newRevision->getEntityTypeId());
       if (!$newParent = $storage->getNode($newNodeKey)) {
@@ -41,6 +42,7 @@ class ParentEntityRevisionUpdater extends ParentEntityReactionBase {
       if ($storage->findChildren($oldNodeKey)) {
         $storage->adoptChildren($storage->getNode($oldNodeKey), $newParent);
       }
+      $this->releaseLock($field_name, $newRevision->getEntityTypeId());
     }
   }
 

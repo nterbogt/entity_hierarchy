@@ -8,6 +8,7 @@ use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\entity_hierarchy\Storage\InsertPosition;
 use Drupal\entity_hierarchy\Storage\NestedSetStorage;
+use Drupal\entity_hierarchy\Storage\TreeLockTrait;
 use PNX\NestedSet\Node;
 use PNX\NestedSet\NodeKey;
 
@@ -26,6 +27,8 @@ use PNX\NestedSet\NodeKey;
  * )
  */
 class EntityReferenceHierarchy extends EntityReferenceItem {
+
+  use TreeLockTrait;
 
   /**
    * Defines the minimum weight of a child (but has the highest priority).
@@ -124,7 +127,10 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     $storage = $this->getTreeStorage();
 
     // Get the field name.
-    $fieldName = $this->getFieldDefinition()->getName();
+    $fieldDefinition = $this->getFieldDefinition();
+    $fieldName = $fieldDefinition->getName();
+    $entityTypeId = $fieldDefinition->getTargetEntityTypeId();
+    $this->lockTree($fieldName, $entityTypeId);
 
     // Get the parent/child entities and their node-keys in the nested set.
     $parentEntity = $this->get('entity')->getValue();
@@ -135,6 +141,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
       if (($existingNode = $storage->getNode($stubNode)) && $existingNode->getDepth() > 0) {
         $storage->moveSubTreeToRoot($existingNode);
       }
+      $this->releaseLock($fieldName, $entityTypeId);
       return;
     }
     $parentKey = $nodeKeyFactory->fromEntity($parentEntity);
@@ -163,11 +170,13 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
         $insertPosition = $this->getInsertPosition($weightOrderedSiblings, $weight, $isNewNode) ?: $insertPosition;
       }
       $insertPosition->performInsert($storage, $childNode);
+      $this->releaseLock($fieldName, $entityTypeId);
       return;
     }
     // We need to create a node for the parent in the tree.
     $parentNode = $storage->addRootNode($parentKey);
     (new InsertPosition($parentNode, $isNewNode, InsertPosition::DIRECTION_BELOW))->performInsert($storage, $childNode);
+    $this->releaseLock($fieldName, $entityTypeId);
   }
 
   /**

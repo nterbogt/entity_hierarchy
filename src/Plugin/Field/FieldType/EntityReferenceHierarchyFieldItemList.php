@@ -3,11 +3,14 @@
 namespace Drupal\entity_hierarchy\Plugin\Field\FieldType;
 
 use Drupal\Core\Field\EntityReferenceFieldItemList;
+use Drupal\entity_hierarchy\Storage\TreeLockTrait;
 
 /**
  * Defines a field item list for entity reference with hierarchy.
  */
 class EntityReferenceHierarchyFieldItemList extends EntityReferenceFieldItemList {
+
+  use TreeLockTrait;
 
   /**
    * {@inheritdoc}
@@ -19,7 +22,12 @@ class EntityReferenceHierarchyFieldItemList extends EntityReferenceFieldItemList
       $stubNode = $this->getNestedSetNodeFactory()->fromEntity($this->getEntity());
       $storage = $this->getTreeStorage();
       if (($existingNode = $storage->getNode($stubNode)) && $existingNode->getDepth() > 0) {
+        $fieldDefinition = $this->getFieldDefinition();
+        $fieldName = $fieldDefinition->getName();
+        $entityTypeId = $fieldDefinition->getTargetEntityTypeId();
+        $this->lockTree($fieldName, $entityTypeId);
         $storage->moveSubTreeToRoot($existingNode);
+        $this->releaseLock($fieldName, $entityTypeId);
       }
     }
     return parent::postSave($update);

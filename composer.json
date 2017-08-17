@@ -3,7 +3,7 @@
     "type": "drupal-module",
     "require": {
         "drupal/dbal": "dev-1.x",
-        "previousnext/nested-set": "0.1.0"
+        "previousnext/nested-set": "^0.1.1"
     },
     "license": "GPL2+",
     "minimum-stability": "dev"

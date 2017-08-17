@@ -11,6 +11,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 abstract class ParentEntityReactionBase implements ContainerInjectionInterface {
 
+  use TreeLockTrait;
+
   /**
    * Nested set storage.
    *
@@ -52,11 +54,11 @@ abstract class ParentEntityReactionBase implements ContainerInjectionInterface {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    return new static(
+    return (new static(
       $container->get('entity_hierarchy.nested_set_storage_factory'),
       $container->get('entity_hierarchy.nested_set_node_factory'),
       $container->get('entity_hierarchy.information.parent_candidate')
-    );
+    ))->setLockBackend($container->get('lock'));
   }
 
 }

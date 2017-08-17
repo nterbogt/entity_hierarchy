@@ -39,12 +39,12 @@ class ParentEntityDeleteUpdater extends ParentEntityReactionBase {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    return new static(
+    return (new static(
       $container->get('entity_hierarchy.nested_set_storage_factory'),
       $container->get('entity_hierarchy.nested_set_node_factory'),
       $container->get('entity_hierarchy.information.parent_candidate'),
       $container->get('entity_hierarchy.entity_tree_node_mapper')
-    );
+    ))->setLockBackend($container->get('lock'));
   }
 
   /**
@@ -82,9 +82,11 @@ class ParentEntityDeleteUpdater extends ParentEntityReactionBase {
           $child_entity->save();
         }
       }
+      $this->lockTree($field_name, $parent->getEntityTypeId());
       if ($existingNode = $storage->getNode($stubNode)) {
         $storage->deleteNode($existingNode);
       }
+      $this->releaseLock($field_name, $parent->getEntityTypeId());
     }
   }
 
