@@ -4,6 +4,7 @@ namespace Drupal\entity_hierarchy\Storage;
 
 use Doctrine\DBAL\Connection;
 use Drupal\Core\Database\Connection as DrupalConnection;
+use Psr\Log\LoggerInterface;
 
 /**
  * Defines a factory for creating a nested set storage handler for hierarchies.
@@ -32,16 +33,26 @@ class NestedSetStorageFactory {
   protected $tablePrefix = '';
 
   /**
+   * Logger.
+   *
+   * @var \Psr\Log\LoggerInterface
+   */
+  protected $logger;
+
+  /**
    * Constructs a new NestedSetStorageFactory object.
    *
    * @param \Doctrine\DBAL\Connection $connection
    *   Dbal Connection.
    * @param \Drupal\Core\Database\Connection $drupalConnection
    *   Drupal connection.
+   * @param \Psr\Log\LoggerInterface $logger
+   *   Logger.
    */
-  public function __construct(Connection $connection, DrupalConnection $drupalConnection) {
+  public function __construct(Connection $connection, DrupalConnection $drupalConnection, LoggerInterface $logger) {
     $this->connection = $connection;
     $this->tablePrefix = $drupalConnection->tablePrefix();
+    $this->logger = $logger;
   }
 
   /**
@@ -73,7 +84,7 @@ class NestedSetStorageFactory {
    */
   public function fromTableName($table_name) {
     if (!isset($this->cache[$table_name])) {
-      $this->cache[$table_name] = new NestedSetStorage($this->connection, $table_name);
+      $this->cache[$table_name] = new NestedSetStorage($this->connection, $table_name, $this->logger);
     }
     return $this->cache[$table_name];
   }

@@ -1,7 +1,10 @@
 services:
   entity_hierarchy.nested_set_storage_factory:
     class: Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
-    arguments: ['@dbal_connection', '@database']
+    arguments: ['@dbal_connection', '@database', '@entity_hierarchy.logger']
+  entity_hierarchy.logger:
+    parent: logger.channel_base
+    arguments: ['entity_hierarchy']
   entity_hierarchy.nested_set_node_factory:
     class: Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
   entity_hierarchy.information.parent_candidate:
