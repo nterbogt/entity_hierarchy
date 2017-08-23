@@ -129,7 +129,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
    */
   protected function doCreateTestEntity(array $values) {
     $entity = Node::create([
-      'title' => $this->randomMachineName(),
+      'title' => $values['title'] ?? $this->randomMachineName(),
       'type' => $this->childNodeType->id(),
       'status' => 1,
       'uid' => 1,
@@ -175,6 +175,16 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     $last_child->{self::BOOLEAN_FIELD} = TRUE;
     $last_child->save();
     $grandchildren = $this->createChildEntities($last_child->id(), 1);
+
+    // Check the tree labels.
+    $tree = $this->container->get('plugin.manager.workbench_access.scheme')->getActiveTree();
+    $this->assertEquals([
+      1 => 'Section',
+      6 => 'Child 5 (Section >)',
+    ], array_map(function ($item) {
+      return $item['label'];
+    }, $tree[self::BOOLEAN_FIELD . '_value']));
+
     // Create a different section.
     $section2 = Node::create([
       'type' => $this->parentNodeType->id(),

@@ -125,7 +125,7 @@ trait EntityHierarchyTestTrait {
   protected function createTestEntity($parentId, $label = 'Child 1', $weight = 0) {
     $values = [
       'type' => static::ENTITY_TYPE,
-      'name' => $label,
+      $this->container->get('entity_type.manager')->getDefinition(static::ENTITY_TYPE)->getKey('label') => $label,
     ];
     if ($parentId) {
       $values[static::FIELD_NAME] = [
