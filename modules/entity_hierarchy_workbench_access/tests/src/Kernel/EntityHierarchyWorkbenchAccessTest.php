@@ -129,7 +129,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
    */
   protected function doCreateTestEntity(array $values) {
     $entity = Node::create([
-      'title' => $values['title'] ?? $this->randomMachineName(),
+      'title' => isset($values['title']) ? $values['title'] : $this->randomMachineName(),
       'type' => $this->childNodeType->id(),
       'status' => 1,
       'uid' => 1,
