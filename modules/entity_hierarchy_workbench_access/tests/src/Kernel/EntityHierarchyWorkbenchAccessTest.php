@@ -159,7 +159,8 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
    */
   public function testWorkbenchAccessIntegration() {
     // Get UID 1 out of the way.
-    $this->createUser();
+    $root = $this->createUser();
+    $this->container->get('account_switcher')->switchTo($root);
     // Create a section.
     $section1 = Node::create([
       'type' => $this->parentNodeType->id(),
@@ -180,7 +181,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     $tree = $this->container->get('plugin.manager.workbench_access.scheme')->getActiveTree();
     $this->assertEquals([
       1 => 'Section',
-      6 => 'Child 5 (Section >)',
+      6 => 'Child 5 (Section)',
     ], array_map(function ($item) {
       return $item['label'];
     }, $tree[self::BOOLEAN_FIELD . '_value']));

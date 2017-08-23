@@ -8,6 +8,8 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\entity_hierarchy\Information\AncestryLabelTrait;
+use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
 use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
 use Drupal\workbench_access\AccessControlHierarchyBase;
@@ -28,6 +30,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFactoryPluginInterface {
 
+  use AncestryLabelTrait;
+
   /**
    * Entity field manager service.
    *
@@ -41,13 +45,6 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    * @var \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
    */
   protected $nestedSetStorageFactory;
-
-  /**
-   * Key factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
-   */
-  protected $nodeKeyFactory;
 
   /**
    * Entity type manager.
@@ -77,12 +74,15 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    *   Entity type manager.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
    *   Config factory.
+   * @param \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface $entityTreeNodeMapper
+   *   Tree node mapper.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, UserSectionStorageInterface $userSectionStorage, EntityFieldManagerInterface $entityFieldManager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, UserSectionStorageInterface $userSectionStorage, EntityFieldManagerInterface $entityFieldManager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory, EntityTreeNodeMapperInterface $entityTreeNodeMapper) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $userSectionStorage, $configFactory, $entityTypeManager);
     $this->entityFieldManager = $entityFieldManager;
     $this->nestedSetStorageFactory = $nestedSetStorageFactory;
-    $this->nodeKeyFactory = $nodeKeyFactory;
+    $this->keyFactory = $nodeKeyFactory;
+    $this->entityTreeNodeMapper = $entityTreeNodeMapper;
   }
 
   /**
@@ -98,7 +98,8 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       $container->get('entity_hierarchy.nested_set_storage_factory'),
       $container->get('entity_hierarchy.nested_set_node_factory'),
       $container->get('entity_type.manager'),
-      $container->get('config.factory')
+      $container->get('config.factory'),
+      $container->get('entity_hierarchy.entity_tree_node_mapper')
     );
   }
 
@@ -124,7 +125,6 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    * {@inheritdoc}
    */
   public function alterOptions($field, WorkbenchAccessManagerInterface $manager, array $user_sections = []) {
-    // @todo We need to limit the allowed options here...
     return $field;
   }
 
@@ -152,8 +152,6 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       if (!$valid_ids) {
         return $tree;
       }
-      $parents = [];
-      $current_depth = 0;
       $aggregate = $this->entityTypeManager->getStorage($entity_type_id)->getAggregateQuery();
       $aggregate->groupBy($entity_type->getKey('label'))
         ->groupBy($entity_type->getKey('id'));
@@ -168,7 +166,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
         // Return just the boolean fields that were checked.
         return array_keys(array_filter($item));
       }, $details));
-      $labels = array_combine(array_column($details, $entity_type->getKey('id')), array_column($details, $entity_type->getKey('label')));
+      $entities = $this->entityTypeManager->getStorage($entity_type_id)->loadMultiple($valid_ids);
       /** @var \PNX\NestedSet\Node $node */
       foreach ($tree_storage->getTree() as $weight => $node) {
         $id = $node->getId();
@@ -176,20 +174,9 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
           // Not a valid parent.
           continue;
         }
-        if ($node->getDepth() === 0) {
-          $parents = [$id];
-          $current_depth = 0;
-        }
-        elseif ($node->getDepth() > $current_depth) {
-          $parents[] = $node->getDepth();
-        }
-        elseif ($node->getDepth() < $current_depth) {
-          array_pop($parents);
-          $parents[] = $node->getDepth();
-        }
         foreach ($boolean_parents[$id] as $parent) {
           $tree[$parent][$id] = [
-            'label' => isset($labels[$id]) ? $labels[$id] : 'N/A',
+            'label' => isset($entities[$id]) ? $this->generateEntityLabelWithAncestry($entities[$id], $tree_storage, $entity_type_id) : 'N/A',
             'depth' => $node->getDepth(),
             'parents' => [],
             'weight' => $weight,
@@ -225,7 +212,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
   public function getEntityValues(EntityInterface $entity, $field) {
     // We start with our own ID.
     $values = [$entity->id()];
-    $nodeKey = $this->nodeKeyFactory->fromEntity($entity);
+    $nodeKey = $this->keyFactory->fromEntity($entity);
     foreach ($entity->get($field) as $item) {
       if ($item->isEmpty()) {
         continue;
@@ -233,7 +220,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       $property_name = $item->mainPropertyName();
       $values[] = $item->{$property_name};
       if ($item instanceof EntityReferenceItem) {
-        $nodeKey = $this->nodeKeyFactory->fromEntity($item->entity);
+        $nodeKey = $this->keyFactory->fromEntity($item->entity);
       }
     }
     $storage = $this->nestedSetStorageFactory->get($this->pluginDefinition['field_name'], $this->pluginDefinition['entity']);

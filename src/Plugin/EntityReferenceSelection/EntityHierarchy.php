@@ -7,6 +7,7 @@ use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\Plugin\EntityReferenceSelection\DefaultSelection;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\entity_hierarchy\Information\AncestryLabelTrait;
 use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
 use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
@@ -25,19 +26,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class EntityHierarchy extends DefaultSelection {
 
-  /**
-   * Tree node mapper.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface
-   */
-  protected $entityTreeNodeMapper;
-
-  /**
-   * Key factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
-   */
-  protected $keyFactory;
+  use AncestryLabelTrait;
 
   /**
    * Storage factory.
@@ -123,26 +112,8 @@ class EntityHierarchy extends DefaultSelection {
     $storage = $this->nestedSetStorageFactory->get($this->pluginDefinition['field_name'], $target_type);
     foreach ($entities as $entity_id => $entity) {
       $bundle = $entity->bundle();
-      $key = $this->keyFactory->fromEntity($entity);
-      $ancestors = $storage->findAncestors($key);
-      // Remove ourself.
-      array_pop($ancestors);
-      $ancestor_entities = $this->entityTreeNodeMapper->loadAndAccessCheckEntitysForTreeNodes($target_type, $ancestors);
-      $ancestors_labels = [];
-      foreach ($ancestor_entities as $ancestor_node) {
-        if (!$ancestor_entities->contains($ancestor_node)) {
-          // Doesn't exist or is access hidden.
-          continue;
-        }
-        $ancestor_entity = $ancestor_entities->offsetGet($ancestor_node);
-        $ancestors_labels[] = $this->entityManager->getTranslationFromContext($ancestor_entity)->label();
-      }
-      if (!$ancestors || !$ancestors_labels) {
-        // No parents.
-        $options[$bundle][$entity_id] = Html::escape($this->entityManager->getTranslationFromContext($entity)->label());
-        continue;
-      }
-      $options[$bundle][$entity_id] = Html::escape(sprintf('%s (%s)', $this->entityManager->getTranslationFromContext($entity)->label(), implode(' ❭ ', $ancestors_labels)));
+      $label = $this->generateEntityLabelWithAncestry($entity, $storage, $target_type);
+      $options[$bundle][$entity_id] = Html::escape($label);
     }
 
     return $options;
