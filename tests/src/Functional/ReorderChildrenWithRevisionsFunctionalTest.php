@@ -1,11 +1,11 @@
 <?php
 
 namespace Drupal\Tests\entity_hierarchy\Functional;
+
 use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\simpletest\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\entity_hierarchy\Traits\EntityHierarchyTestTrait;
-use PNX\NestedSet\Node;
 
 /**
  * Tests reordering with revisions.
