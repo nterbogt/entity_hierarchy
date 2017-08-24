@@ -238,14 +238,12 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     $key = $entityType->hasKey('revision') ? $entityType->getKey('revision') : $entityType->getKey('id');
     $parentField = $fieldDefinition->getName();
     $query = $entityStorage->getAggregateQuery();
-    if ($entityType->hasKey('revision')) {
-      $query->allRevisions();
-    }
     $ids = array_map(function (Node $item) {
       return $item->getRevisionId();
     }, $siblings);
     $entities = $query
       ->groupBy($key)
+      ->sort($key, 'ASC')
       ->groupBy($parentField . '.weight')
       ->condition($key, $ids, 'IN')
       ->execute();

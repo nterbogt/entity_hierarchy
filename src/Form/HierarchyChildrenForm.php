@@ -3,8 +3,10 @@
 namespace Drupal\entity_hierarchy\Form;
 
 use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
 use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
@@ -166,6 +168,10 @@ class HierarchyChildrenForm extends ContentEntityForm {
       }
       /** @var \Drupal\Core\Entity\ContentEntityInterface $childEntity */
       $childEntity = $childEntities->offsetGet($node);
+      if (!$childEntity->isDefaultRevision()) {
+        // We only update default revisions here.
+        continue;
+      }
       $child = $node->getId();
       $form['children'][$child]['#attributes']['class'][] = 'draggable';
       $form['children'][$child]['#weight'] = $weight;
@@ -259,12 +265,46 @@ class HierarchyChildrenForm extends ContentEntityForm {
     $children = $form_state->getValue('children');
     $childEntities = $form_state->getTemporaryValue(self::CHILD_ENTITIES_STORAGE);
     $fieldName = $form_state->getValue('fieldname');
+    $batch = [
+      'title' => new TranslatableMarkup('Reordering children ...'),
+      'operations' => [],
+      'finished' => [static::class, 'finished'],
+    ];
     foreach ($childEntities as $node) {
       $childEntity = $childEntities->offsetGet($node);
-      $childEntity->{$fieldName}->weight = $children[$node->getId()]['weight'];
-      $childEntity->save();
+      if (!$childEntity->isDefaultRevision()) {
+        // We don't operate on other than the default revision.
+        continue;
+      }
+      $batch['operations'][] = [
+        [static::class, 'reorder'],
+        [$fieldName, $childEntity, $children[$node->getId()]['weight']],
+      ];
+
     }
-    drupal_set_message($this->t('Updated child order.'));
+    batch_set($batch);
+  }
+
+  /**
+   * Reorder batch callback.
+   *
+   * @param string $fieldName
+   *   Field name.
+   * @param \Drupal\Core\Entity\ContentEntityInterface $childEntity
+   *   Child entity being updated.
+   * @param int $weight
+   *   New weight.
+   */
+  public static function reorder($fieldName, ContentEntityInterface $childEntity, $weight) {
+    $childEntity->{$fieldName}->weight = $weight;
+    $childEntity->save();
+  }
+
+  /**
+   * Batch finished callback.
+   */
+  public static function finished() {
+    drupal_set_message(new TranslatableMarkup('Updated child order.'));
   }
 
 }
