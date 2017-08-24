@@ -148,7 +148,7 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
    * @return array
    *   Labels.
    */
-  protected function getLabels(\SplObjectStorage $ancestors): array {
+  protected function getLabels(\SplObjectStorage $ancestors) {
     $labels = [];
     foreach ($ancestors as $node) {
       $entity = $ancestors->offsetGet($node);
