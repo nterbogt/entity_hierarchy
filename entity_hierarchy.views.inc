@@ -76,6 +76,15 @@ function entity_hierarchy_views_data() {
           'id' => $has_revisions ? 'entity_hierarchy_argument_is_parent_of_entity_revision' : 'entity_hierarchy_argument_is_parent_of_entity',
         ],
       ];
+      // Contextual filter for filtering to sibling of a given child.
+      $data[$table_name]['is_sibling'] = [
+        'title' => t('Hierarchy: Is Sibling of'),
+        'help' => t('Limit to sibling of given entity'),
+        'real field' => 'left_pos',
+        'argument' => [
+          'id' => $has_revisions ? 'entity_hierarchy_argument_is_sibling_of_entity_revision' : 'entity_hierarchy_argument_is_sibling_of_entity',
+        ],
+      ];
       // Sorting and filtering on depth.
       $data[$table_name]['depth'] = [
         'title' => t('Hierarchy depth'),
