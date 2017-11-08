@@ -6,6 +6,7 @@ type: module
 dependencies:
   - drupal:node
   - dbal:dbal
+  - drupal:system (>=8.4)
 test_dependencies:
   - workbench_access:workbench_access
   - workbench_moderation:workbench_moderation
