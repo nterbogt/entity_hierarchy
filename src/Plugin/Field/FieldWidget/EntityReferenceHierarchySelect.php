@@ -44,7 +44,6 @@ class EntityReferenceHierarchySelect extends OptionsWidgetBase {
       '#default_value' => isset($items[$delta]) ? $items[$delta]->weight : 1,
       '#weight' => 10,
     ];
-    kint($widget);
 
     if ($this->fieldDefinition->getFieldStorageDefinition()->isMultiple()) {
       $widget['weight']['#placeholder'] = $this->fieldDefinition->getSetting('weight_label');
