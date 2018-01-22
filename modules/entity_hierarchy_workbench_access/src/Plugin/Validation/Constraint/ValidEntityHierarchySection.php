@@ -59,8 +59,14 @@ class ValidEntityHierarchySection extends Constraint implements ConstraintValida
     /** @var \Drupal\workbench_access\WorkbenchAccessManagerInterface $workbench_access_manager */
     $workbench_access_manager = \Drupal::service('plugin.manager.workbench_access.scheme');
     $parent = $items->entity;
-    $result = $workbench_access_manager->getActiveScheme()->checkEntityAccess($parent, 'update', $user, $workbench_access_manager);
-    if ($result->isForbidden()) {
+    if (!$parent) {
+      if (\Drupal::config('workbench_access.settings')->get('deny_on_empty')) {
+        $this->context->addViolation($this->message);
+      }
+      return;
+    }
+
+    if ($workbench_access_manager->getActiveScheme()->checkEntityAccess($parent, 'update', $user, $workbench_access_manager)->isForbidden()) {
       $this->context->addViolation($this->message);
     }
   }

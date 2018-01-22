@@ -89,6 +89,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
       $this->parentNodeType->id() => 'nid',
     ];
     $config->set('fields', $fields);
+    $config->set('deny_on_empty', FALSE);
     $config->save();
   }
 
@@ -231,6 +232,16 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     array_pop($children_of_section1);
     $disallowed = array_merge($disallowed, $children_of_section1, [$section1]);
     $this->checkAccess($allowed, $disallowed, $editor2);
+    // Try to create a node with no section.
+    $node = Node::create([
+      'type' => $this->childNodeType->id(),
+      'title' => 'A new child',
+    ]);
+    $this->assertEmpty($node->validate());
+    $config = $this->container->get('config.factory')->getEditable('workbench_access.settings');
+    $config->set('deny_on_empty', TRUE);
+    $config->save();
+    $this->assertNotEmpty($node->validate());
   }
 
   /**
