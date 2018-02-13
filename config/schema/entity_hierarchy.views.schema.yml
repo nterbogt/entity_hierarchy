@@ -19,9 +19,9 @@ views.argument.entity_hierarchy_argument_is_sibling_of_entity:
   type: views_argument
   label: 'Sibling entities'
   mapping:
-    depth:
-      type: integer
-      label: 'Depth'
+    show_self:
+      type: boolean
+      label: 'Show self'
 
 views.argument.entity_hierarchy_argument_is_parent_of_entity_revision:
   type: views.argument.entity_hierarchy_argument_is_parent_of_entity

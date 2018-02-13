@@ -27,13 +27,16 @@ class HierarchyIsSiblingOfEntity extends EntityHierarchyArgumentPluginBase {
       if ($node = $this->getTreeStorage()->findParent($stub)) {
         // Query between a range with fixed depth, excluding the original node.
         $filtered = TRUE;
-        $expression = "$this->tableAlias.$this->realField BETWEEN :lower and :upper AND $this->tableAlias.$this->realField <> :lower AND $this->tableAlias.depth = :depth AND $this->tableAlias.id != :self";
+        $expression = "$this->tableAlias.$this->realField BETWEEN :lower and :upper AND $this->tableAlias.$this->realField <> :lower AND $this->tableAlias.depth = :depth";
         $arguments = [
           ':lower' => $node->getLeft(),
           ':upper' => $node->getRight(),
           ':depth' => $node->getDepth() + 1,
-          ':self' => $stub->getId(),
         ];
+        if (!$this->options['show_self']) {
+          $expression .= " AND $this->tableAlias.id != :self";
+          $arguments[':self'] = $stub->getId();
+        }
 
         $this->query->addWhereExpression(0, $expression, $arguments);
       }
@@ -50,8 +53,25 @@ class HierarchyIsSiblingOfEntity extends EntityHierarchyArgumentPluginBase {
    * {@inheritdoc}
    */
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
+    $form['show_self'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Show self'),
+      '#default_value' => $this->options['show_self'],
+      '#description' => $this->t('Filter out the current child from the list of siblings.'),
+    ];
     parent::buildOptionsForm($form, $form_state);
     unset($form['depth']);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function defineOptions() {
+    $options = parent::defineOptions();
+    unset($options['depth']);
+    $options['show_self'] = ['default' => FALSE];
+
+    return $options;
   }
 
 }

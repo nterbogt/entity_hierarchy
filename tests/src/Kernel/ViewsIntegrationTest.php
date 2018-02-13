@@ -196,4 +196,42 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
     $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
   }
 
+  /**
+   * Tests views sibling integration with show_self enabled.
+   */
+  public function testViewsIntegrationSiblingsShowSelf() {
+    $children = $this->createChildEntities($this->parent->id(), 3);
+    $child = reset($children);
+    $this->createChildEntities($child->id(), 5);
+    // Tree is as follows
+    // 1     : Parent
+    // - 4   : Child 3
+    // - 3   : Child 2
+    // - 2   : Child 1
+    // - - 9 : Child 5
+    // - - 8 : Child 4
+    // - - 7 : Child 3
+    // - - 6 : Child 2
+    // - - 5 : Child 1
+    // Test showing siblings with the show_self option enabled.
+    $expected = [
+      [
+        'name' => 'Child 3',
+        'id' => 4,
+      ],
+      [
+        'name' => 'Child 2',
+        'id' => 3,
+      ],
+      [
+        'name' => 'Child 1',
+        'id' => 2,
+      ],
+    ];
+    $executable = Views::getView('entity_hierarchy_test_children_view');
+    $executable->preview('block_5', [$child->id()]);
+    $this->assertCount(3, $executable->result);
+    $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
+  }
+
 }
