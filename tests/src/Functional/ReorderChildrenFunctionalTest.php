@@ -164,16 +164,6 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
    */
   public function testAddChildLinks() {
     $this->setupEntityFormDisplay(self::ENTITY_TYPE, self::ENTITY_TYPE, self::FIELD_NAME);
-    $bundles = [
-      'bundle1' => 'Bundle 1',
-      'bundle2' => 'Bundle 2',
-      'bundle3' => 'Bundle 3',
-      'entity_test' => 'Entity Test Bundle',
-    ];
-    foreach ($bundles as $id => $name) {
-      entity_test_create_bundle($id, $name);
-      $this->setupEntityHierarchyField('entity_test', $id, self::FIELD_NAME);
-    }
 
     // Login.
     $this->drupalLogin($this->drupalCreateUser([
@@ -184,6 +174,30 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
     $assert = $this->assertSession();
     $assert->statusCodeEquals(200);
+    // We have no children, and only 1 bundle configured.
+    $assert->buttonNotExists('Update child order');
+    $assert->elementNotExists('css', '.dropbutton');
+    $assert->linkExists('Create new Entity Test Bundle');
+    $assert->linkByHrefExists(Url::fromRoute('entity.entity_test.add_form', [
+      'type' => 'entity_test',
+    ], [
+      'query' => [self::FIELD_NAME => $this->parent->id()],
+    ])->toString());
+
+    // Create a child and extra bundles. Make sure the buttons update.
+    $this->createTestEntity($this->parent->id());
+    $bundles = [
+      'bundle1' => 'Bundle 1',
+      'bundle2' => 'Bundle 2',
+      'bundle3' => 'Bundle 3',
+      'entity_test' => 'Entity Test Bundle',
+    ];
+    foreach ($bundles as $id => $name) {
+      entity_test_create_bundle($id, $name);
+      $this->setupEntityHierarchyField('entity_test', $id, self::FIELD_NAME);
+    }
+    $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
+    $assert->buttonExists('Update child order');
 
     foreach ($bundles as $id => $name) {
       $assert->linkExists(sprintf('Create new %s', $name));

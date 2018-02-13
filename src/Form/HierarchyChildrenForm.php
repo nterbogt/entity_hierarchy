@@ -6,6 +6,7 @@ use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
 use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
@@ -234,24 +235,39 @@ class HierarchyChildrenForm extends ContentEntityForm {
     $actions['submit']['#value'] = $this->t('Update child order');
     unset($actions['delete']);
     // Don't show the actions links if there are no children.
-    if (isset($form['no_children'])) {
+    if (empty(Element::children($form['children']))) {
       unset($actions['submit']);
     }
     $fields = $this->parentCandidate->getCandidateFields($this->entity);
     $fieldName = $form_state->getValue('fieldname') ?: reset($fields);
     $entityType = $this->entity->getEntityType();
     if ($entityType->hasHandlerClass('entity_hierarchy') && ($childBundles = $this->parentCandidate->getCandidateBundles($this->entity)) && isset($childBundles[$fieldName])) {
-      $actions['add_child'] = [
-        '#type' => 'dropbutton',
-        '#links' => [],
-      ];
       $handlerClass = $entityType->getHandlerClass('entity_hierarchy');
       /** @var \Drupal\entity_hierarchy\Handler\EntityHierarchyHandlerInterface $handler */
       $handler = new $handlerClass();
-      foreach ($childBundles[$fieldName] as $id => $info) {
-        $actions['add_child']['#links'][$id] = [
-          'title' => $this->t('Create new @bundle', ['@bundle' => $info['label']]),
-          'url' => $handler->getAddChildUrl($entityType, $this->entity, $id, $fieldName),
+      if (count($childBundles[$fieldName]) > 1) {
+        $actions['add_child'] = [
+          '#type' => 'dropbutton',
+          '#links' => [],
+        ];
+        foreach ($childBundles[$fieldName] as $id => $info) {
+          $actions['add_child']['#links'][$id] = [
+            'title' => $this->t('Create new @bundle', ['@bundle' => $info['label']]),
+            'url' => $handler->getAddChildUrl($entityType, $this->entity, $id, $fieldName),
+          ];
+        }
+      }
+      else {
+        reset($childBundles[$fieldName]);
+        $id = key($childBundles[$fieldName]);
+        $actions['add_child'] = [
+          '#type' => 'link',
+          '#title' => $this->t('Create new @bundle', ['@bundle' => $childBundles[$fieldName][$id]['label']]),
+          '#url' => $handler->getAddChildUrl($entityType, $this->entity, $id, $fieldName),
+          '#attributes' => [
+            'class' => ['button', 'button--primary'],
+          ],
+          '#weight' => -100,
         ];
       }
     }
