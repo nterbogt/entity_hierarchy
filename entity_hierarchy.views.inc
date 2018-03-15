@@ -26,15 +26,16 @@ function entity_hierarchy_views_data() {
     /** @var \Drupal\views\EntityViewsDataInterface $views_handler */
     $views_handler = $entityTypeManager->getHandler($entity_type_id, 'views_data');
     foreach ($fields as $field_name => $field_info) {
-      $table_name = \Drupal::service('entity_hierarchy.nested_set_storage_factory')->getTableName($field_name, $entity_type_id, FALSE);
+      $table_name = \Drupal::service('entity_hierarchy.nested_set_storage_factory')
+        ->getTableName($field_name, $entity_type_id, FALSE);
       $sample_bundle = reset($field_info['bundles']);
       /** @var Drupal\Core\Field\FieldDefinitionInterface $sample_field */
-      $sample_field                        = $fieldManager->getFieldDefinitions($entity_type_id, $sample_bundle)[$field_name];
+      $sample_field = $fieldManager->getFieldDefinitions($entity_type_id, $sample_bundle)[$field_name];
       $data[$table_name]['table']['group'] = t('Entity hierarchy: @entity_type - @field_name', [
         '@entity_type' => $entity_type->getLabel(),
         '@field_name' => $sample_field->getLabel(),
       ]);
-      $base_table                          = $views_handler->getViewsTableForEntityType($entity_type);
+      $base_table = $views_handler->getViewsTableForEntityType($entity_type);
 
       // Relationship to the entity base table.
       $data[$table_name]['table']['join'] = [
@@ -93,7 +94,7 @@ function entity_hierarchy_views_data() {
           'id' => 'standard',
         ],
         'filter' => [
-          'id' => 'standard',
+          'id' => 'numeric',
         ],
         'argument' => [
           'id' => 'standard',
