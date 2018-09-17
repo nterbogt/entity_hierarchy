@@ -32,11 +32,13 @@ trait AncestryLabelTrait {
    *   Tree storage.
    * @param string $entity_type_id
    *   Entity type ID.
+   * @param array $tags
+   *   Cache tags.
    *
    * @return string
    *   Label with ancestry if applicable.
    */
-  protected function generateEntityLabelWithAncestry(ContentEntityInterface $entity, $storage, $entity_type_id) {
+  protected function generateEntityLabelWithAncestry(ContentEntityInterface $entity, $storage, $entity_type_id, &$tags = []) {
     $key = $this->keyFactory->fromEntity($entity);
     $ancestors = $storage->findAncestors($key);
     // Remove ourself.
@@ -50,6 +52,9 @@ trait AncestryLabelTrait {
       }
       $ancestor_entity = $ancestor_entities->offsetGet($ancestor_node);
       $ancestors_labels[] = $ancestor_entity->label();
+      foreach ($ancestor_entity->getCacheTags() as $tag) {
+        $tags[] = $tag;
+      }
     }
     if (!$ancestors || !$ancestors_labels) {
       // No parents.
