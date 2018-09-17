@@ -1,6 +1,5 @@
 name: Entity Hierarchy Workbench Access
 description: Integrates entity hierarchy with workbench access
-core: 8.x
 package: "Entity Hierarchy"
 core: 8.x
 type: module
