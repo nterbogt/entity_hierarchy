@@ -233,6 +233,8 @@ class HierarchyChildrenForm extends ContentEntityForm {
   protected function actions(array $form, FormStateInterface $form_state) {
     $actions = parent::actions($form, $form_state);
     $actions['submit']['#value'] = $this->t('Update child order');
+    // Don't perform field validation.
+    $actions['submit']['#limit_validation_errors'] = [['children'], ['fieldname']];
     unset($actions['delete']);
     // Don't show the actions links if there are no children.
     if (empty(Element::children($form['children']))) {
