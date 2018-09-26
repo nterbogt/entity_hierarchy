@@ -65,7 +65,7 @@ class ReorderChildrenAccess implements AccessCheckInterface {
   public function access(Route $route, Request $request = NULL, AccountInterface $account = NULL) {
     $entity_type = $route->getOption(EntityHierarchyRouteProvider::ENTITY_HIERARCHY_ENTITY_TYPE);
     $entity = $this->routeMatch->getParameter($entity_type);
-    if ($this->parentCandidate->getCandidateFields($entity)) {
+    if ($entity && $this->parentCandidate->getCandidateFields($entity)) {
       return AccessResult::allowed()->setCacheMaxAge(0);
     }
     return AccessResult::forbidden();
