@@ -23,3 +23,11 @@ field.widget.settings.entity_reference_hierarchy_autocomplete:
     hide_weight:
       type: boolean
       label: 'Hide weight field'
+
+field.formatter.settings.entity_reference_hierarchy:
+  type: field.field_settings.entity_reference_label
+  label: 'Entity reference hierarchy field formatter settings'
+  mapping:
+    weight_output:
+      type: string
+      label: 'Weight output'
