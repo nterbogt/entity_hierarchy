@@ -8,8 +8,9 @@ use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\node\Entity\Node;
-use Drupal\simpletest\ContentTypeCreationTrait;
 use Drupal\Tests\entity_hierarchy\Kernel\EntityHierarchyKernelTestBase;
+use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
+use Drupal\workbench_access\Entity\AccessScheme;
 use Drupal\workbench_access\WorkbenchAccessManagerInterface;
 
 /**
@@ -30,6 +31,13 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
    * @var \Drupal\node\NodeTypeInterface
    */
   protected $parentNodeType;
+
+  /**
+   * Access scheme.
+   *
+   * @var \Drupal\workbench_access\Entity\AccessSchemeInterface
+   */
+  protected $scheme;
 
   /**
    * Node type.
@@ -62,14 +70,24 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
   protected function setUp() {
     EntityKernelTestBase::setUp();
     $this->installEntitySchema(static::ENTITY_TYPE);
+    $this->installEntitySchema('section_association');
     $this->installConfig(['node', 'workbench_access']);
     $this->installSchema('node', ['node_access']);
-    module_load_install('workbench_access');
-    workbench_access_install();
-    $this->parentNodeType = $this->setUpContentType('section');
-    $this->childNodeType = $this->setUpContentType('children');
+    $this->parentNodeType = $this->createContentType(['type' => 'section']);
+    $this->childNodeType =  $this->createContentType(['type' => 'children']);
     // Only the child has the field.
     $this->setupEntityHierarchyField(static::ENTITY_TYPE, $this->childNodeType->id(), static::FIELD_NAME);
+    $this->scheme = AccessScheme::create([
+      'id' => 'eh',
+      'label' => 'EH',
+      'plural_label' => 'EHs',
+      'scheme' => 'entity_hierarchy:node__parents',
+      'scheme_settings' => [
+        'boolean_fields' => [static::BOOLEAN_FIELD],
+        'bundles' => ['section', 'children'],
+      ],
+    ]);
+    $this->scheme->save();
 
     $this->treeStorage = $this->container->get('entity_hierarchy.nested_set_storage_factory')
       ->get(static::FIELD_NAME, static::ENTITY_TYPE);
@@ -79,18 +97,6 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     // Setup a boolean field on both node types.
     $this->setupBooleanEditorialField(static::ENTITY_TYPE, $this->childNodeType->id(), self::BOOLEAN_FIELD);
     $this->setupBooleanEditorialField(static::ENTITY_TYPE, $this->parentNodeType->id(), self::BOOLEAN_FIELD, FALSE);
-
-    // Configure workbench access scheme.
-    $config = $this->container->get('config.factory')->getEditable('workbench_access.settings');
-    $config->set('scheme', sprintf('entity_hierarchy:%s__%s', self::ENTITY_TYPE, self::FIELD_NAME));
-    $config->set('parents', [static::BOOLEAN_FIELD => static::BOOLEAN_FIELD]);
-    $fields['node'] = [
-      $this->childNodeType->id() => self::FIELD_NAME,
-      $this->parentNodeType->id() => 'nid',
-    ];
-    $config->set('fields', $fields);
-    $config->set('deny_on_empty', FALSE);
-    $config->save();
   }
 
   /**
@@ -139,23 +145,6 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
   }
 
   /**
-   * Set up a content type with workbench access enabled.
-   *
-   * @param string $content_type_id
-   *   Content type ID.
-   *
-   * @return \Drupal\node\Entity\NodeType
-   *   The node type entity.
-   */
-  public function setUpContentType($content_type_id) {
-    $node_type = $this->createContentType(['type' => $content_type_id]);
-    $node_type->setThirdPartySetting('workbench_access', 'workbench_access_status', 1);
-    $node_type->save();
-
-    return $node_type;
-  }
-
-  /**
    * Tests integration.
    */
   public function testWorkbenchAccessIntegration() {
@@ -179,7 +168,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     $grandchildren = $this->createChildEntities($last_child->id(), 1);
 
     // Check the tree labels.
-    $tree = $this->container->get('plugin.manager.workbench_access.scheme')->getActiveTree();
+    $tree = $this->scheme->getAccessScheme()->getTree();
     $this->assertEquals([
       1 => 'Section',
       6 => 'Child 5 (Section)',
@@ -208,8 +197,8 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
       'access content',
     ]);
     // Assign them to first section.
-    $editor1->{WorkbenchAccessManagerInterface::FIELD_NAME} = [$section1->id()];
-    $editor1->save();
+    $userSectionStorage = $this->container->get('workbench_access.user_section_storage');
+    $userSectionStorage->addUser($this->scheme, $editor1, [$section1->id()]);
     // They should be able to edit/delete from first section and children.
     // But not from different section and children.
     $allowed = array_merge([$section1], $children_of_section1, $grandchildren);
@@ -226,8 +215,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
       'access content',
     ]);
     // Assign them to child section.
-    $editor2->{WorkbenchAccessManagerInterface::FIELD_NAME} = [$last_child->id()];
-    $editor2->save();
+    $userSectionStorage->addUser($this->scheme, $editor2, [$last_child->id()]);
     $allowed = [$last_child, reset($grandchildren)];
     array_pop($children_of_section1);
     $disallowed = array_merge($disallowed, $children_of_section1, [$section1]);

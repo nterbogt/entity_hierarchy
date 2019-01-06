@@ -5,48 +5,42 @@
  * Main module functions.
  */
 
-use Drupal\Component\Plugin\Exception\PluginNotFoundException;
+use Drupal\Core\Config\Config;
 use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\entity_hierarchy_workbench_access\Plugin\AccessControlHierarchy\EntityHierarchy;
-use Drupal\node\Entity\NodeType;
+use Drupal\workbench_access\Entity\AccessSchemeInterface;
 
 /**
  * Implements hook_entity_bundle_field_info_alter().
  */
 function entity_hierarchy_workbench_access_entity_bundle_field_info_alter(&$fields, EntityTypeInterface $entity_type, $bundle) {
-  /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $fields */
-  if ($entity_type->id() !== 'node') {
-    // Workbench access only supports node at present.
+  $schemes = array_filter(\Drupal::entityTypeManager()->getStorage('access_scheme')->loadMultiple(), function (AccessSchemeInterface $scheme) {
+    return strpos($scheme->getAccessScheme()->getPluginId(), 'entity_hierarchy') === 0;
+  });
+  /** @var \Drupal\workbench_access\Entity\AccessSchemeInterface $scheme */
+  foreach ($schemes as $scheme) {
+    $accessPlugin = $scheme->getAccessScheme();
+    $definition = $accessPlugin->getPluginDefinition();
+    if ($entity_type->id() !== $definition['entity']) {
+      continue;
+    }
+    $configuration = $accessPlugin->getConfiguration();
+    if (!in_array($bundle, $configuration['bundles'], TRUE)) {
+      continue;
+    }
+    if (!isset($fields[$definition['field_name']])) {
+      continue;
+    }
+    $fields[$definition['field_name']]->addConstraint('ValidHierarchySection');
+  }
+}
+
+/**
+ * Implements hook_workbench_access_scheme_update_alter().
+ */
+function entity_hierarchy_workbench_access_workbench_access_scheme_update_alter(array &$settings, Config $config) {
+  if (strpos($config->get('scheme'), 'entity_hierarchy') !== 0) {
     return;
   }
-  if (($node_type = NodeType::load($bundle)) && (!$node_type->getThirdPartySetting('workbench_access', 'workbench_access_status', FALSE))) {
-    // No access controls for this node type.
-    return;
-  }
-  try {
-    $scheme = \Drupal::service('plugin.manager.workbench_access.scheme')->getActiveScheme();
-  }
-  catch (PluginNotFoundException $e) {
-    // Config import is running.
-    return;
-  }
-  if (!($scheme instanceof EntityHierarchy)) {
-    // Some other scheme is active.
-    return;
-  }
-  $config = \Drupal::config('workbench_access.settings')->get('fields');
-  if (empty($config['node'][$bundle])) {
-    // No field configured for this bundle.
-    return;
-  }
-  $field = $config['node'][$bundle];
-  if (!isset($fields[$field])) {
-    // No such field anymore.
-    return;
-  }
-  if ($fields[$field]->getType() !== 'entity_reference_hierarchy') {
-    // Some other field type.
-    return;
-  }
-  $fields[$field]->addConstraint('ValidHierarchySection');
+  $settings['boolean_fields'] = $config->get('parents');
+  $settings['bundles'] = array_keys($config->get('fields')['node']);
 }
