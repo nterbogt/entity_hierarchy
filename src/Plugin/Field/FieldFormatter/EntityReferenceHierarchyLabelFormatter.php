@@ -31,7 +31,7 @@ class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatt
         'suffix' => t('After title'),
         'attribute' => t('In a data attribute'),
       ],
-      '#title' => t('Output weigh'),
+      '#title' => t('Output weight'),
       '#default_value' => $this->getSetting('weight_output'),
       '#required' => TRUE,
     ];
