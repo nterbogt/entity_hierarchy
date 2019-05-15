@@ -33,6 +33,11 @@ class UpdatePathTest extends UpdatePathTestBase {
     $config = $scheme->getAccessScheme()->getConfiguration();
     $this->assertEquals($expected_fields, $config['boolean_fields']);
     $this->assertEquals($expected_bundles, $config['bundles']);
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet($scheme->toUrl('edit-form'));
+    $assert = $this->assertSession();
+    $assert->fieldExists('scheme_settings[bundles][page]');
+    $assert->checkboxChecked('scheme_settings[bundles][page]');
   }
 
 }

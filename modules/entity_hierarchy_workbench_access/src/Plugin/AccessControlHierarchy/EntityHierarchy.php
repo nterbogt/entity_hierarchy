@@ -273,6 +273,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+    $form = parent::buildConfigurationForm($form, $form_state);
     $entity_type_id = $this->pluginDefinition['entity'];
     $booleans = $this->entityFieldManager->getFieldMapByFieldType('boolean');
     $options = [];
@@ -287,7 +288,8 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       '#title' => new TranslatableMarkup('Editorial section flag'),
       '#description' => new TranslatableMarkup('Select the field to use to enable the entity as an editorial section. Not all entities in the tree need to be editorial sections.'),
       '#options' => $options,
-      '#default_values' => $this->configuration['boolean_fields'],
+      '#type' => 'checkboxes',
+      '#default_value' => $this->configuration['boolean_fields'],
     ];
     $entityType = $this->entityTypeManager->getDefinition($entity_type_id);
     if ($bundle = $entityType->getBundleEntityType()) {
@@ -297,13 +299,14 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
         '#description' => new TranslatableMarkup('Select the @label this access scheme applies to.', [
           '@label' => $bundleEntityType->getPluralLabel(),
         ]),
+        '#type' => 'checkboxes',
         '#options' => array_map(function (EntityInterface $entity) {
           return $entity->label();
         }, $this->entityTypeManager->getStorage($bundle)->loadMultiple()),
-        '#default_values' => $this->configuration['bundles'],
+        '#default_value' => $this->configuration['bundles'],
       ];
     }
-    return parent::buildConfigurationForm($form, $form_state);
+    return $form;
   }
 
   /**
