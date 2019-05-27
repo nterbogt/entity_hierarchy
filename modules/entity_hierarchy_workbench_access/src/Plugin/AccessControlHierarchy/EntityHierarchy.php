@@ -137,6 +137,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       $entity_type_id = $this->pluginDefinition['entity'];
       $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
       $field_name = $this->pluginDefinition['field_name'];
+      /** @var \PNX\NestedSet\Storage\DbalNestedSet $tree_storage */
       $tree_storage = $this->nestedSetStorageFactory->get($field_name, $entity_type_id);
       $entityStorage = $this->entityTypeManager->getStorage($entity_type_id);
       $query = $entityStorage->getQuery();
@@ -170,27 +171,27 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       }, $details));
       $entities = $entityStorage->loadMultiple($valid_ids);
       $tags = $entityStorage->getEntityType()->getListCacheTags();
-      /** @var \PNX\NestedSet\Node $node */
-      foreach ($tree_storage->getTree() as $weight => $node) {
-        $id = $node->getId();
-        if (!in_array($id, $valid_ids)) {
-          // Not a valid parent.
+      foreach ($entities as $id => $entity) {
+        /** @var \PNX\NestedSet\Node $node */
+        $key = $this->keyFactory->fromEntity($entity);
+        $node = $tree_storage->getNode($key);
+        if (!$node) {
           continue;
         }
-        if (isset($entities[$id])) {
-          $tags = array_merge($tags, $entities[$id]->getCacheTags());
-        }
+        $tags = array_merge($tags, $entities[$id]->getCacheTags());
         foreach ($boolean_parents[$id] as $parent) {
           $cid = sprintf('%s:%s', self::CACHE_ID, $id);
           if ($entry = $this->cacheBackend->get($cid)) {
             $tree[$parent][$id] = $entry->data;
+            // Cache hit.
+            continue;
           }
           $entry_tags = [];
           $entry = [
-            'label' => isset($entities[$id]) ? $this->generateEntityLabelWithAncestry($entities[$id], $tree_storage, $entity_type_id, $entry_tags) : 'N/A',
+            'label' => $this->generateEntityLabelWithAncestry($entity, $tree_storage, $entity_type_id, $entry_tags),
             'depth' => $node->getDepth(),
             'parents' => [],
-            'weight' => $weight,
+            'weight' => $node->getLeft(),
             'description' => '',
           ];
           $tree[$parent][$id] = $entry;
