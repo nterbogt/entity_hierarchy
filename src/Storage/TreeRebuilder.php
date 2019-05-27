@@ -59,7 +59,8 @@ class TreeRebuilder {
       ->groupBy($idKey)
       ->sort("$field_name.target_id")
       ->sort("$field_name.weight")
-      ->exists($field_name);
+      ->exists($field_name)
+      ->accessCheck(FALSE);
     $records = $query->execute();
     $sorted = $this->treeSort($field_name, $records, $idKey);
     foreach ($sorted as $entity_id => $entry) {
