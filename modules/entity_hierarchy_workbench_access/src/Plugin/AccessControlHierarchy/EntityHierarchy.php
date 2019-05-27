@@ -219,7 +219,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
         }
         $property_name = $item->mainPropertyName();
         $values[] = $item->{$property_name};
-        if ($item instanceof EntityReferenceItem) {
+        if ($item instanceof EntityReferenceItem && $item->entity) {
           $nodeKey = $this->keyFactory->fromEntity($item->entity);
         }
       }
