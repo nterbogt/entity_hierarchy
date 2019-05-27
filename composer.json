@@ -6,5 +6,12 @@
         "previousnext/nested-set": "^0.1.1"
     },
     "license": "GPL2+",
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "extra": {
+        "drush": {
+            "services": {
+                "drush.services.yml": "^9"
+            }
+        }
+    }
 }
