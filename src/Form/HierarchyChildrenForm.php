@@ -247,31 +247,36 @@ class HierarchyChildrenForm extends ContentEntityForm {
       $handlerClass = $entityType->getHandlerClass('entity_hierarchy');
       /** @var \Drupal\entity_hierarchy\Handler\EntityHierarchyHandlerInterface $handler */
       $handler = new $handlerClass();
-      if (count($childBundles[$fieldName]) > 1) {
-        $actions['add_child'] = [
-          '#type' => 'dropbutton',
-          '#links' => [],
-        ];
-        foreach ($childBundles[$fieldName] as $id => $info) {
-          $actions['add_child']['#links'][$id] = [
+
+      $links = [];
+      foreach($childBundles[$fieldName] as $id => $info) {
+        $url = $handler->getAddChildUrl($entityType, $this->entity, $id, $fieldName);
+        if($url->access()) {
+          $links[$id] = [
             'title' => $this->t('Create new @bundle', ['@bundle' => $info['label']]),
-            'url' => $handler->getAddChildUrl($entityType, $this->entity, $id, $fieldName),
+            'url' => $url
           ];
         }
       }
+      if(count($links) > 1) {
+        $actions['add_child'] = [
+          '#type' => 'dropbutton',
+          '#links' => $links,
+        ];
+      }
       else {
-        reset($childBundles[$fieldName]);
-        $id = key($childBundles[$fieldName]);
+        $link = reset($links);
         $actions['add_child'] = [
           '#type' => 'link',
-          '#title' => $this->t('Create new @bundle', ['@bundle' => $childBundles[$fieldName][$id]['label']]),
-          '#url' => $handler->getAddChildUrl($entityType, $this->entity, $id, $fieldName),
+          '#title' => $link['title'],
+          '#url' => $link['url'],
           '#attributes' => [
             'class' => ['button', 'button--primary'],
           ],
           '#weight' => -100,
         ];
       }
+
     }
     return $actions;
   }
