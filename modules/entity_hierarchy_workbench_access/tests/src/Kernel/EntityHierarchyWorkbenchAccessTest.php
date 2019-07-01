@@ -169,7 +169,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
 
     // Check the tree labels.
     $tree = $this->scheme->getAccessScheme()->getTree();
-    $this->assertEquals([
+    $this->assertSame([
       1 => 'Section',
       6 => 'Child 5 (Section)',
     ], array_map(function ($item) {

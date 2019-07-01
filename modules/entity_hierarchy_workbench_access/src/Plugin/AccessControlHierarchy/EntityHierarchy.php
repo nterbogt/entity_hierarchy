@@ -200,6 +200,27 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
         }
       }
       $this->tree = $tree;
+      foreach (array_keys($this->tree) as $parent) {
+        uasort($this->tree[$parent], function (array $a, array $b) {
+          // @todo Replace this with null coalesce and spaceship operator when
+          // we only support PHP 7.0 or greater.
+          $a_weight = 0;
+          $b_weight = 0;
+          if (isset($a['weight'])) {
+            $a_weight = $a['weight'];
+          }
+          if (isset($b['weight'])) {
+            $b_weight = $b['weight'];
+          }
+          if ($a_weight < $b_weight) {
+            return -1;
+          }
+          if ($a_weight > $b_weight) {
+            return 1;
+          }
+          return 0;
+        });
+      }
       $this->cacheBackend->set(self::CACHE_ID, $tree, Cache::PERMANENT, array_unique($tags));
     }
     return $this->tree;
