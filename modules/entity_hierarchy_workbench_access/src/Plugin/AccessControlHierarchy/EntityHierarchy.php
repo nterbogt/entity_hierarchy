@@ -199,9 +199,8 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
           $tags = array_merge($tags, $entry_tags);
         }
       }
-      $this->tree = $tree;
-      foreach (array_keys($this->tree) as $parent) {
-        uasort($this->tree[$parent], function (array $a, array $b) {
+      foreach (array_keys($tree) as $parent) {
+        uasort($tree, function (array $a, array $b) {
           // @todo Replace this with null coalesce and spaceship operator when
           // we only support PHP 7.0 or greater.
           $a_weight = 0;
@@ -221,6 +220,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
           return 0;
         });
       }
+      $this->tree = $tree;
       $this->cacheBackend->set(self::CACHE_ID, $tree, Cache::PERMANENT, array_unique($tags));
     }
     return $this->tree;
