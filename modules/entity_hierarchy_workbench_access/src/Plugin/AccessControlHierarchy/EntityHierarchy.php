@@ -200,7 +200,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
         }
       }
       foreach (array_keys($tree) as $parent) {
-        uasort($tree, function (array $a, array $b) {
+        uasort($tree[$parent], function (array $a, array $b) {
           // @todo Replace this with null coalesce and spaceship operator when
           // we only support PHP 7.0 or greater.
           $a_weight = 0;
