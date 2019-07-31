@@ -265,6 +265,10 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
         self::FIELD_NAME => $entity->id(),
       ]);
       $this->assertNotEmpty($new_child->validate());
+      $new_child->save();
+      // But can if the item is previously saved and they're not changing the
+      // parent.
+      $this->assertEmpty($new_child->validate());
     }
   }
 

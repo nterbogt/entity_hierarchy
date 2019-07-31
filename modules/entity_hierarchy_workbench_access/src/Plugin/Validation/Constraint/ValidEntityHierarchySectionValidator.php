@@ -86,12 +86,21 @@ class ValidEntityHierarchySectionValidator extends ConstraintValidator implement
     if ($this->currentUser->hasPermission('bypass workbench access')) {
       return;
     }
+    /** @var \Drupal\Core\Entity\ContentEntityInterface $parent */
     $parent = $items->entity;
     if (!$parent) {
       if ($this->configFactory->get('workbench_access.settings')->get('deny_on_empty')) {
         $this->context->addViolation($constraint->message);
       }
       return;
+    }
+    /** @var \Drupal\Core\Entity\ContentEntityInterface $saved */
+    if ($items->getEntity()->id() && $saved = $this->entityTypeManager->getStorage($parent->getEntityTypeId())->loadUnchanged($items->getEntity()->id())) {
+      $field_name = $items->getFieldDefinition()->getFieldStorageDefinition()->getName();
+      if ($saved->hasField($field_name) && !$saved->get($field_name)->isEmpty() && $saved->{$field_name}->entity && $saved->{$field_name}->entity->id() === $parent->id()) {
+        // The user is not changing the field value.
+        return;
+      }
     }
 
     $result = array_reduce($this->entityTypeManager->getStorage('access_scheme')->loadMultiple(), function (AccessResult $carry, AccessSchemeInterface $scheme) use ($parent) {
