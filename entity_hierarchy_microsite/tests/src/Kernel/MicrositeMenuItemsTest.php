@@ -1,0 +1,109 @@
+<?php
+
+namespace Drupal\Tests\entity_hierarchy_microsite\Kernel;
+
+use Drupal\entity_hierarchy_microsite\Entity\Microsite;
+use Drupal\entity_hierarchy_microsite\Entity\MicrositeMenuItemOverride;
+
+/**
+ * Defines a class for testing microsite menu items.
+ *
+ * @group entity_hierarchy_microsite
+ */
+class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
+
+  /**
+   * Tests the microsite menu link integration.
+   */
+  public function testMicrositeMenuLinkDerivation() {
+    $media = $this->createImageMedia();
+    $children = $this->createChildEntities($this->parent->id(), 5);
+    list ($first, $second) = array_values($children);
+    $first_children = $this->createChildEntities($first->id(), 5);
+    $second_children = $this->createChildEntities($second->id(), 4);
+    $microsite = Microsite::create([
+      'name' => 'Subsite',
+      'home' => $this->parent,
+      'logo' => $media,
+    ]);
+    $microsite->save();
+    /** @var \Drupal\Core\Menu\MenuLinkTreeInterface $tree */
+    $tree = \Drupal::service('menu.link_tree');
+    $params = $tree->getCurrentRouteMenuTreeParameters('entity-hierarchy-microsite');
+    $params->setMaxDepth(9);
+    $items = $tree->load('entity-hierarchy-microsite', $params);
+    $this->assertCount(1, $items);
+    $plugin_id = 'entity_hierarchy_microsite:' . $this->parent->uuid();
+    $this->assertArrayHasKey($plugin_id, $items);
+    $this->assertCount(5, $items[$plugin_id]->subtree);
+    foreach ($children as $entity) {
+      $child_plugin_id = 'entity_hierarchy_microsite:' . $entity->uuid();
+      $this->assertArrayHasKey($child_plugin_id, $items[$plugin_id]->subtree);
+      if ($entity->uuid() === $first->uuid()) {
+        $this->assertCount(5, $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+        foreach ($first_children as $child_entity) {
+          $this->assertArrayHasKey('entity_hierarchy_microsite:' . $child_entity->uuid(), $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+        }
+      }
+      if ($entity->uuid() === $second->uuid()) {
+        $this->assertCount(4, $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+        foreach ($second_children as $child_entity) {
+          $this->assertArrayHasKey('entity_hierarchy_microsite:' . $child_entity->uuid(), $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+        }
+      }
+    }
+    $last = array_pop($second_children);
+    array_push($first_children, $last);
+    $last->{self::FIELD_NAME} = $first;
+    $last->save();
+    $items = $tree->load('entity-hierarchy-microsite', $params);
+    $child_plugin_id = 'entity_hierarchy_microsite:' . $first->uuid();
+    $this->assertCount(6, $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+    foreach ($first_children as $child_entity) {
+      $this->assertArrayHasKey('entity_hierarchy_microsite:' . $child_entity->uuid(), $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+    }
+    $child_plugin_id = 'entity_hierarchy_microsite:' . $second->uuid();
+    $this->assertCount(3, $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+    foreach ($second_children as $child_entity) {
+      $this->assertArrayHasKey('entity_hierarchy_microsite:' . $child_entity->uuid(), $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+    }
+    $last = array_pop($second_children);
+    $last->delete();
+    $items = $tree->load('entity-hierarchy-microsite', $params);
+    $this->assertCount(2, $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+    foreach ($second_children as $child_entity) {
+      $this->assertArrayHasKey('entity_hierarchy_microsite:' . $child_entity->uuid(), $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+    }
+
+    $lastChildOfSecond = end($second_children);
+    $override1 = MicrositeMenuItemOverride::create([
+      'target' => $lastChildOfSecond->uuid(),
+      'enabled' => FALSE,
+      'weight' => 1000,
+      'title' => $lastChildOfSecond->label(),
+      'parent' => 'entity_hierarchy_microsite:' . $second->uuid(),
+    ]);
+    $override1->save();
+    $moved = reset($second_children);
+    $override2 = MicrositeMenuItemOverride::create([
+      'target' => $moved->uuid(),
+      'weight' => -1000,
+      'title' => 'Some other title',
+      'parent' => 'entity_hierarchy_microsite:' . $first->uuid(),
+    ]);
+    $override2->save();
+    $items = $tree->load('entity-hierarchy-microsite', $params);
+    $child_plugin_id = 'entity_hierarchy_microsite:' . $first->uuid();
+    $this->assertCount(7, $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+    foreach ($first_children as $child_entity) {
+      $this->assertArrayHasKey('entity_hierarchy_microsite:' . $child_entity->uuid(), $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+    }
+    $this->assertArrayHasKey('entity_hierarchy_microsite:' . $moved->uuid(), $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+    $this->assertEquals('Some other title', $items[$plugin_id]->subtree[$child_plugin_id]->subtree['entity_hierarchy_microsite:' . $moved->uuid()]->link->getTitle());
+    $this->assertEquals('-1000', $items[$plugin_id]->subtree[$child_plugin_id]->subtree['entity_hierarchy_microsite:' . $moved->uuid()]->link->getWeight());
+    $child_plugin_id = 'entity_hierarchy_microsite:' . $second->uuid();
+    $this->assertCount(1, $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+    $this->assertFalse((bool) $items[$plugin_id]->subtree[$child_plugin_id]->subtree['entity_hierarchy_microsite:' . $lastChildOfSecond->uuid()]->link->isEnabled());
+  }
+
+}

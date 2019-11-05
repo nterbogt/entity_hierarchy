@@ -1,0 +1,10 @@
+name: Entity hierarchy microsites
+description: 'Provides microsites based on an entity hierarchy'
+core: 8.x
+type: module
+dependencies:
+  - entity_hierarchy:entity_hierarchy
+  - drupal:media
+  - drupal:node
+  - drupal:system
+  - drupal:menu_ui
