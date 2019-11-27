@@ -4,7 +4,7 @@ namespace Drupal\Tests\entity_hierarchy\Functional;
 
 use Drupal\entity_hierarchy\Plugin\Field\FieldWidget\EntityReferenceHierarchyAutocomplete;
 use Drupal\node\Entity\Node;
-use Drupal\simpletest\ContentTypeCreationTrait;
+use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\entity_hierarchy\Traits\EntityHierarchyTestTrait;
 use Drupal\workbench_moderation\Entity\ModerationState;

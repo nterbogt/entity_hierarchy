@@ -327,7 +327,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
    * Batch finished callback.
    */
   public static function finished() {
-    drupal_set_message(new TranslatableMarkup('Updated child order.'));
+    \Drupal::messenger()->addMessage(new TranslatableMarkup('Updated child order.'));
   }
 
 }

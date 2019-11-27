@@ -3,7 +3,7 @@
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
 use Drupal\entity_test\Entity\EntityTestRev;
-use Drupal\simpletest\BlockCreationTrait;
+use Drupal\Tests\block\Traits\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\entity_hierarchy\Traits\EntityHierarchyTestTrait;
 

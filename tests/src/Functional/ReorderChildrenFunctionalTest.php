@@ -6,7 +6,7 @@ use Drupal\Core\Url;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\field\Entity\FieldConfig;
-use Drupal\simpletest\BlockCreationTrait;
+use Drupal\Tests\block\Traits\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\entity_hierarchy\Traits\EntityHierarchyTestTrait;
 use PNX\NestedSet\Node;

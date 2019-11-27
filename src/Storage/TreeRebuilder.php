@@ -148,7 +148,7 @@ class TreeRebuilder {
       $message = new TranslatableMarkup('Finished rebuilding tree, @count items were processed.', [
         '@count' => count($results),
       ]);
-      drupal_set_message($message);
+      \Drupal::messenger()->addMessage($message);
     }
     else {
       // An error occurred.
@@ -158,7 +158,7 @@ class TreeRebuilder {
         '%error_operation' => implode('::', $error_operation[0]),
         '@arguments' => print_r($error_operation[1], TRUE),
       ]);
-      drupal_set_message($message, 'error');
+      \Drupal::messenger()->addMessage($message, 'error');
     }
   }
 
@@ -264,9 +264,7 @@ class TreeRebuilder {
    *   Message to output.
    */
   protected static function debug($message) {
-    if (function_exists('drush_log')) {
-      drush_log($message);
-    }
+    \Drupal::logger($message);
   }
 
 }
