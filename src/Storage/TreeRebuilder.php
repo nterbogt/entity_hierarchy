@@ -205,7 +205,6 @@ class TreeRebuilder {
         $this->buildThread($weights, $items, $parent, $items[$parent], $flipped_sets);
       }
       if (isset($weights[$parent])) {
-        self::debug(sprintf('Added %s, (total items: %d)', $id, count($weights)));
         $weights[$id] = array_merge($weights[$parent], $weights[$id]);
       }
     }
@@ -250,7 +249,6 @@ class TreeRebuilder {
         $this->buildThread($weights, $items, $next_parent, $items[$next_parent], $flipped_sets);
       }
       if (isset($weights[$next_parent])) {
-        self::debug(sprintf('Added %s, (total items: %d)', $parent, count($weights)));
         $weights[$parent] = array_merge($weights[$next_parent], $weights[$parent]);
       }
       $weights[$id] = array_merge($weights[$parent], $weights[$id]);
