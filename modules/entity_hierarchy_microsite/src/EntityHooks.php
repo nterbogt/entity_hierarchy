@@ -125,11 +125,20 @@ class EntityHooks implements ContainerInjectionInterface {
     $original = $node->original;
     foreach ($this->parentCandidate->getCandidateFields($node) as $field) {
       if ($node->hasField($field) && (!$node->get($field)->isEmpty() || !$original->get($field)->isEmpty()) ||
-        $node->{$field}->target_id !== $original->{$field}->target_id ||
-        $node->{$field}->weight !== $original->{$field}->weight) {
+        ($node->{$field}->target_id !== $original->{$field}->target_id ||
+        $node->{$field}->weight !== $original->{$field}->weight)) {
         if ($microsites = $this->childOfMicrositeLookup->findMicrositesForNodeAndField($node, $field)) {
           foreach ($microsites as $microsite) {
             $this->updateMenuForMicrosite($microsite);
+          }
+          continue;
+        }
+        if ($microsites = $this->childOfMicrositeLookup->findMicrositesForNodeAndField($original, $field)) {
+          // This item is no longer in the microsite, so we need to trigger
+          // its removal
+          $plugin_id = 'entity_hierarchy_microsite:' . $original->uuid();
+          if ($this->menuLinkManager->hasDefinition($plugin_id)) {
+            $this->menuLinkManager->removeDefinition($plugin_id);
           }
         }
       }

@@ -52,6 +52,7 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
         }
       }
     }
+    /** @var \Drupal\node\NodeInterface $last */
     $last = array_pop($second_children);
     array_push($first_children, $last);
     $last->{self::FIELD_NAME} = $first;
@@ -67,7 +68,12 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
     foreach ($second_children as $child_entity) {
       $this->assertArrayHasKey('entity_hierarchy_microsite:' . $child_entity->uuid(), $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
     }
+
     $last = array_pop($second_children);
+    // Create a new revision.
+    $last->{self::FIELD_NAME} = NULL;
+    $last->setNewRevision(TRUE);
+    $last->save();
     $last->delete();
     $items = $tree->load('entity-hierarchy-microsite', $params);
     $this->assertCount(2, $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
