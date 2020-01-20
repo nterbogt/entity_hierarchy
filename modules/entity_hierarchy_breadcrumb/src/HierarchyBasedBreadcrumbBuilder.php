@@ -104,7 +104,6 @@ class HierarchyBasedBreadcrumbBuilder implements BreadcrumbBuilderInterface {
     $breadcrumb = new Breadcrumb();
     /** @var \Drupal\Core\Entity\ContentEntityInterface $route_entity */
     $route_entity = $this->getEntityFromRouteMatch($route_match);
-    $breadcrumb->addCacheableDependency($route_match->getRouteObject());
 
     $entity_type = $route_entity->getEntityTypeId();
     $storage = $this->storageFactory->get($this->getHierarchyFieldFromEntity($route_entity), $entity_type);

@@ -101,6 +101,9 @@ class BreadcrumbTest extends EntityHierarchyKernelTestBase {
 
     $route_match = new RouteMatch('test', $this->testRoute, [$entity_type => $grandchild], [$entity_type => $grandchild->id()]);
     $actual = $this->breadcrumbBuilder->build($route_match);
+
+    $this->assertNotEquals(0, $actual->getCacheMaxAge());
+
     $actual_links = $actual->getLinks();
 
     $expected_cache_tags = [
