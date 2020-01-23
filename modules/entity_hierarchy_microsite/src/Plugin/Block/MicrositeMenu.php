@@ -82,7 +82,9 @@ class MicrositeMenu extends SystemMenuBlock implements ContainerFactoryPluginInt
     $microsite = reset($microsites);
     $cache->addCacheableDependency($node);
     $cache->addCacheableDependency($microsite);
-    $cache->addCacheableDependency($microsite->getHome());
+    if ($home = $microsite->getHome()) {
+      $cache->addCacheableDependency($home);
+    }
     $menu_name = $this->getDerivativeId();
     if ($this->configuration['expand_all_items']) {
       $parameters = new MenuTreeParameters();
@@ -92,7 +94,9 @@ class MicrositeMenu extends SystemMenuBlock implements ContainerFactoryPluginInt
     else {
       $parameters = $this->menuTree->getCurrentRouteMenuTreeParameters($menu_name);
     }
-    $parameters->setRoot('entity_hierarchy_microsite:' . $microsite->getHome()->uuid());
+    if ($home) {
+      $parameters->setRoot('entity_hierarchy_microsite:' . $home->uuid());
+    }
 
     // Adjust the menu tree parameters based on the block's configuration.
     $level = $this->configuration['level'];

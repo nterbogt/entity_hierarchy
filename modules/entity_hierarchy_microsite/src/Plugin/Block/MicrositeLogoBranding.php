@@ -76,11 +76,13 @@ class MicrositeLogoBranding extends BlockBase implements ContainerFactoryPluginI
     $microsite = reset($microsites);
     $cache->addCacheableDependency($node);
     $cache->addCacheableDependency($microsite);
-    $cache->addCacheableDependency($microsite->getHome());
+    if ($home = $microsite->getHome()) {
+      $cache->addCacheableDependency($home);
+    }
     $build = [
       '#theme' => 'entity_hierarchy_microsite_branding',
       '#site_name' => $microsite->label(),
-      '#site_home' => $microsite->getHome()->toUrl()->toString(),
+      '#site_home' => $home ? $home->toUrl()->toString() : '',
       '#microsite' => $microsite,
     ];
     if ($media = $microsite->getLogo()) {

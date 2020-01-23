@@ -12,16 +12,16 @@ interface MicrositeInterface extends ContentEntityInterface {
   /**
    * Gets the home page of the microsite.
    *
-   * @return \Drupal\node\NodeInterface
-   *   Home page node.
+   * @return \Drupal\node\NodeInterface|null
+   *   Home page node, or null if none exists.
    */
   public function getHome();
 
   /**
    * Gets the logo of the microsite.
    *
-   * @return \Drupal\media\MediaInterface
-   *   Home page node.
+   * @return \Drupal\media\MediaInterface|null
+   *   Logo media, or null if none exists.
    */
   public function getLogo();
 

@@ -93,6 +93,9 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
     /** @var \Drupal\entity_hierarchy_microsite\Entity\MicrositeInterface $microsite */
     foreach ($microsites as $microsite) {
       $home = $microsite->getHome();
+      if (!$home) {
+        continue;
+      }
       $key = $this->keyFactory->fromEntity($home);
       $parentUuids = [];
       foreach ($this->candidate->getCandidateFields($home) as $field_name) {
