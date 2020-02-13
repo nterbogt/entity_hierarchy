@@ -27,15 +27,19 @@ class HierarchyIsSiblingOfEntity extends EntityHierarchyArgumentPluginBase {
       if ($node = $this->getTreeStorage()->findParent($stub)) {
         // Query between a range with fixed depth, excluding the original node.
         $filtered = TRUE;
-        $expression = "$this->tableAlias.$this->realField BETWEEN :lower and :upper AND $this->tableAlias.$this->realField <> :lower AND $this->tableAlias.depth = :depth";
+        $lower_token = ':lower_' . $this->tableAlias;
+        $upper_token = ':upper_' . $this->tableAlias;
+        $depth_token = ':depth_' . $this->tableAlias;
+        $expression = "$this->tableAlias.$this->realField BETWEEN {$lower_token} and {$upper_token} AND $this->tableAlias.$this->realField <> {$lower_token} AND $this->tableAlias.depth = {$depth_token}";
         $arguments = [
-          ':lower' => $node->getLeft(),
-          ':upper' => $node->getRight(),
-          ':depth' => $node->getDepth() + 1,
+          $lower_token => $node->getLeft(),
+          $upper_token => $node->getRight(),
+          $depth_token => $node->getDepth() + 1,
         ];
         if (!$this->options['show_self']) {
-          $expression .= " AND $this->tableAlias.id != :self";
-          $arguments[':self'] = $stub->getId();
+          $self_token = ':self'  . $this->tableAlias;
+          $expression .= " AND $this->tableAlias.id != {$self_token}";
+          $arguments[$self_token] = $stub->getId();
         }
 
         $this->query->addWhereExpression(0, $expression, $arguments);

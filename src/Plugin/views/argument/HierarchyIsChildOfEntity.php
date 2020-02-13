@@ -25,14 +25,17 @@ class HierarchyIsChildOfEntity extends EntityHierarchyArgumentPluginBase {
       if ($node = $this->getTreeStorage()->getNode($stub)) {
         // Query between a range.
         $filtered = TRUE;
-        $expression = "$this->tableAlias.$this->realField BETWEEN :lower and :upper AND $this->tableAlias.$this->realField <> :lower";
+        $lower_token = ':lower_' . $this->tableAlias;
+        $upper_token = ':upper_' . $this->tableAlias;
+        $expression = "$this->tableAlias.$this->realField BETWEEN {$lower_token} and $upper_token AND $this->tableAlias.$this->realField <> {$lower_token}";
         $arguments = [
-          ':lower' => $node->getLeft(),
-          ':upper' => $node->getRight(),
+          $lower_token => $node->getLeft(),
+          $upper_token => $node->getRight(),
         ];
         if ($depth = $this->options['depth']) {
-          $expression .= " AND $this->tableAlias.depth <= :depth";
-          $arguments[':depth'] = $node->getDepth() + $depth;
+          $depth_token = ':depth_' . $this->tableAlias;
+          $expression .= " AND $this->tableAlias.depth <= {$depth_token}";
+          $arguments[$depth_token] = $node->getDepth() + $depth;
         }
         $this->query->addWhereExpression(0, $expression, $arguments);
       }

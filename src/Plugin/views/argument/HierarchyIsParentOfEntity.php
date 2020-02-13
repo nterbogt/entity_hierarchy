@@ -27,13 +27,15 @@ class HierarchyIsParentOfEntity extends EntityHierarchyArgumentPluginBase {
       if ($node = $this->getTreeStorage()->getNode($stub)) {
         // Child comes between our left and right.
         $filtered = TRUE;
-        $expression = "$this->tableAlias.$this->realField < :child_left AND $this->tableAlias.right_pos > :child_left";
+        $child_left_token = ':child_left_' . $this->tableAlias;
+        $expression = "$this->tableAlias.$this->realField < {$child_left_token} AND $this->tableAlias.right_pos > {$child_left_token}";
         $arguments = [
-          ':child_left' => $node->getLeft(),
+          $child_left_token => $node->getLeft(),
         ];
         if ($depth = $this->options['depth']) {
-          $expression .= " AND $this->tableAlias.depth <= :depth";
-          $arguments[':depth'] = $node->getDepth() - $depth;
+          $depth_token = ':depth_' . $this->tableAlias;
+          $expression .= " AND $this->tableAlias.depth <= {$depth_token}}";
+          $arguments[$depth_token] = $node->getDepth() - $depth;
         }
         $this->query->addWhereExpression(0, $expression, $arguments);
       }
