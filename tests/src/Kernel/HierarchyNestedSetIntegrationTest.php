@@ -95,8 +95,10 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     $child2->delete();
     $children = $this->getChildren($root_node);
     $this->assertCount(2, $children);
-    $load_function = static::ENTITY_TYPE . '_load';
-    $grandchild2 = $load_function($grandchild2->id(), TRUE);
+    $reload = function ($id) {
+      return \Drupal::entityTypeManager()->getStorage(static::ENTITY_TYPE)->loadUnchanged($id);
+    };
+    $grandchild2 = $reload($grandchild2->id());
     $field_name = static::FIELD_NAME;
     $this->assertNotNull($grandchild2);
     $this->assertEquals($this->parent->id(), $grandchild2->{$field_name}->target_id);
@@ -106,11 +108,11 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     // Confirm field values were updated.
     $this->parent->delete();
     // Grandchild2 and child should now be parentless.
-    $grandchild2 = $load_function($grandchild2->id(), TRUE);
+    $grandchild2 = $reload($grandchild2->id());
     $grandchild2_node = $this->treeStorage->getNode($this->nodeFactory->fromEntity($grandchild2));
     $this->assertEquals(0, $grandchild2_node->getDepth());
-    $grandchild2 = $load_function($grandchild2->id(), TRUE);
-    $child = $load_function($grandchild2->id(), TRUE);
+    $grandchild2 = $reload($grandchild2->id());
+    $child = $reload($grandchild2->id());
     // Confirm field values were updated.
     $this->assertEquals(NULL, $grandchild2->{self::FIELD_NAME}->target_id);
     $this->assertEquals(NULL, $child->{self::FIELD_NAME}->target_id);
