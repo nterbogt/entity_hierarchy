@@ -58,38 +58,16 @@ class HierarchyChildrenForm extends ContentEntityForm {
   protected $entityTreeNodeMapper;
 
   /**
-   * Constructs a new HierarchyChildrenForm object.
-   *
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   *   Entity type manager.
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory $nestedSetStorageFactory
-   *   Nested set storage.
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $nodeKeyFactory
-   *   Node key factory.
-   * @param \Drupal\entity_hierarchy\Information\ParentCandidateInterface $parentCandidate
-   *   Parent candidate service.
-   * @param \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface $entityTreeNodeMapper
-   *   Tree node mapper.
-   */
-  public function __construct(EntityManagerInterface $entity_manager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, ParentCandidateInterface $parentCandidate, EntityTreeNodeMapperInterface $entityTreeNodeMapper) {
-    parent::__construct($entity_manager);
-    $this->nestedSetStorageFactory = $nestedSetStorageFactory;
-    $this->nodeKeyFactory = $nodeKeyFactory;
-    $this->parentCandidate = $parentCandidate;
-    $this->entityTreeNodeMapper = $entityTreeNodeMapper;
-  }
-
-  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    return new static(
-      $container->get('entity.manager'),
-      $container->get('entity_hierarchy.nested_set_storage_factory'),
-      $container->get('entity_hierarchy.nested_set_node_factory'),
-      $container->get('entity_hierarchy.information.parent_candidate'),
-      $container->get('entity_hierarchy.entity_tree_node_mapper')
-    );
+    /** @var self $instance */
+    $instance = parent::create($container);
+    $instance->nestedSetStorageFactory = $container->get('entity_hierarchy.nested_set_storage_factory');
+    $instance->nodeKeyFactory = $container->get('entity_hierarchy.nested_set_node_factory');
+    $instance->parentCandidate = $container->get('entity_hierarchy.information.parent_candidate');
+    $instance->entityTreeNodeMapper = $container->get('entity_hierarchy.entity_tree_node_mapper');
+    return $instance;
   }
 
   /**

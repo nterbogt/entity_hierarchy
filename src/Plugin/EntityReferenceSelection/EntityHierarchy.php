@@ -36,53 +36,15 @@ class EntityHierarchy extends DefaultSelection {
   protected $nestedSetStorageFactory;
 
   /**
-   * Constructs a new SelectionBase object.
-   *
-   * @param array $configuration
-   *   A configuration array containing information about the plugin instance.
-   * @param string $plugin_id
-   *   The plugin_id for the plugin instance.
-   * @param mixed $plugin_definition
-   *   The plugin implementation definition.
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   *   The entity manager service.
-   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
-   *   The module handler service.
-   * @param \Drupal\Core\Session\AccountInterface $current_user
-   *   The current user.
-   * @param \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface $entityTreeNodeMapper
-   *   Tree node mapper.
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $keyFactory
-   *   Node key factory.
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory $nestedSetStorageFactory
-   *   Tree node storage factory.
-   */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityManagerInterface $entity_manager, ModuleHandlerInterface $module_handler, AccountInterface $current_user, EntityTreeNodeMapperInterface $entityTreeNodeMapper, NestedSetNodeKeyFactory $keyFactory, NestedSetStorageFactory $nestedSetStorageFactory) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $entity_manager, $module_handler, $current_user);
-
-    $this->entityManager = $entity_manager;
-    $this->moduleHandler = $module_handler;
-    $this->currentUser = $current_user;
-    $this->entityTreeNodeMapper = $entityTreeNodeMapper;
-    $this->keyFactory = $keyFactory;
-    $this->nestedSetStorageFactory = $nestedSetStorageFactory;
-  }
-
-  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static(
-      $configuration,
-      $plugin_id,
-      $plugin_definition,
-      $container->get('entity.manager'),
-      $container->get('module_handler'),
-      $container->get('current_user'),
-      $container->get('entity_hierarchy.entity_tree_node_mapper'),
-      $container->get('entity_hierarchy.nested_set_node_factory'),
-      $container->get('entity_hierarchy.nested_set_storage_factory')
-    );
+    /** @var self $instance */
+    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $instance->entityTreeNodeMapper = $container->get('entity_hierarchy.entity_tree_node_mapper');
+    $instance->keyFactory = $container->get('entity_hierarchy.nested_set_node_factory');
+    $instance->nestedSetStorageFactory = $container->get('entity_hierarchy.nested_set_storage_factory');
+    return $instance;
   }
 
   /**
