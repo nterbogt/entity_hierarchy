@@ -6,9 +6,9 @@
  */
 
 /**
- * Implements hook_menu_links_discovered_alter().
+ * Implements hook_entity_hierarchy_microsite_links_alter().
  */
-function entity_hierarchy_microsite_test_menu_links_discovered_alter(&$links) {
+function entity_hierarchy_microsite_test_entity_hierarchy_microsite_links_alter(&$links) {
   $message = \Drupal::state()->get(__FUNCTION__, 'success');
   \Drupal::state()->set(__FUNCTION__, $message);
 }

@@ -4,6 +4,7 @@ namespace Drupal\entity_hierarchy_microsite;
 
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Menu\Form\MenuLinkDefaultForm;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
 use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
@@ -60,6 +61,13 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
   private $keyFactory;
 
   /**
+   * The module handler.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
+   */
+  protected $moduleHandler;
+
+  /**
    * Constructs a new MicrositeMenuItemDeriver.
    *
    * @param \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory $nestedSetStorageFactory
@@ -74,14 +82,17 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
    *   Type manager.
    * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $keyFactory
    *   Key factory.
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $moduleHandler
+   *   The module handler.
    */
-  public function __construct(NestedSetStorageFactory $nestedSetStorageFactory, EntityTreeNodeMapperInterface $mapper, ParentCandidateInterface $candidate, EntityFieldManagerInterface $entityFieldManager, EntityTypeManagerInterface $entityTypeManager, NestedSetNodeKeyFactory $keyFactory) {
+  public function __construct(NestedSetStorageFactory $nestedSetStorageFactory, EntityTreeNodeMapperInterface $mapper, ParentCandidateInterface $candidate, EntityFieldManagerInterface $entityFieldManager, EntityTypeManagerInterface $entityTypeManager, NestedSetNodeKeyFactory $keyFactory, ModuleHandlerInterface $moduleHandler) {
     $this->nestedSetStorageFactory = $nestedSetStorageFactory;
     $this->mapper = $mapper;
     $this->candidate = $candidate;
     $this->entityFieldManager = $entityFieldManager;
     $this->entityTypeManager = $entityTypeManager;
     $this->keyFactory = $keyFactory;
+    $this->moduleHandler = $moduleHandler;
   }
 
   /**
@@ -187,6 +198,8 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
         }
       }
     }
+
+    $this->moduleHandler->alter('entity_hierarchy_microsite_links', $definitions);
 
     return $definitions;
   }

@@ -8,6 +8,7 @@ services:
       - '@entity_field.manager'
       - '@entity_type.manager'
       - '@entity_hierarchy.nested_set_node_factory'
+      - '@module_handler'
   entity_hierarchy_microsite.microsite_lookup:
     class: Drupal\entity_hierarchy_microsite\ChildOfMicrositeLookup
     arguments:
