@@ -25,6 +25,7 @@ abstract class EntityHierarchyMicrositeKernelTestBase extends EntityHierarchyKer
     'file',
     'image',
     'media',
+    'entity_hierarchy_microsite_test',
   ];
 
   /**

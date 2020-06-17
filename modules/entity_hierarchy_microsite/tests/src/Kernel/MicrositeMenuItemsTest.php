@@ -27,6 +27,8 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
       'logo' => $media,
     ]);
     $microsite->save();
+    // hook_menu_links_discovered_alter() should be fired.
+    $this->assertEquals('success', \Drupal::state()->get('entity_hierarchy_microsite_test_menu_links_discovered_alter', NULL));
     /** @var \Drupal\Core\Menu\MenuLinkTreeInterface $tree */
     $tree = \Drupal::service('menu.link_tree');
     $params = $tree->getCurrentRouteMenuTreeParameters('entity-hierarchy-microsite');

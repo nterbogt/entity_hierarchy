@@ -3,6 +3,7 @@
 namespace Drupal\entity_hierarchy_microsite;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Menu\MenuLinkManagerInterface;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
 use Drupal\entity_hierarchy_microsite\Entity\MicrositeInterface;
@@ -50,6 +51,13 @@ class EntityHooks implements ContainerInjectionInterface {
   protected $menuLinkDiscovery;
 
   /**
+   * The module handler.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
+   */
+  protected $moduleHandler;
+
+  /**
    * Constructs a new EntityHooks.
    *
    * @param \Drupal\Core\Menu\MenuLinkManagerInterface $menuLinkManager
@@ -60,12 +68,15 @@ class EntityHooks implements ContainerInjectionInterface {
    *   Microsite lookup.
    * @param \Drupal\entity_hierarchy_microsite\MicrositeMenuLinkDiscoveryInterface $menuLinkDiscovery
    *   Discovery.
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $moduleHandler
+   *   The module handler.
    */
-  public function __construct(MenuLinkManagerInterface $menuLinkManager, ParentCandidateInterface $parentCandidate, ChildOfMicrositeLookupInterface $childOfMicrositeLookup, MicrositeMenuLinkDiscoveryInterface $menuLinkDiscovery) {
+  public function __construct(MenuLinkManagerInterface $menuLinkManager, ParentCandidateInterface $parentCandidate, ChildOfMicrositeLookupInterface $childOfMicrositeLookup, MicrositeMenuLinkDiscoveryInterface $menuLinkDiscovery, ModuleHandlerInterface $moduleHandler) {
     $this->menuLinkManager = $menuLinkManager;
     $this->parentCandidate = $parentCandidate;
     $this->childOfMicrositeLookup = $childOfMicrositeLookup;
     $this->menuLinkDiscovery = $menuLinkDiscovery;
+    $this->moduleHandler = $moduleHandler;
   }
 
   /**
@@ -76,7 +87,8 @@ class EntityHooks implements ContainerInjectionInterface {
       $container->get('plugin.manager.menu.link'),
       $container->get('entity_hierarchy.information.parent_candidate'),
       $container->get('entity_hierarchy_microsite.microsite_lookup'),
-      $container->get('entity_hierarchy_microsite.menu_link_discovery')
+      $container->get('entity_hierarchy_microsite.menu_link_discovery'),
+      $container->get('module_handler')
     );
   }
 
@@ -182,7 +194,9 @@ class EntityHooks implements ContainerInjectionInterface {
    *   Microsite.
    */
   protected function updateMenuForMicrosite(MicrositeInterface $microsite) {
-    foreach ($this->menuLinkDiscovery->getMenuLinkDefintions($microsite) as $uuid => $definition) {
+    $definitions = $this->menuLinkDiscovery->getMenuLinkDefintions($microsite);
+    $this->moduleHandler->alter('menu_links_discovered', $definitions);
+    foreach ($definitions as $uuid => $definition) {
       $plugin_id = 'entity_hierarchy_microsite:' . $uuid;
       if ($this->menuLinkManager->hasDefinition($plugin_id)) {
         $this->menuLinkManager->updateDefinition($plugin_id, $definition, FALSE);
