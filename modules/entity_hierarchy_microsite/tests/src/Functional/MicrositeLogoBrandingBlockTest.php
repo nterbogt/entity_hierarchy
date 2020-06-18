@@ -53,7 +53,7 @@ class MicrositeLogoBrandingBlockTest extends MicrositeFunctionalTestBase {
     $microsite->save();
     $this->drupalGet($child->toUrl());
     $element = $assert->elementExists('css', 'a[rel=home]');
-    $this->assertContains($child->label(), $element->getAttribute('title'));
+    $this->assertStringContainsString($child->label(), $element->getAttribute('title'));
     $this->drupalGet($root->toUrl());
     $assert->elementNotExists('css', 'a[rel=home]');
   }

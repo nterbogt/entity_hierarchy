@@ -16,6 +16,12 @@ class DeleteParentWarningTest extends BrowserTestBase {
 
   const FIELD_NAME = 'parents';
   const ENTITY_TYPE = 'entity_test';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
   /**
    * {@inheritdoc}
    */

@@ -23,6 +23,11 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
   protected static $modules = [
     'entity_hierarchy',
     'entity_test',

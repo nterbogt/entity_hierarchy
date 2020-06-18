@@ -51,8 +51,8 @@ class MicrositeMenuBlockTest extends MicrositeFunctionalTestBase {
     $microsite->save();
     $this->drupalGet($root->toUrl());
     $assert = $this->assertSession();
-    $menu = $assert->elementExists('css', 'ul.menu');
-    $links = $menu->findAll('css', 'li.menu-item');
+    $menu = $assert->elementExists('css', '#block-microsite-menu ul');
+    $links = $menu->findAll('css', 'li a');
     $this->assertCount(5, $links);
     foreach ($children as $child) {
       $this->assertNotEmpty($menu->find('named', ['link', $child->label()]));

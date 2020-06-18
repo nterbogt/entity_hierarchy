@@ -51,7 +51,7 @@ class MicrositeAdminTest extends MicrositeFunctionalTestBase {
     $assert->pageTextContains(sprintf('Created the %s Microsite', $label));
 
     // Test that admin can edit the microsite.
-    $this->assertContains($listing->toString(), $this->getSession()->getCurrentUrl());
+    $this->assertStringContainsString($listing->toString(), $this->getSession()->getCurrentUrl());
     $this->clickLink('Edit');
     $assert->fieldValueEquals('Name', $label);
     $assert->fieldValueEquals('Home page', sprintf($entity_reference_format, $root->label(), $root->id()));
@@ -61,7 +61,7 @@ class MicrositeAdminTest extends MicrositeFunctionalTestBase {
       'name[0][value]' => $label,
     ], 'Save');
     $assert->pageTextContains(sprintf('Saved the %s Microsite', $label));
-    $this->assertContains($listing->toString(), $this->getSession()->getCurrentUrl());
+    $this->assertStringContainsString($listing->toString(), $this->getSession()->getCurrentUrl());
 
     // Test menu link admin.
     $menuAdmin = Url::fromRoute('entity.menu.edit_form', ['menu' => 'entity-hierarchy-microsite']);
@@ -79,7 +79,7 @@ class MicrositeAdminTest extends MicrositeFunctionalTestBase {
     $edit = $row->find('named', ['link', 'Edit']);
     $edit->click();
     $newOverrideUrl = new Url('entity.eh_microsite_menu_override.add', ['target' => $other_child->uuid()]);
-    $this->assertContains($newOverrideUrl->toString(), $this->getSession()->getCurrentUrl());
+    $this->assertStringContainsString($newOverrideUrl->toString(), $this->getSession()->getCurrentUrl());
     $assert->fieldValueEquals('Parent link', 'entity-hierarchy-microsite:entity_hierarchy_microsite:' . $root->uuid());
     $newTitle = $this->randomMachineName();
     $this->submitForm([
@@ -117,7 +117,7 @@ class MicrositeAdminTest extends MicrositeFunctionalTestBase {
     // Test edit button now goes to edit page and editing is possible.
     $edit = $assert->elementExists('named', ['link', 'Edit'], $row);
     $edit->click();
-    $this->assertContains($override->toUrl('edit-form')->toString(), $this->getSession()->getCurrentUrl());
+    $this->assertStringContainsString($override->toUrl('edit-form')->toString(), $this->getSession()->getCurrentUrl());
     $assert->fieldValueEquals('Parent link', 'entity-hierarchy-microsite:entity_hierarchy_microsite:' . $child->uuid());
     $anotherTitle = $this->randomMachineName();
     $this->submitForm([
@@ -138,7 +138,7 @@ class MicrositeAdminTest extends MicrositeFunctionalTestBase {
     $this->drupalGet($menuAdmin);
     $revert = $assert->elementExists('named', ['link', 'Remove override'], $row);
     $revert->click();
-    $this->assertContains($override->toUrl('delete-form')->toString(), $this->getSession()->getCurrentUrl());
+    $this->assertStringContainsString($override->toUrl('delete-form')->toString(), $this->getSession()->getCurrentUrl());
     $assert->pageTextContains(sprintf('Are you sure you want to delete the microsite menu override %s', $anotherTitle));
     $this->submitForm([], 'Delete');
     $overrides = $overrideStorage->loadByProperties([

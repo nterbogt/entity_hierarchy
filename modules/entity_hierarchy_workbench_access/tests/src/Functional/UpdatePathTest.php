@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\entity_hierarchy_workbench_access\Functional;
 
+use Composer\Semver\Semver;
 use Drupal\FunctionalTests\Update\UpdatePathTestBase;
 
 /**
@@ -24,6 +25,9 @@ class UpdatePathTest extends UpdatePathTestBase {
    * Tests entity_hierarchy_workbench_access_workbench_access_scheme_update_alter.
    */
   public function testUpdatePath() {
+    if (Semver::satisfies(\Drupal::VERSION, '~9')) {
+      $this->markTestSkipped('This test is only for Drupal 8');
+    }
     $expected_fields = \Drupal::config('workbench_access.settings')->get('parents');
     $expected_bundles = array_keys(\Drupal::config('workbench_access.settings')->get('fields')['node']);
     $this->runUpdates();

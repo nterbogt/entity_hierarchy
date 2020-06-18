@@ -21,6 +21,12 @@ class ForwardRevisionNodeValidationTest extends BrowserTestBase {
 
   const FIELD_NAME = 'parents';
   const ENTITY_TYPE = 'node';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
   /**
    * {@inheritdoc}
    */

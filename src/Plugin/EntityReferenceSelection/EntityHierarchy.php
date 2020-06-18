@@ -65,7 +65,7 @@ class EntityHierarchy extends DefaultSelection {
     }
 
     $options = [];
-    $entities = $this->entityManager->getStorage($target_type)->loadMultiple($result);
+    $entities = $this->entityTypeManager->getStorage($target_type)->loadMultiple($result);
 
     // We assume target and definition are one and the same, as there is no
     // point in a hierarchy if you're referencing something else, you can't

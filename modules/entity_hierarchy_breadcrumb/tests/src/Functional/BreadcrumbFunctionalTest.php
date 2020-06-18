@@ -19,6 +19,12 @@ class BreadcrumbFunctionalTest extends BrowserTestBase {
 
   const FIELD_NAME = 'parents';
   const ENTITY_TYPE = 'entity_test';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
   /**
    * {@inheritdoc}
    */
@@ -52,13 +58,13 @@ class BreadcrumbFunctionalTest extends BrowserTestBase {
       'view test entity',
     ]));
     $this->drupalGet($this->parent->toUrl());
-    $this->assertElementsOrder('.breadcrumb li', [
+    $this->assertElementsOrder('nav[aria-labelledby="system-breadcrumb"] li', [
       'Home',
       'Parent',
     ]);
     $first_child = reset($children);
     $this->drupalGet($first_child->toUrl());
-    $this->assertElementsOrder('.breadcrumb li', [
+    $this->assertElementsOrder('nav[aria-labelledby="system-breadcrumb"] li', [
       'Home',
       'Parent',
       'Child 1',

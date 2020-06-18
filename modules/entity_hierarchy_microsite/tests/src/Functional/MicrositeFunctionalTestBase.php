@@ -23,6 +23,11 @@ abstract class MicrositeFunctionalTestBase extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
   protected static $modules = [
     'entity_hierarchy_microsite',
     'block',
