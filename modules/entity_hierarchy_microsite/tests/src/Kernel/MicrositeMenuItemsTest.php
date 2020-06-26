@@ -112,6 +112,7 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
     $child_plugin_id = 'entity_hierarchy_microsite:' . $second->uuid();
     $this->assertCount(1, $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
     $this->assertFalse((bool) $items[$plugin_id]->subtree[$child_plugin_id]->subtree['entity_hierarchy_microsite:' . $lastChildOfSecond->uuid()]->link->isEnabled());
+    $this->assertEquals('some-data', $items[$plugin_id]->subtree[$child_plugin_id]->subtree['entity_hierarchy_microsite:' . $lastChildOfSecond->uuid()]->link->getUrlObject()->getOption('attributes')['data-some-data']);
   }
 
 }

@@ -3,6 +3,7 @@
 namespace Drupal\entity_hierarchy_microsite\Plugin\Menu;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Menu\MenuLinkBase;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Url;
@@ -39,6 +40,13 @@ class MicrositeMenuItem extends MenuLinkBase implements ContainerFactoryPluginIn
   protected $entityTypeManager;
 
   /**
+   * The module handler.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
+   */
+  private $moduleHandler;
+
+  /**
    * Constructs a new MicrositeMenuItem.
    *
    * @param array $configuration
@@ -49,10 +57,13 @@ class MicrositeMenuItem extends MenuLinkBase implements ContainerFactoryPluginIn
    *   The plugin implementation definition.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   Module handler.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, ModuleHandlerInterface $module_handler) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->entityTypeManager = $entity_type_manager;
+    $this->moduleHandler = $module_handler;
   }
 
   /**
@@ -63,7 +74,8 @@ class MicrositeMenuItem extends MenuLinkBase implements ContainerFactoryPluginIn
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('module_handler')
     );
   }
 
@@ -190,6 +202,16 @@ class MicrositeMenuItem extends MenuLinkBase implements ContainerFactoryPluginIn
    */
   public function getDescription() {
     return $this->pluginDefinition['description'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getUrlObject($title_attribute = TRUE) {
+    $url = parent::getUrlObject($title_attribute);
+    $override_entity = $this->getOverrideEntity();
+    $this->moduleHandler->alter('entity_hierarchy_microsite_menu_item_url', $url, $override_entity, $this);
+    return $url;
   }
 
 }
