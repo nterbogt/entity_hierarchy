@@ -8,3 +8,4 @@ dependencies:
   - drupal:node
   - drupal:system
   - drupal:menu_ui
+configure: entity.entity_hierarchy_microsite.collection
