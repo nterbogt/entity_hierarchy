@@ -164,7 +164,12 @@ class HierarchyBasedBreadcrumbBuilder implements BreadcrumbBuilderInterface {
    *   The entity, or null if it's not an entity route.
    */
   protected function getEntityFromRouteMatch(RouteMatchInterface $route_match) {
-    $entity_type_id = $this->getEntityTypeFromRoute($route_match->getRouteObject());
+    $route = $route_match->getRouteObject();
+    if (!$route) {
+      return NULL;
+    }
+
+    $entity_type_id = $this->getEntityTypeFromRoute($route);
     if ($entity_type_id) {
       return $route_match->getParameter($entity_type_id);
     }
