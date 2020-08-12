@@ -23,6 +23,15 @@ class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatt
   /**
    * {@inheritdoc}
    */
+  public static function defaultSettings() {
+    return [
+      'weight_output' => 'attribute',
+    ] + parent::defaultSettings();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function settingsForm(array $form, FormStateInterface $form_state) {
     $elements = parent::settingsForm($form, $form_state);
     $elements['weight_output'] = [
@@ -47,14 +56,14 @@ class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatt
 
     switch ($this->getSetting('weight_output')) {
       case 'attribute':
-        $action = t('custom data-* attribute');
+        $position = $this->t('custom data-* attribute');
         break;
 
       case 'suffix':
-        $action = t('suffix after title');
+        $position = $this->t('suffix after title');
         break;
     }
-    $summary[] = t('Show weight as @action', ['@action' => $action]);
+    $summary[] = $this->t('Show weight as @position', ['@position' => $position]);
 
     return $summary;
   }
