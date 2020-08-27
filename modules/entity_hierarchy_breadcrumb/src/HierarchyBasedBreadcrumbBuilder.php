@@ -9,6 +9,7 @@ use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Routing\AdminContext;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
 use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
@@ -128,7 +129,7 @@ class HierarchyBasedBreadcrumbBuilder implements BreadcrumbBuilderInterface {
       }
     }
 
-    array_unshift($links, Link::createFromRoute('Home', '<front>'));
+    array_unshift($links, Link::createFromRoute(new TranslatableMarkup('Home'), '<front>'));
     $breadcrumb->setLinks($links);
     return $breadcrumb;
   }
