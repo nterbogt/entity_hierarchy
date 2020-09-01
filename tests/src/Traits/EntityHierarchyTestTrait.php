@@ -96,14 +96,16 @@ trait EntityHierarchyTestTrait {
    *   Parent ID.
    * @param int $count
    *   (optional) Number to create. Defaults to 5.
+   * @param string $prefix
+   *   (Optional) Title prefix.
    *
    * @return \Drupal\Core\Entity\EntityInterface[]
    *   Child entities
    */
-  protected function createChildEntities($parentId, $count = 5) {
+  protected function createChildEntities($parentId, $count = 5, string $prefix = '') {
     $entities = [];
     foreach (range(1, $count) as $i) {
-      $label = sprintf('Child %d', $i);
+      $label = sprintf('Child %s%d', $prefix, $i);
       $entities[$label] = $this->doCreateChildTestEntity($parentId, $label, -1 * $i);
     }
     return $entities;

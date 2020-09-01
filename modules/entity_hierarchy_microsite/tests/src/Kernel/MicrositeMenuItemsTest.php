@@ -19,8 +19,8 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
     $media = $this->createImageMedia();
     $children = $this->createChildEntities($this->parent->id(), 5);
     list ($first, $second) = array_values($children);
-    $first_children = $this->createChildEntities($first->id(), 5);
-    $second_children = $this->createChildEntities($second->id(), 4);
+    $first_children = $this->createChildEntities($first->id(), 5, '1.');
+    $second_children = $this->createChildEntities($second->id(), 4, '2.');
     $microsite = Microsite::create([
       'name' => 'Subsite',
       'home' => $this->parent,
@@ -82,6 +82,14 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
     foreach ($second_children as $child_entity) {
       $this->assertArrayHasKey('entity_hierarchy_microsite:' . $child_entity->uuid(), $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
     }
+
+    // Update child and make sure no items have been re-parented.
+    $items = $tree->load('entity-hierarchy-microsite', $params);
+    $this->assertCount(5, $items[$plugin_id]->subtree);
+    $first->set('title', 'Updated first title')->setNewRevision();
+    $first->save();
+    $items = $tree->load('entity-hierarchy-microsite', $params);
+    $this->assertCount(5, $items[$plugin_id]->subtree);
 
     $lastChildOfSecond = end($second_children);
     $override1 = MicrositeMenuItemOverride::create([
