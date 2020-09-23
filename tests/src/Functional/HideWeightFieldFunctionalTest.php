@@ -77,4 +77,35 @@ class HideWeightFieldFunctionalTest extends BrowserTestBase {
     $this->assertCount(1, $saved);
   }
 
+  /**
+   * Tests weight element can be hidden on Select widget.
+   */
+  public function testHideWeightSelectWidget() {
+    $this->drupalLogin($this->drupalCreateUser([], NULL, TRUE));
+    $this->drupalGet('/entity_test/add');
+    $assert = $this->assertSession();
+    $assert->fieldExists('parents[0][weight]');
+    // Change the field to hide the weight field.
+    $field = FieldConfig::load("entity_test.entity_test.parents");
+    $this->getEntityFormDisplay(self::ENTITY_TYPE, self::ENTITY_TYPE, 'default')
+      ->setComponent(self::FIELD_NAME, [
+        'type' => 'entity_reference_hierarchy_select',
+        'weight' => 20,
+        'settings' => ['hide_weight' => TRUE] + EntityReferenceHierarchyAutocomplete::defaultSettings(),
+      ])
+      ->save();
+    $field->setSetting('hide_weight', TRUE);
+    $field->save();
+    $this->drupalGet('/entity_test/add');
+    $assert->fieldNotExists('parents[0][weight]');
+    // Submit the form.
+    $name = $this->randomMachineName();
+    $this->submitForm([
+      'parents[0][target_id]' => $this->parent->id(),
+      'name[0][value]' => $name,
+    ], 'Save');
+    $saved = $this->container->get('entity_type.manager')->getStorage('entity_test')->loadByProperties(['name' => $name]);
+    $this->assertCount(1, $saved);
+  }
+
 }

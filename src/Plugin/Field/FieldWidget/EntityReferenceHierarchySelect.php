@@ -20,6 +20,39 @@ use Drupal\Core\Field\Plugin\Field\FieldWidget\OptionsWidgetBase;
  * )
  */
 class EntityReferenceHierarchySelect extends OptionsWidgetBase {
+  const HIDE_WEIGHT = 'hide_weight';
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function defaultSettings() {
+    return parent::defaultSettings() + [self::HIDE_WEIGHT => FALSE];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function settingsForm(array $form, FormStateInterface $form_state) {
+    return parent::settingsForm($form, $form_state) + [
+        'hide_weight' => [
+          '#type' => 'checkbox',
+          '#title' => $this->t('Hide weight field'),
+          '#description' => $this->t('Hide the weight field and use the default value instead'),
+          '#default_value' => $this->getSetting(self::HIDE_WEIGHT),
+        ],
+      ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function settingsSummary() {
+    $summary = parent::settingsSummary();
+    if ($this->getSetting(self::HIDE_WEIGHT)) {
+      $summary[] = $this->t('Weight field is hidden');
+    }
+    return $summary;
+  }
 
   /**
    * {@inheritdoc}
@@ -38,18 +71,26 @@ class EntityReferenceHierarchySelect extends OptionsWidgetBase {
     ];
 
     $widget['target_id'] = $element;
-    $widget['weight'] = [
-      '#type' => 'number',
-      '#size' => '4',
-      '#default_value' => isset($items[$delta]) ? $items[$delta]->weight : 1,
-      '#weight' => 10,
-    ];
-
-    if ($this->fieldDefinition->getFieldStorageDefinition()->isMultiple()) {
-      $widget['weight']['#placeholder'] = $this->fieldDefinition->getSetting('weight_label');
+    if ($this->getSetting(self::HIDE_WEIGHT)) {
+      $widget['weight'] = [
+        '#type' => 'value',
+        '#value' => isset($items[$delta]->weight) ? $items[$delta]->weight : 0,
+      ];
     }
     else {
-      $widget['weight']['#title'] = $this->fieldDefinition->getSetting('weight_label');
+      $widget['weight'] = [
+        '#type' => 'number',
+        '#size' => '4',
+        '#default_value' => isset($items[$delta]) ? $items[$delta]->weight : 1,
+        '#weight' => 10,
+      ];
+
+      if ($this->fieldDefinition->getFieldStorageDefinition()->isMultiple()) {
+        $widget['weight']['#placeholder'] = $this->fieldDefinition->getSetting('weight_label');
+      }
+      else {
+        $widget['weight']['#title'] = $this->fieldDefinition->getSetting('weight_label');
+      }
     }
 
     return $widget;

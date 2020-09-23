@@ -24,6 +24,14 @@ field.widget.settings.entity_reference_hierarchy_autocomplete:
       type: boolean
       label: 'Hide weight field'
 
+field.widget.settings.entity_reference_hierarchy_select:
+  type: field.widget.settings.options_select
+  label: 'Entity reference hierarchy select widget settings'
+  mapping:
+    hide_weight:
+      type: boolean
+      label: 'Hide weight field'
+
 field.formatter.settings.entity_reference_hierarchy_label:
   type: field.formatter.settings.entity_reference_label
   label: 'Entity reference hierarchy field formatter settings'
