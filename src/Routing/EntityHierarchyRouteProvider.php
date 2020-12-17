@@ -82,7 +82,10 @@ class EntityHierarchyRouteProvider implements EntityRouteProviderInterface, Enti
         ->setOption(self::ENTITY_HIERARCHY_ENTITY_TYPE, $entity_type_id)
         ->setOption('_admin_route', TRUE)
         ->setOption('parameters', [
-          $entity_type_id => ['type' => 'entity:' . $entity_type_id],
+          $entity_type_id => [
+            'type' => 'entity:' . $entity_type_id,
+            'load_latest_revision' => FALSE,
+          ],
         ]);
       $collection->add("entity.$entity_type_id.entity_hierarchy_reorder", $route);
     }
