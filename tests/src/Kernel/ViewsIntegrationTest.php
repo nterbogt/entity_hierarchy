@@ -234,4 +234,23 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
     $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
   }
 
+  /**
+   * Tests the depth field.
+   */
+  public function testDepthField() {
+    $children = $this->createChildEntities($this->parent->id(), 1);
+    $child = reset($children);
+    $this->createChildEntities($child->id(), 1);
+    // Tree is as follows
+    // 1     : Parent
+    // - 2   : Child 1
+    // - - 3 : Child 1.
+    $executable = Views::getView('entity_hierarchy_test_fields_view');
+    $output = $executable->preview('field_depth');
+    $output = \Drupal::service('renderer')->renderRoot($output);
+
+    $this->assertStringContainsString('Parent at depth 0', $output);
+    $this->assertStringContainsString('Child 1 at depth 2', $output);
+  }
+
 }

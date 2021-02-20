@@ -99,6 +99,9 @@ function entity_hierarchy_views_data() {
         'argument' => [
           'id' => 'standard',
         ],
+        'field' => [
+          'id' => 'numeric',
+        ],
       ];
       // Additional relationship from base table to field.
       $data[$base_table]['tree'] = [
