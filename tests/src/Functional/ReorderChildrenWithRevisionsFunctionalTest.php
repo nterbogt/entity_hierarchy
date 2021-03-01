@@ -120,6 +120,7 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
     $this->drupalLogin($this->drupalCreateUser([
       'reorder entity_hierarchy children',
       'view test entity',
+      'administer entity_test content',
     ]));
     $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
     $assert = $this->assertSession();
