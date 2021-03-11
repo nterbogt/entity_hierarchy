@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\entity_hierarchy\Kernel;
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\views\Tests\ViewResultAssertionTrait;
 use Drupal\views\Views;
 
@@ -13,6 +14,13 @@ use Drupal\views\Views;
 class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
 
   use ViewResultAssertionTrait;
+
+  /**
+   * Module containing the test views.
+   *
+   * @var string
+   */
+  protected $testViewModule = 'entity_hierarchy_test_views';
 
   /**
    * {@inheritdoc}
@@ -33,9 +41,22 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
    */
   protected function additionalSetup() {
     parent::additionalSetup();
-    $this->installConfig('entity_hierarchy_test_views');
+    $this->installConfig($this->testViewModule);
     $this->installConfig('system');
     $this->installSchema('system', ['key_value_expire']);
+  }
+
+  /**
+   * Gets the views argument from a given entity.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The entity.
+   *
+   * @return int
+   *   The views argument/contextual filter value.
+   */
+  protected function getArgumentFromEntity(ContentEntityInterface $entity) : int {
+    return $entity->id();
   }
 
   /**
@@ -71,7 +92,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
       ],
     ];
     $executable = Views::getView('entity_hierarchy_test_children_view');
-    $executable->preview('block_1', [$this->parent->id()]);
+    $executable->preview('block_1', [$this->getArgumentFromEntity($this->parent)]);
     $this->assertCount(3, $executable->result);
     $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
   }
@@ -129,7 +150,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
       ],
     ];
     $executable = Views::getView('entity_hierarchy_test_children_view');
-    $executable->preview('block_2', [$this->parent->id()]);
+    $executable->preview('block_2', [$this->getArgumentFromEntity($this->parent)]);
     $this->assertCount(8, $executable->result);
     $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
   }
@@ -157,7 +178,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
       ],
     ];
     $executable = Views::getView('entity_hierarchy_test_children_view');
-    $executable->preview('block_3', [reset($grandchildren)->id()]);
+    $executable->preview('block_3', [$this->getArgumentFromEntity(reset($grandchildren))]);
     $this->assertCount(2, $executable->result);
     $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
   }
@@ -191,7 +212,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
       ],
     ];
     $executable = Views::getView('entity_hierarchy_test_children_view');
-    $executable->preview('block_4', [$child->id()]);
+    $executable->preview('block_4', [$this->getArgumentFromEntity($child)]);
     $this->assertCount(2, $executable->result);
     $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
   }
@@ -229,7 +250,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
       ],
     ];
     $executable = Views::getView('entity_hierarchy_test_children_view');
-    $executable->preview('block_5', [$child->id()]);
+    $executable->preview('block_5', [$this->getArgumentFromEntity($child)]);
     $this->assertCount(3, $executable->result);
     $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
   }
@@ -251,6 +272,115 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
 
     $this->assertStringContainsString('Parent at depth 0', $output);
     $this->assertStringContainsString('Child 1 at depth 2', $output);
+  }
+
+  /**
+   * Tests the child summary field.
+   */
+  public function testChildrenSummaryField() {
+    $children = $this->createChildEntities($this->parent->id(), 1, 'First');
+    $child = reset($children);
+    $children = $this->createChildEntities($child->id(), 2, 'Second');
+    foreach ($children as $key => $child) {
+      $children = $this->createChildEntities($child->id(), 3, "Third-{$key}");
+    }
+    $child = reset($children);
+    $this->createChildEntities($child->id(), 1, 'Fourth');
+    $this->createChildEntities($this->parent->id(), 1, 'Other');
+
+    $executable = Views::getView('entity_hierarchy_test_fields_view');
+    $output = $executable->preview('summary_child_counts');
+    $output = \Drupal::service('renderer')->renderRoot($output);
+
+    $this->assertStringContainsString('Parent child counts are 2 / 2 / 6 / 1', $output);
+    $this->assertStringContainsString('Child First1 child counts are 2 / 6 / 1', $output);
+    $this->assertStringContainsString('Child Second2 child counts are 3 / 1', $output);
+    $this->assertStringContainsString('Child Third-Child Second21 child counts are 1', $output);
+    $this->assertStringContainsString('Child Second1 child counts are 3', $output);
+  }
+
+  /**
+   * Tests the relationship to the root node..
+   */
+  public function testRelationshipRoot() {
+    $children = $this->createChildEntities($this->parent->id(), 1, 'First');
+    $child = reset($children);
+    $children = $this->createChildEntities($child->id(), 2, 'Second');
+    $child = reset($children);
+    $children = $this->createChildEntities($child->id(), 1, 'Third');
+    $child = reset($children);
+    $children = $this->createChildEntities($child->id(), 1, 'Fourth');
+    // Tree is as follows.
+    // 1     : First 1
+    // - 2   : Second 1
+    // - 3   : Second 2
+    // -- 4  : Third 1
+    // --- 5 : Fourth 1.
+    $executable = Views::getView('entity_hierarchy_test_relationships_view');
+    $output = $executable->preview('root');
+    $output = trim(\Drupal::service('renderer')->renderRoot($output));
+
+    $this->assertStringContainsString('Parent is root of Child First1', $output);
+    $this->assertStringContainsString('Parent is root of Child Third1', $output);
+    $this->assertStringContainsString('Parent is root of Child Fourth1', $output);
+    $this->assertStringNotContainsString('1 is root', $output);
+    $this->assertEquals(6, substr_count($output, ' is root of'));
+  }
+
+  /**
+   * Tests the relationship to the parent node.
+   */
+  public function testRelationshipParent() {
+    $children = $this->createChildEntities($this->parent->id(), 1, 'First');
+    $child = reset($children);
+    $children = $this->createChildEntities($child->id(), 2, 'Second');
+    $child = reset($children);
+    $children = $this->createChildEntities($child->id(), 1, 'Third');
+    $child = reset($children);
+    $children = $this->createChildEntities($child->id(), 1, 'Fourth');
+    // Tree is as follows.
+    // 1     : First 1
+    // - 2   : Second 1
+    // - 3   : Second 2
+    // -- 4  : Third 1
+    // --- 5 : Fourth 1.
+    $executable = Views::getView('entity_hierarchy_test_relationships_view');
+    $output = $executable->preview('parent');
+    $output = \Drupal::service('renderer')->renderRoot($output);
+
+    $this->assertStringContainsString('Child First1 is parent of Child Second2', $output);
+    $this->assertStringContainsString('Child Second1 is parent of Child Third1', $output);
+    $this->assertStringContainsString('Child Third1 is parent of Child Fourth1', $output);
+    $this->assertStringNotContainsString('Child Fourth1 is parent of', $output);
+    $this->assertEquals(5, substr_count($output, ' is parent of Child'));
+  }
+
+  /**
+   * Tests the relationship to the children nodes.
+   */
+  public function testRelationshipChildren() {
+    $children = $this->createChildEntities($this->parent->id(), 1, 'First');
+    $child = reset($children);
+    $children = $this->createChildEntities($child->id(), 2, 'Second');
+    $child = reset($children);
+    $children = $this->createChildEntities($child->id(), 1, 'Third');
+    $child = reset($children);
+    $children = $this->createChildEntities($child->id(), 1, 'Fourth');
+    // Tree is as follows.
+    // 1     : First 1
+    // - 2   : Second 1
+    // - 3   : Second 2
+    // -- 4  : Third 1
+    // --- 5 : Fourth 1.
+    $executable = Views::getView('entity_hierarchy_test_relationships_view');
+    $output = $executable->preview('children');
+    $output = trim(\Drupal::service('renderer')->renderRoot($output));
+
+    $this->assertStringContainsString('Child Second1 is child of Child First1', $output);
+    $this->assertStringContainsString('Child Third1 is child of Child Second1', $output);
+    $this->assertStringContainsString('Child Fourth1 is child of Child Third1', $output);
+    $this->assertStringNotContainsString('child of Child Fourth1', $output);
+    $this->assertEquals(5, substr_count($output, ' is child of'));
   }
 
 }

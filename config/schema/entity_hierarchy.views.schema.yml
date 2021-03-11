@@ -31,3 +31,11 @@ views.argument.entity_hierarchy_argument_is_child_of_entity_revision:
 
 views.argument.entity_hierarchy_argument_is_sibling_of_entity_revision:
   type: views.argument.entity_hierarchy_argument_is_sibling_of_entity
+
+views.field.entity_hierarchy_tree_summary:
+  type: views_field
+  label: 'Children summary type'
+  mapping:
+    summary_type:
+      type: string
+      label: 'How to display the summary'

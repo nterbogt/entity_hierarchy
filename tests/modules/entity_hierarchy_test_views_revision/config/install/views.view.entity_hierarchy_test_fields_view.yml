@@ -4,12 +4,14 @@ dependencies:
   module:
     - entity_hierarchy
     - entity_test
+_core:
+  default_config_hash: FIddHYhw6_PutfiM_mdxznGPsDR2YEeHKkcZKEqXiUQ
 id: entity_hierarchy_test_fields_view
 label: 'Entity Hierarchy Test Fields View'
 module: views
 description: ''
 tag: ''
-base_table: entity_test
+base_table: entity_test_rev
 base_field: id
 display:
   default:
@@ -62,7 +64,7 @@ display:
           default_field_elements: true
       fields:
         name:
-          table: entity_test
+          table: entity_test_rev
           field: name
           id: name
           entity_type: null
@@ -129,7 +131,7 @@ display:
       sorts:
         left_pos:
           id: left_pos
-          table: nested_set_parents_entity_test
+          table: nested_set_parents_entity_test_rev
           field: left_pos
           relationship: none
           group_type: group
@@ -146,7 +148,7 @@ display:
       arguments:
         is_child:
           id: is_child
-          table: nested_set_parents_entity_test
+          table: nested_set_parents_entity_test_rev
           field: is_child
           relationship: none
           group_type: group
@@ -183,7 +185,6 @@ display:
     cache_metadata:
       max-age: -1
       contexts:
-        - entity_test_view_grants
         - 'languages:language_content'
         - 'languages:language_interface'
         - url
@@ -198,7 +199,7 @@ display:
       display_description: 'Used to test the depth field is output correctly.'
       fields:
         name:
-          table: entity_test
+          table: entity_test_rev
           field: name
           id: name
           entity_type: null
@@ -263,7 +264,7 @@ display:
           field_api_classes: false
         depth:
           id: depth
-          table: nested_set_parents_entity_test
+          table: nested_set_parents_entity_test_rev
           field: depth
           relationship: none
           group_type: group
@@ -330,7 +331,6 @@ display:
     cache_metadata:
       max-age: -1
       contexts:
-        - entity_test_view_grants
         - 'languages:language_content'
         - 'languages:language_interface'
         - url
@@ -346,7 +346,7 @@ display:
       fields:
         name:
           id: name
-          table: entity_test
+          table: entity_test_rev
           field: name
           relationship: none
           group_type: group
@@ -411,7 +411,7 @@ display:
           plugin_id: field
         tree_summary:
           id: tree_summary
-          table: nested_set_parents_entity_test
+          table: nested_set_parents_entity_test_rev
           field: tree_summary
           relationship: none
           group_type: group
@@ -471,7 +471,6 @@ display:
     cache_metadata:
       max-age: -1
       contexts:
-        - entity_test_view_grants
         - 'languages:language_content'
         - 'languages:language_interface'
         - url

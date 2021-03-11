@@ -1,0 +1,7 @@
+name: Entity Hierarchy Test Views (Revisions)
+hidden: true
+type: module
+core_version_requirement: ^8.8 || ^9.0
+dependencies:
+  - drupal:views
+  - entity_hierarchy:entity_hierarchy
