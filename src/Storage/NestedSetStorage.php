@@ -9,6 +9,26 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Wraps the library nested set implementation with JIT table creation.
+ *
+ * @method \PNX\NestedSet\Node addRootNode(\PNX\NestedSet\NodeKey $nodeKey)
+ * @method \PNX\NestedSet\Node addNodeBelow(\PNX\NestedSet\Node $target, \PNX\NestedSet\NodeKey $nodeKey)
+ * @method \PNX\NestedSet\Node addNodeBefore(\PNX\NestedSet\Node $target, \PNX\NestedSet\NodeKey $nodeKey)
+ * @method \PNX\NestedSet\Node addNodeAfter(\PNX\NestedSet\Node $target, \PNX\NestedSet\NodeKey $nodeKey)
+ * @method \PNX\NestedSet\Node[] findDescendants(\PNX\NestedSet\NodeKey $nodeKey, int $depth = 0, int $start = 1)
+ * @method \PNX\NestedSet\Node[] findChildren(\PNX\NestedSet\NodeKey $nodeKey)
+ * @method \PNX\NestedSet\Node getNode(\PNX\NestedSet\NodeKey $nodeKey)
+ * @method \PNX\NestedSet\Node[] findAncestors(\PNX\NestedSet\NodeKey $nodeKey)
+ * @method \PNX\NestedSet\Node findRoot(\PNX\NestedSet\NodeKey $nodeKey)
+ * @method \PNX\NestedSet\Node findParent(\PNX\NestedSet\NodeKey $nodeKey)
+ * @method \PNX\NestedSet\Node[] getTree()
+ * @method void deleteNode(\PNX\NestedSet\Node $node)
+ * @method void deleteSubTree(\PNX\NestedSet\Node $node)
+ * @method void moveSubTreeToRoot(\PNX\NestedSet\Node $node)
+ * @method void moveSubTreeBelow(\PNX\NestedSet\Node $target, \PNX\NestedSet\Node $node)
+ * @method void moveSubTreeBefore(\PNX\NestedSet\Node $target, \PNX\NestedSet\Node $node)
+ * @method void moveSubTreeAfter(\PNX\NestedSet\Node $target, \PNX\NestedSet\Node $node)
+ * @method void adoptChildren(\PNX\NestedSet\Node $oldParent, \PNX\NestedSet\Node $newParent)
+ * @method \PNX\NestedSet\Node getNodeAtPosition(int $left)
  */
 class NestedSetStorage {
 
