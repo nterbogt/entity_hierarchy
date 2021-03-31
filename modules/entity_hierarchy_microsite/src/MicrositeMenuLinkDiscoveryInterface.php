@@ -18,6 +18,6 @@ interface MicrositeMenuLinkDiscoveryInterface {
    * @return array
    *   Menu link plugin definitions.
    */
-  public function getMenuLinkDefintions(MicrositeInterface $microsite = NULL);
+  public function getMenuLinkDefinitions(MicrositeInterface $microsite = NULL);
 
 }

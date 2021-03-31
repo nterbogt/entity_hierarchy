@@ -98,7 +98,7 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
   /**
    * {@inheritdoc}
    */
-  public function getMenuLinkDefintions(MicrositeInterface $microsite = NULL) {
+  public function getMenuLinkDefinitions(MicrositeInterface $microsite = NULL) {
     $definitions = [];
     $microsites = $microsite ? [$microsite] : $this->entityTypeManager->getStorage('entity_hierarchy_microsite')->loadMultiple();
     /** @var \Drupal\entity_hierarchy_microsite\Entity\MicrositeInterface $microsite */

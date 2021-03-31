@@ -182,7 +182,7 @@ class EntityHooks implements ContainerInjectionInterface {
    *   Microsite.
    */
   protected function updateMenuForMicrosite(MicrositeInterface $microsite) {
-    foreach ($this->menuLinkDiscovery->getMenuLinkDefintions($microsite) as $uuid => $definition) {
+    foreach ($this->menuLinkDiscovery->getMenuLinkDefinitions($microsite) as $uuid => $definition) {
       $plugin_id = 'entity_hierarchy_microsite:' . $uuid;
       if ($this->menuLinkManager->hasDefinition($plugin_id)) {
         $this->menuLinkManager->updateDefinition($plugin_id, $definition, FALSE);

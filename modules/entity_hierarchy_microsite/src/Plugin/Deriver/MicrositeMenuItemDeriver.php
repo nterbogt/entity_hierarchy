@@ -42,7 +42,7 @@ class MicrositeMenuItemDeriver extends DeriverBase implements ContainerDeriverIn
    * {@inheritdoc}
    */
   public function getDerivativeDefinitions($base_plugin_definition) {
-    $this->derivatives = $this->micrositeMenuLinkDiscovery->getMenuLinkDefintions();
+    $this->derivatives = $this->micrositeMenuLinkDiscovery->getMenuLinkDefinitions();
     return parent::getDerivativeDefinitions($base_plugin_definition);
   }
 
