@@ -2,6 +2,7 @@
 
 namespace Drupal\entity_hierarchy\Plugin\Field\FieldType;
 
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
@@ -247,7 +248,8 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
       ->groupBy($parentField . '.weight')
       ->condition($key, $ids, 'IN')
       ->execute();
-    $entities = array_combine(array_column($entities, $key), array_column($entities, $parentField . '_weight'));
+    $weightSeparator = $fieldDefinition instanceof BaseFieldDefinition ? '__' : '_';
+    $entities = array_combine(array_column($entities, $key), array_column($entities, $parentField . $weightSeparator. 'weight'));
     foreach ($siblings as $node) {
       if (!isset($entities[$node->getRevisionId()])) {
         continue;
