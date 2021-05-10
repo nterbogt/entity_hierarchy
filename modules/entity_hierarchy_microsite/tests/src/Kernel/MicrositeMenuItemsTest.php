@@ -123,4 +123,35 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
     $this->assertEquals('some-data', $items[$plugin_id]->subtree[$child_plugin_id]->subtree['entity_hierarchy_microsite:' . $lastChildOfSecond->uuid()]->link->getUrlObject()->getOption('attributes')['data-some-data']);
   }
 
+  /**
+   * Tests microsite menus do not exceed the maximum depth.
+   */
+  public function testMicrositeMenuLinkMaxDepth() {
+    /** @var \Drupal\Core\Menu\MenuLinkTreeInterface $menu_link_tree */
+    $menu_link_tree = \Drupal::service('menu.link_tree');
+    $menu_max_depth = $menu_link_tree->maxDepth();
+    $entity_max_depth = $menu_max_depth + 1;
+
+    $media = $this->createImageMedia();
+    $parent_id = $this->parent->id();
+    for ($i=1; $i<=$entity_max_depth; $i++) {
+      $child = $this->createTestEntity($parent_id, 1, "{$i}.");
+      $parent_id = $child->id();
+    }
+    $microsite = Microsite::create([
+      'name' => 'Subsite',
+      'home' => $this->parent,
+      'logo' => $media,
+    ]);
+    $microsite->save();
+
+    // menu depth should not exceed the maximum supported depth
+    $plugin_id = 'entity_hierarchy_microsite:' . $this->parent->uuid();
+    $this->assertEquals($menu_max_depth, $menu_link_tree->getSubtreeHeight($plugin_id));
+
+    // microsite should still have descendants beyond the maximum supported depth
+    $descendants = $this->treeStorage->findDescendants($this->parentStub);
+    $this->assertEquals($entity_max_depth, end($descendants)->getDepth());
+  }
+
 }

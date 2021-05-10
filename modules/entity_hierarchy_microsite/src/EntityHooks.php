@@ -3,6 +3,7 @@
 namespace Drupal\entity_hierarchy_microsite;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Drupal\Core\Menu\MenuLinkTreeInterface;
 use Drupal\Core\Menu\MenuLinkManagerInterface;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
 use Drupal\entity_hierarchy_microsite\Entity\MicrositeInterface;
@@ -18,8 +19,17 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   https://www.drupal.org/project/drupal/issues/3001284 is in as that would
  *   allow us to specify cache tags which would trigger refreshing the
  *   derivatives automatically.
+ *
+ * @internal
  */
 class EntityHooks implements ContainerInjectionInterface {
+
+  /**
+   * Menu link tree.
+   *
+   * @var \Drupal\Core\Menu\MenuLinkTreeInterface
+   */
+  protected $menuLinkTree;
 
   /**
    * Menu link manager.
@@ -60,8 +70,11 @@ class EntityHooks implements ContainerInjectionInterface {
    *   Microsite lookup.
    * @param \Drupal\entity_hierarchy_microsite\MicrositeMenuLinkDiscoveryInterface $menuLinkDiscovery
    *   Discovery.
+   * @param \Drupal\Core\Menu\MenuLinkTreeInterface $menuLinkTree
+   *   Menu link tree.
    */
-  public function __construct(MenuLinkManagerInterface $menuLinkManager, ParentCandidateInterface $parentCandidate, ChildOfMicrositeLookupInterface $childOfMicrositeLookup, MicrositeMenuLinkDiscoveryInterface $menuLinkDiscovery) {
+  public function __construct(MenuLinkManagerInterface $menuLinkManager, ParentCandidateInterface $parentCandidate, ChildOfMicrositeLookupInterface $childOfMicrositeLookup, MicrositeMenuLinkDiscoveryInterface $menuLinkDiscovery, MenuLinkTreeInterface $menuLinkTree) {
+    $this->menuLinkTree = $menuLinkTree;
     $this->menuLinkManager = $menuLinkManager;
     $this->parentCandidate = $parentCandidate;
     $this->childOfMicrositeLookup = $childOfMicrositeLookup;
@@ -76,7 +89,8 @@ class EntityHooks implements ContainerInjectionInterface {
       $container->get('plugin.manager.menu.link'),
       $container->get('entity_hierarchy.information.parent_candidate'),
       $container->get('entity_hierarchy_microsite.microsite_lookup'),
-      $container->get('entity_hierarchy_microsite.menu_link_discovery')
+      $container->get('entity_hierarchy_microsite.menu_link_discovery'),
+      $container->get('menu.link_tree')
     );
   }
 
@@ -182,13 +196,20 @@ class EntityHooks implements ContainerInjectionInterface {
    *   Microsite.
    */
   protected function updateMenuForMicrosite(MicrositeInterface $microsite) {
+    $menu_max_depth = $this->menuLinkTree->maxDepth();
     foreach ($this->menuLinkDiscovery->getMenuLinkDefinitions($microsite) as $uuid => $definition) {
       $plugin_id = 'entity_hierarchy_microsite:' . $uuid;
       if ($this->menuLinkManager->hasDefinition($plugin_id)) {
-        $this->menuLinkManager->updateDefinition($plugin_id, $definition, FALSE);
+        if ($definition['metadata']['entity_hierarchy_depth'] < $menu_max_depth) {
+          $this->menuLinkManager->updateDefinition($plugin_id, $definition, FALSE);
+          continue;
+        }
+        $this->menuLinkManager->removeDefinition($plugin_id);
         continue;
       }
-      $this->menuLinkManager->addDefinition($plugin_id, $definition);
+      if ($definition['metadata']['entity_hierarchy_depth'] < $menu_max_depth) {
+        $this->menuLinkManager->addDefinition($plugin_id, $definition);
+      }
     }
   }
 
