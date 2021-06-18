@@ -25,7 +25,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'entity_hierarchy',
     'entity_test',
     'system',

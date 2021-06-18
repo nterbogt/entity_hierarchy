@@ -19,7 +19,7 @@ abstract class EntityHierarchyMicrositeKernelTestBase extends EntityHierarchyKer
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'entity_hierarchy_microsite',
     'node',
     'file',

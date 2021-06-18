@@ -16,7 +16,7 @@ class BreadcrumbTest extends EntityHierarchyKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'entity_hierarchy_breadcrumb',
     'entity_hierarchy',
     'entity_test',

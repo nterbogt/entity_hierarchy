@@ -12,7 +12,7 @@ class BaseFieldTest extends HierarchyNestedSetIntegrationTest {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'entity_hierarchy_test_base_field',
   ];
 

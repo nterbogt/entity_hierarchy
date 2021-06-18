@@ -49,7 +49,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'entity_hierarchy',
     'system',
     'user',

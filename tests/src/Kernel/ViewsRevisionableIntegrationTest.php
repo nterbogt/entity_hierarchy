@@ -27,7 +27,7 @@ class ViewsRevisionableIntegrationTest extends ViewsIntegrationTest {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'entity_hierarchy_test_views_revision',
   ];
 

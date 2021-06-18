@@ -18,7 +18,7 @@ abstract class EntityHierarchyKernelTestBase extends EntityKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'entity_hierarchy',
     'entity_test',
     'system',
