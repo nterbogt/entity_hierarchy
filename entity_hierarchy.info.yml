@@ -8,4 +8,3 @@ dependencies:
   - dbal:dbal
 test_dependencies:
   - workbench_access:workbench_access
-  - workbench_moderation:workbench_moderation

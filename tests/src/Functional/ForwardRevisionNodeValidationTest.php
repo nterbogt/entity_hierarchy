@@ -4,20 +4,19 @@ namespace Drupal\Tests\entity_hierarchy\Functional;
 
 use Drupal\entity_hierarchy\Plugin\Field\FieldWidget\EntityReferenceHierarchyAutocomplete;
 use Drupal\node\Entity\Node;
-use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
+use Drupal\Tests\content_moderation\Traits\ContentModerationTestTrait;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\entity_hierarchy\Traits\EntityHierarchyTestTrait;
-use Drupal\workbench_moderation\Entity\ModerationState;
 
 /**
- * Defines a class for testing the warnings on delete form.
+ * Defines a class for testing the warnings on edit form.
  *
  * @group entity_hierarchy
  */
 class ForwardRevisionNodeValidationTest extends BrowserTestBase {
 
   use EntityHierarchyTestTrait;
-  use ContentTypeCreationTrait;
+  use ContentModerationTestTrait;
 
   const FIELD_NAME = 'parents';
   const ENTITY_TYPE = 'node';
@@ -39,7 +38,7 @@ class ForwardRevisionNodeValidationTest extends BrowserTestBase {
     'node',
     'filter',
     'options',
-    'workbench_moderation',
+    'content_moderation',
   ];
 
   /**
@@ -47,15 +46,16 @@ class ForwardRevisionNodeValidationTest extends BrowserTestBase {
    */
   protected function setUp() {
     parent::setUp();
-    $content_type = $this->createContentType([
+    $content_type = $this->drupalCreateContentType([
       'type' => 'article',
-      'new_revision' => 1,
     ]);
-    $content_type->setThirdPartySetting('workbench_moderation', 'enabled', TRUE);
-    $content_type->setThirdPartySetting('workbench_moderation', 'allowed_moderation_states', array_keys(ModerationState::loadMultiple()));
     $content_type->save();
+
+    $workflow = $this->createEditorialWorkflow();
+    $this->addEntityTypeAndBundleToWorkflow($workflow, static::ENTITY_TYPE, 'article');
+
     $this->setupEntityHierarchyField(static::ENTITY_TYPE, 'article', static::FIELD_NAME);
-    $this->getEntityFormDisplay(self::ENTITY_TYPE, 'article', 'default')
+    $this->getEntityFormDisplay(static::ENTITY_TYPE, 'article', 'default')
       ->setComponent(self::FIELD_NAME, [
         'type' => 'entity_reference_hierarchy_autocomplete',
         'weight' => 20,
@@ -75,19 +75,11 @@ class ForwardRevisionNodeValidationTest extends BrowserTestBase {
       ->getPermissions()), NULL, TRUE));
     $this->drupalGet($this->parent->toUrl('edit-form'));
     // Try to submit form with child as parent.
-    $buttons = [
-      'Save and Publish',
-      'Save and Create New Draft',
-      'Save and Archive',
-      'Preview',
-    ];
-    foreach ($buttons as $button) {
-      $this->submitForm([
-        sprintf('%s[0][target_id][target_id]', static::FIELD_NAME) => sprintf('%s (%s)', $first_child->label(), $first_child->id()),
-      ], $button);
-      $assert = $this->assertSession();
-      $assert->pageTextContains(sprintf('This entity (node: %s) cannot be referenced as it is either a child or the same entity.', $first_child->id()));
-    }
+    $this->submitForm([
+      sprintf('%s[0][target_id][target_id]', static::FIELD_NAME) => sprintf('%s (%s)', $first_child->label(), $first_child->id()),
+    ], 'Save');
+    $assert = $this->assertSession();
+    $assert->pageTextContains(sprintf('This entity (node: %s) cannot be referenced as it is either a child or the same entity.', $first_child->id()));
   }
 
   /**
