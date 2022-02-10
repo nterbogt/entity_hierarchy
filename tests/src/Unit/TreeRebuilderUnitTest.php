@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\entity_hierarchy\Unit;
 
+use Drupal\Core\Entity\EntityFieldManager;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\entity_hierarchy\Storage\TreeRebuilder;
 use Drupal\Tests\UnitTestCase;
@@ -30,7 +31,8 @@ class TreeRebuilderUnitTest extends UnitTestCase {
    */
   public function testTreeSort() {
     $entity_type_manager = $this->prophesize(EntityTypeManagerInterface::class);
-    $treeRebuilder = new TreeRebuilder($entity_type_manager->reveal());
+    $entity_field_manager = $this->prophesize(EntityFieldManager::class);
+    $treeRebuilder = new TreeRebuilder($entity_type_manager->reveal(), $entity_field_manager->reveal());
     $reflection = new \ReflectionClass($treeRebuilder);
     $method = $reflection->getMethod('treeSort');
     $method->setAccessible(TRUE);
@@ -86,7 +88,7 @@ class TreeRebuilderUnitTest extends UnitTestCase {
         'field_parent_weight' => -49,
       ],
     ];
-    $result = $method->invoke($treeRebuilder, 'field_parent', $records, 'nid');
+    $result = $method->invoke($treeRebuilder, 'field_parent', $records, 'nid', 'node');
     $this->assertSame([
       789,
       991,

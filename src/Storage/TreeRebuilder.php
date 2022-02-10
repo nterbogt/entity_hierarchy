@@ -3,6 +3,7 @@
 namespace Drupal\entity_hierarchy\Storage;
 
 use Drupal\Component\Utility\Number;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 
@@ -19,13 +20,23 @@ class TreeRebuilder {
   protected $entityTypeManager;
 
   /**
+   * Entity field manager.
+   *
+   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
+   */
+  protected $entityFieldManager;
+
+  /**
    * Constructs a new TreeRebuilder object.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   Entity type manager.
+   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
+   *   Entity field manager
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager) {
+  public function __construct(EntityTypeManagerInterface $entityTypeManager, EntityFieldManagerInterface $entity_field_manager) {
     $this->entityTypeManager = $entityTypeManager;
+    $this->entityFieldManager = $entity_field_manager;
   }
 
   /**
@@ -62,7 +73,7 @@ class TreeRebuilder {
       ->exists($field_name)
       ->accessCheck(FALSE);
     $records = $query->execute();
-    $sorted = $this->treeSort($field_name, $records, $idKey);
+    $sorted = $this->treeSort($field_name, $records, $idKey, $entity_type_id);
     foreach ($sorted as $entity_id => $entry) {
       $batch['operations'][] = [
         [static::class, 'rebuildTree'],
@@ -118,6 +129,9 @@ class TreeRebuilder {
    *   Entity ID.
    * @param array $context
    *   Batch context.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   //@codingStandardsIgnoreStart
   public static function rebuildTree($field_name, $entity_type_id, $entity_id, &$context) {
@@ -171,16 +185,20 @@ class TreeRebuilder {
    *   Records to sort.
    * @param string $idKey
    *   Field name of ID.
+   * @param string $entity_type_id
+   *   Entity type id.
    *
    * @return array
    *   Sorted records.
    */
-  protected function treeSort($field_name, array $records, $idKey) {
+  protected function treeSort($field_name, array $records, $idKey, string $entity_type_id) {
     $items = [];
     $weights = [];
     $sets = [];
+    $base_field_definitions = $this->entityFieldManager->getBaseFieldDefinitions($entity_type_id);
+    $weight_separator = isset($base_field_definitions[$field_name]) ? '__' : '_';
     foreach ($records as $ix => $item) {
-      $parent = $item["{$field_name}_target_id"];
+      $parent = $item["$field_name{$weight_separator}target_id"];
       $sets[$parent][] = $item[$idKey];
       $items[$item[$idKey]] = $parent;
     }
