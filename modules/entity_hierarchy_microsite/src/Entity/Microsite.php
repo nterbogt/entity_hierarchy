@@ -100,7 +100,7 @@ class Microsite extends ContentEntityBase implements MicrositeInterface {
         'weight' => -5,
       ])
       ->setDisplayOptions('form', [
-        'type' => 'entity_reference_autocomplete',
+        'type' => \Drupal::moduleHandler()->moduleExists('media_library') ? 'media_library_widget' : 'entity_reference_autocomplete',
         'weight' => -5,
       ])
       ->setDisplayConfigurable('view', TRUE)
