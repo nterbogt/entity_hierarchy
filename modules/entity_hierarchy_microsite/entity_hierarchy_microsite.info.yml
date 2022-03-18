@@ -1,5 +1,6 @@
-name: Entity hierarchy microsites
+name: Entity Hierarchy Microsites
 description: 'Provides microsites based on an entity hierarchy'
+package: "Entity Hierarchy"
 core_version_requirement: ^8.8 || ^9.0
 type: module
 dependencies:
