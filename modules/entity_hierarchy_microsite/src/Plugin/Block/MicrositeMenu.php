@@ -27,30 +27,6 @@ class MicrositeMenu extends SystemMenuBlock implements ContainerFactoryPluginInt
 
   use MicrositePluginTrait {
     create as traitCreate;
-    buildConfigurationForm as traitBuildConfigurationForm;
-    submitConfigurationForm as traitSubmitConfigurationForm;
-    defaultConfiguration as traitDefaultConfiguration;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function defaultConfiguration() {
-    return parent::defaultConfiguration() + $this->traitDefaultConfiguration();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    return parent::buildConfigurationForm($form, $form_state) + $this->traitBuildConfigurationForm($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
-    return parent::submitConfigurationForm($form, $form_state) + $this->traitSubmitConfigurationForm($form, $form_state);
   }
 
   /**
