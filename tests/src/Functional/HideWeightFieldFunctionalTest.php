@@ -44,6 +44,13 @@ class HideWeightFieldFunctionalTest extends BrowserTestBase {
     $this->setupEntityHierarchyField(static::ENTITY_TYPE, static::ENTITY_TYPE, static::FIELD_NAME);
     $this->additionalSetup();
     $this->setupEntityFormDisplay(self::ENTITY_TYPE, self::ENTITY_TYPE, self::FIELD_NAME);
+    $this->getEntityFormDisplay(self::ENTITY_TYPE, self::ENTITY_TYPE, 'default')
+      ->setComponent(self::FIELD_NAME, [
+        'type' => 'entity_reference_hierarchy_autocomplete',
+        'weight' => 20,
+        'settings' => ['hide_weight' => FALSE] + EntityReferenceHierarchyAutocomplete::defaultSettings(),
+      ])
+      ->save();
   }
 
   /**

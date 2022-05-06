@@ -26,7 +26,7 @@ class EntityReferenceHierarchySelect extends OptionsWidgetBase {
    * {@inheritdoc}
    */
   public static function defaultSettings() {
-    return parent::defaultSettings() + [self::HIDE_WEIGHT => FALSE];
+    return parent::defaultSettings() + [self::HIDE_WEIGHT => TRUE];
   }
 
   /**
