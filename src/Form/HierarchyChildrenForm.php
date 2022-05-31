@@ -180,12 +180,6 @@ class HierarchyChildrenForm extends ContentEntityForm {
           'url' => $childEntity->toUrl('edit-form'),
         ];
       }
-      if ($childEntity->access('delete') && $childEntity->hasLinkTemplate('delete-form')) {
-        $form['children'][$child]['operations']['#links']['delete'] = [
-          'title' => t('Delete'),
-          'url' => $childEntity->toUrl('delete-form'),
-        ];
-      }
     }
 
     $cache->applyTo($form);
