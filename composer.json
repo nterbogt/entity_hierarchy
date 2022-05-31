@@ -5,7 +5,10 @@
         "drupal/dbal": "~1.0",
         "previousnext/nested-set": "^0.1.1"
     },
-    "license": "GPL2+",
+    "require-dev": {
+        "drupal/workbench_access": "*"
+    },
+    "license": "GPL-2.0-or-later",
     "extra": {
         "drush": {
             "services": {
