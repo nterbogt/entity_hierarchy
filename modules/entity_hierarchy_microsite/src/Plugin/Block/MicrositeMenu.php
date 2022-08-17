@@ -3,7 +3,6 @@
 namespace Drupal\entity_hierarchy_microsite\Plugin\Block;
 
 use Drupal\Core\Cache\CacheableMetadata;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Menu\MenuTreeParameters;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\entity_hierarchy_microsite\Plugin\MicrositePluginTrait;

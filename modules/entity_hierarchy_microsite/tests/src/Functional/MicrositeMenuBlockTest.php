@@ -47,6 +47,7 @@ class MicrositeMenuBlockTest extends MicrositeFunctionalTestBase {
       'name' => $root->label(),
       'home' => $root,
       'logo' => $logo,
+      'generate_menu' => TRUE,
     ]);
     $microsite->save();
     $this->drupalGet($root->toUrl());
@@ -57,7 +58,7 @@ class MicrositeMenuBlockTest extends MicrositeFunctionalTestBase {
     foreach ($children as $child) {
       $this->assertNotEmpty($menu->find('named', ['link', $child->label()]));
       $assert->linkExists($child->label());
-      $xpath = $this->buildXPathQuery('//a[contains(@href, :href)]', [':href' => $child->toUrl()->toString()]);
+      $xpath = $this->assertSession()->buildXPathQuery('//a[contains(@href, :href)]', [':href' => $child->toUrl()->toString()]);
       $this->assertNotEmpty($menu->find('xpath', $xpath));
     }
   }

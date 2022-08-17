@@ -27,7 +27,17 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
       'logo' => $media,
     ]);
     $microsite->save();
-    // hook_entity_hierarchy_microsite_links_alter() should be fired.
+    // There should be no menus generated.
+    /** @var \Drupal\Core\Menu\MenuLinkTreeInterface $tree */
+    $tree = \Drupal::service('menu.link_tree');
+    $params = $tree->getCurrentRouteMenuTreeParameters('entity-hierarchy-microsite');
+    $params->setMaxDepth(9);
+    $items = $tree->load('entity-hierarchy-microsite', $params);
+    $this->assertCount(0, $items);
+
+    // Set the generate menu flag.
+    $microsite->set('generate_menu', TRUE)->save();
+    // hook_entity_hierarchy_microsite_links_alter() should now be fired.
     $this->assertEquals('success', \Drupal::state()->get('entity_hierarchy_microsite_test_entity_hierarchy_microsite_links_alter', NULL));
     /** @var \Drupal\Core\Menu\MenuLinkTreeInterface $tree */
     $tree = \Drupal::service('menu.link_tree');
@@ -140,6 +150,7 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
     }
     $microsite = Microsite::create([
       'name' => 'Subsite',
+      'generate_menu' => TRUE,
       'home' => $this->parent,
       'logo' => $media,
     ]);

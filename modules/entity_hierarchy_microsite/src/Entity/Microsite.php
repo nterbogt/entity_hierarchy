@@ -91,6 +91,20 @@ class Microsite extends ContentEntityBase implements MicrositeInterface {
       ->setDisplayConfigurable('view', TRUE)
       ->setDisplayConfigurable('form', TRUE);
 
+    $fields['generate_menu'] = BaseFieldDefinition::create('boolean')
+      ->setLabel('Generate menu')
+      ->setDisplayOptions('view', [
+        'label' => 'hidden',
+        'type' => 'boolean',
+        'weight' => -5,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'checkbox',
+        'weight' => -5,
+      ])
+      ->setDisplayConfigurable('view', TRUE)
+      ->setDisplayConfigurable('form', TRUE);
+
     $fields['logo'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel('Logo')
       ->setSetting('target_type', 'media')
@@ -121,6 +135,13 @@ class Microsite extends ContentEntityBase implements MicrositeInterface {
    */
   public function getLogo() {
     return $this->get('logo')->entity;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function shouldGenerateMenu() : bool {
+    return (bool) $this->get('generate_menu')->value;
   }
 
   /**

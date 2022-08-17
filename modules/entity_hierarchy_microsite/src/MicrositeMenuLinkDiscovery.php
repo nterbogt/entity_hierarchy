@@ -5,6 +5,7 @@ namespace Drupal\entity_hierarchy_microsite;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Menu\MenuTreeStorage;
 use Drupal\Core\Menu\Form\MenuLinkDefaultForm;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
 use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
@@ -104,7 +105,8 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
     /** @var \Drupal\entity_hierarchy_microsite\Entity\MicrositeInterface $microsite */
     foreach ($microsites as $microsite) {
       $home = $microsite->getHome();
-      if (!$home) {
+      $generate_menu = $microsite->shouldGenerateMenu();
+      if (!$home || !$generate_menu) {
         continue;
       }
       $key = $this->keyFactory->fromEntity($home);
@@ -134,11 +136,11 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
           'enabled' => 1,
           'expanded' => 1,
           'provider' => 'entity_hierarchy_microsite',
-          'discovered' => 0,
+          'discovered' => 1,
         ];
         /** @var \PNX\NestedSet\Node $treeNode */
         foreach ($nodes as $treeNode) {
-          if (!$nodes->contains($treeNode)) {
+          if (!$nodes->contains($treeNode) || $treeNode->getDepth() >= MenuTreeStorage::MAX_DEPTH) {
             continue;
           }
           /** @var \Drupal\node\NodeInterface $item */
@@ -157,12 +159,15 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
             'description' => '',
             'weight' => $treeNode->getLeft(),
             'id' => 'entity_hierarchy_microsite:' . $itemUuid,
-            'metadata' => ['entity_id' => $item->id(), 'entity_hierarchy_depth' => $treeNode->getDepth()],
+            'metadata' => [
+              'entity_id' => $item->id(),
+              'entity_hierarchy_depth' => $treeNode->getDepth()
+            ],
             'form_class' => MenuLinkDefaultForm::class,
             'enabled' => 1,
             'expanded' => 1,
             'provider' => 'entity_hierarchy_microsite',
-            'discovered' => 0,
+            'discovered' => 1,
             'parent' => 'entity_hierarchy_microsite:' . $home->uuid(),
           ];
           $parent = $tree->findParent($treeNode->getNodeKey());

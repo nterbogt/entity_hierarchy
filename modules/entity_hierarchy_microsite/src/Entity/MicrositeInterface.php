@@ -25,4 +25,12 @@ interface MicrositeInterface extends ContentEntityInterface {
    */
   public function getLogo();
 
+  /**
+   * Whether the microsite should generate a menu.
+   *
+   * @return bool
+   *   True if a menu should be built, false otherwise.
+   */
+  public function shouldGenerateMenu();
+
 }

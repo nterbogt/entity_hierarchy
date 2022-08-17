@@ -45,6 +45,7 @@ class MicrositeAdminTest extends MicrositeFunctionalTestBase {
     $label = $this->randomMachineName();
     $this->submitForm([
       'name[0][value]' => $label,
+      'generate_menu[value]' => TRUE,
       'home[0][target_id]' => sprintf($entity_reference_format, $root->label(), $root->id()),
       'logo[0][target_id]' => sprintf($entity_reference_format, $logo->label(), $logo->id()),
     ], 'Save');
