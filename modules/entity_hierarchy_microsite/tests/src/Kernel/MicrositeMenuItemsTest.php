@@ -16,6 +16,7 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
    * Tests the microsite menu link integration.
    */
   public function testMicrositeMenuLinkDerivation() {
+    \Drupal::state()->set('entity_hierarchy_microsite_max_depth', 2);
     $media = $this->createImageMedia();
     $children = $this->createChildEntities($this->parent->id(), 5);
     list ($first, $second) = array_values($children);
@@ -26,6 +27,8 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
       'home' => $this->parent,
       'logo' => $media,
     ]);
+    $last_second_child = end($second_children);
+    $too_deep = $this->createChildEntities($last_second_child->id(), 4, '2.4.');
     $microsite->save();
     // There should be no menus generated.
     /** @var \Drupal\Core\Menu\MenuLinkTreeInterface $tree */
@@ -61,6 +64,9 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
         $this->assertCount(4, $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
         foreach ($second_children as $child_entity) {
           $this->assertArrayHasKey('entity_hierarchy_microsite:' . $child_entity->uuid(), $items[$plugin_id]->subtree[$child_plugin_id]->subtree);
+          if ($child_entity->uuid() === $last_second_child->uuid()) {
+            $this->assertEmpty($items[$plugin_id]->subtree[$child_plugin_id]->subtree['entity_hierarchy_microsite:' . $child_entity->uuid()]->subtree);
+          }
         }
       }
     }

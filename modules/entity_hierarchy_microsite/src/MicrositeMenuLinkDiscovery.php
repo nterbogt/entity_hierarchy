@@ -149,7 +149,7 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
           $revisionKey = sprintf('%s:%s', $treeNode->getId(), $treeNode->getRevisionId());
           $itemUuid = $item->uuid();
           $parentUuids[$revisionKey] = $itemUuid;
-          $definitions[$itemUuid] = [
+          if ($definition = $microsite->modifyMenuPluginDefinition($treeNode, $item, [
             'class' => MicrositeMenuItem::class,
             'menu_name' => 'entity-hierarchy-microsite',
             'route_name' => $url->getRouteName(),
@@ -169,10 +169,12 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
             'provider' => 'entity_hierarchy_microsite',
             'discovered' => 1,
             'parent' => 'entity_hierarchy_microsite:' . $home->uuid(),
-          ];
-          $parent = $tree->findParent($treeNode->getNodeKey());
-          if ($parent && ($parentRevisionKey = sprintf('%s:%s', $parent->getId(), $parent->getRevisionId())) && array_key_exists($parentRevisionKey, $parentUuids)) {
-            $definitions[$itemUuid]['parent'] = 'entity_hierarchy_microsite:' . $parentUuids[$parentRevisionKey];
+          ], $homeNode)) {
+            $definitions[$itemUuid] = $definition;
+            $parent = $tree->findParent($treeNode->getNodeKey());
+            if ($parent && ($parentRevisionKey = sprintf('%s:%s', $parent->getId(), $parent->getRevisionId())) && array_key_exists($parentRevisionKey, $parentUuids)) {
+              $definitions[$itemUuid]['parent'] = 'entity_hierarchy_microsite:' . $parentUuids[$parentRevisionKey];
+            }
           }
         }
       }

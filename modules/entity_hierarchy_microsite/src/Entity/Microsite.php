@@ -7,6 +7,8 @@ use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\entity_hierarchy_microsite\EntityHooks;
+use Drupal\node\Entity\Node as DrupalNode;
+use PNX\NestedSet\Node;
 
 /**
  * Defines a class for a microsite entity.
@@ -57,7 +59,7 @@ class Microsite extends ContentEntityBase implements MicrositeInterface {
   /**
    * {@inheritdoc}
    */
-  public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
+  public static function baseFieldDefinitions(EntityTypeInterface $entity_type): array {
     $fields = parent::baseFieldDefinitions($entity_type);
 
     $fields['name'] = BaseFieldDefinition::create('string')
@@ -99,7 +101,7 @@ class Microsite extends ContentEntityBase implements MicrositeInterface {
         'weight' => -5,
       ])
       ->setDisplayOptions('form', [
-        'type' => 'checkbox',
+        'type' => 'boolean_checkbox',
         'weight' => -5,
       ])
       ->setDisplayConfigurable('view', TRUE)
@@ -142,6 +144,13 @@ class Microsite extends ContentEntityBase implements MicrositeInterface {
    */
   public function shouldGenerateMenu() : bool {
     return (bool) $this->get('generate_menu')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function modifyMenuPluginDefinition(Node $treeNode, DrupalNode $node, array $definition, Node $homeNode): array {
+    return $definition;
   }
 
   /**
