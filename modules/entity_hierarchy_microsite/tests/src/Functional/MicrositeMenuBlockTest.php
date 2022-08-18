@@ -14,7 +14,7 @@ class MicrositeMenuBlockTest extends MicrositeFunctionalTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->drupalPlaceBlock('entity_hierarchy_microsite_menu', [
       'field' => self::FIELD_NAME,
@@ -42,7 +42,7 @@ class MicrositeMenuBlockTest extends MicrositeFunctionalTestBase {
   public function testMenuBlock() {
     $logo = $this->createImageMedia();
     $root = $this->createTestEntity(NULL, 'Root');
-    $children = $this->createChildEntities($root->id(), 5);
+    $children = $this->createChildEntities($root->id());
     $microsite = Microsite::create([
       'name' => $root->label(),
       'home' => $root,

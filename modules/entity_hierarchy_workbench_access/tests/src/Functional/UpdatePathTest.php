@@ -15,7 +15,7 @@ class UpdatePathTest extends UpdatePathTestBase {
   /**
    * Set database dump files to be used.
    */
-  protected function setDatabaseDumpFiles() {
+  protected function setDatabaseDumpFiles(): void {
     $this->databaseDumpFiles = [
       __DIR__ . '/../../fixtures/eh_wba-update-path-test.php.gz',
     ];
@@ -24,8 +24,8 @@ class UpdatePathTest extends UpdatePathTestBase {
   /**
    * Tests entity_hierarchy_workbench_access_workbench_access_scheme_update_alter.
    */
-  public function testUpdatePath() {
-    if (Semver::satisfies(\Drupal::VERSION, '~9')) {
+  public function testUpdatePath(): void {
+    if (Semver::satisfies(\Drupal::VERSION, '>9')) {
       $this->markTestSkipped('This test is only for Drupal 8');
     }
     $expected_fields = \Drupal::config('workbench_access.settings')->get('parents');

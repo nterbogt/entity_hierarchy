@@ -25,7 +25,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
    *
    * @group entity_hierarchy_ordering
    */
-  public function testNestedSetOrdering() {
+  public function testNestedSetOrdering(): void {
     // Test for weight ordering of inserts.
     $entities = $this->createChildEntities($this->parent->id());
     $root_node = $this->treeStorage->getNode($this->parentStub);
@@ -52,7 +52,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests removing parent reference.
    */
-  public function testRemoveParentReference() {
+  public function testRemoveParentReference(): void {
     $child = $this->createTestEntity($this->parent->id());
     $root_node = $this->treeStorage->getNode($this->parentStub);
     $this->assertSimpleParentChild($child);
@@ -67,7 +67,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests deleting child node.
    */
-  public function testDeleteChild() {
+  public function testDeleteChild(): void {
     $child = $this->createTestEntity($this->parent->id());
     $root_node = $this->treeStorage->getNode($this->parentStub);
     $children = $this->getChildren($root_node);
@@ -80,7 +80,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests deleting parent node reparents children.
    */
-  public function testDeleteParent() {
+  public function testDeleteParent(): void {
     $child = $this->createTestEntity($this->parent->id());
     $child2 = $this->createTestEntity($this->parent->id());
     $this->createTestEntity($child->id());
@@ -121,7 +121,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests deleting child node with grandchildren.
    */
-  public function testDeleteChildWithGrandChildren() {
+  public function testDeleteChildWithGrandChildren(): void {
     $child = $this->createTestEntity($this->parent->id());
     $grand_child = $this->createTestEntity($child->id(), 'Grandchild 1', 1);
     $this->assertSimpleParentChild($child);
@@ -133,7 +133,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests removing parent reference with grandchildren.
    */
-  public function testRemoveParentReferenceWithGrandChildren() {
+  public function testRemoveParentReferenceWithGrandChildren(): void {
     $child = $this->createTestEntity($this->parent->id());
     $grand_child = $this->createTestEntity($child->id(), 'Grandchild 1', 1);
     $root_node = $this->treeStorage->getNode($this->parentStub);
@@ -150,7 +150,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests saving with existing parent (no value change).
    */
-  public function testNestedSetStorageSimpleUpdate() {
+  public function testNestedSetStorageSimpleUpdate(): void {
     $child = $this->createTestEntity($this->parent->id());
     $this->assertSimpleParentChild($child);
     $child->save();
@@ -160,7 +160,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests saving with existing parent and sibling (no value change).
    */
-  public function testNestedSetStorageWithSiblingUpdate() {
+  public function testNestedSetStorageWithSiblingUpdate(): void {
     $child = $this->createTestEntity($this->parent->id(), 'Child 1', 1);
     $sibling = $this->createTestEntity($this->parent->id(), 'Child 2', 2);
     $this->assertParentWithTwoChildren($child, $sibling);
@@ -171,7 +171,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests moving parents.
    */
-  public function testNestedSetStorageMoveParent() {
+  public function testNestedSetStorageMoveParent(): void {
     $child = $this->createTestEntity($this->parent->id(), 'Child 1', 1);
     $parent2 = $this->createTestEntity(NULL, 'Parent 2');
     $parent2->save();
@@ -184,7 +184,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests moving tree.
    */
-  public function testNestedSetStorageMoveParentWithChildren() {
+  public function testNestedSetStorageMoveParentWithChildren(): void {
     $child = $this->createTestEntity($this->parent->id(), 'Child 1', 1);
     $parent2 = $this->createTestEntity(NULL, 'Parent 2');
     $grandchild = $this->createTestEntity($child->id(), 'Grandchild 1', 1);
@@ -201,10 +201,10 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
    *
    * @group entity_hierarchy_ordering
    */
-  public function testNestedSetStorageMoveParentWithSiblingOrdering() {
+  public function testNestedSetStorageMoveParentWithSiblingOrdering(): void {
     $child = $this->createTestEntity($this->parent->id(), 'Cousin 1', -2);
     $parent2 = $this->createTestEntity(NULL, 'Parent 2');
-    $child_entities = $this->createChildEntities($parent2->id(), 5);
+    $child_entities = $this->createChildEntities($parent2->id());
     $child_entities['Cousin 1'] = $child;
     $this->assertSimpleParentChild($child);
     $child->set(static::FIELD_NAME, $parent2->id());
@@ -222,7 +222,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests moving from out of tree, into tree.
    */
-  public function testNestedSetParentToChild() {
+  public function testNestedSetParentToChild(): void {
     $child = $this->createTestEntity(NULL);
     $child->set(static::FIELD_NAME, $this->parent->id());
     $child->save();
@@ -234,7 +234,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
    *
    * @group entity_hierarchy_ordering
    */
-  public function testNestedSetParentToChildWithSiblings() {
+  public function testNestedSetParentToChildWithSiblings(): void {
     $child = $this->createTestEntity(NULL, 'Once was a parent');
     $entities = $this->createChildEntities($this->parent->id());
     $entities[$child->label()] = $child;
@@ -256,7 +256,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Test saving the parent after adding children.
    */
-  public function testNestedSetResaveParent() {
+  public function testNestedSetResaveParent(): void {
     // Test for weight ordering of inserts.
     $entities = $this->createChildEntities($this->parent->id());
     $root_node = $this->treeStorage->getNode($this->parentStub);

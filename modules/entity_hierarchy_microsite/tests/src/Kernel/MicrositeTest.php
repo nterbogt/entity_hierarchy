@@ -14,7 +14,7 @@ class MicrositeTest extends EntityHierarchyMicrositeKernelTestBase {
   /**
    * Tests the microsite entity.
    */
-  public function testMicrositeEntity() {
+  public function testMicrositeEntity(): void {
     $media = $this->createImageMedia();
     $microsite = Microsite::create([
       'name' => 'Subsite',

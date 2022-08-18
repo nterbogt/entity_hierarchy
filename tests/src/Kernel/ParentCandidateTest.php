@@ -16,7 +16,7 @@ class ParentCandidateTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests field candidates.
    */
-  public function testGetParentCandidate() {
+  public function testGetParentCandidate(): void {
     $this->installEntitySchema('entity_test_rev');
     $parentCandidate = $this->container->get('entity_hierarchy.information.parent_candidate');
     $this->assertEquals(['parents'], $parentCandidate->getCandidateFields($this->parent));
@@ -43,7 +43,7 @@ class ParentCandidateTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests bundles.
    */
-  public function testGetBundles() {
+  public function testGetBundles(): void {
     $parentCandidate = $this->container->get('entity_hierarchy.information.parent_candidate');
     entity_test_create_bundle('fooey', 'Fooey');
     entity_test_create_bundle('bar');

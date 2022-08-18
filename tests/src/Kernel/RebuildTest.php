@@ -15,7 +15,7 @@ class RebuildTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests rebuilding.
    */
-  public function testRebuild() {
+  public function testRebuild(): void {
     $this->createChildEntities($this->parent->id());
     $expected = [
       new Node(new NodeKey('1', '1'), '1', '12', '0'),

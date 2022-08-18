@@ -14,7 +14,7 @@ class MicrositeAdminTest extends MicrositeFunctionalTestBase {
   /**
    * Tests admin.
    */
-  public function testAdmin() {
+  public function testAdmin(): void {
     $assert = $this->assertSession();
 
     // Access check for non-admins.

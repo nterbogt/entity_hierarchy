@@ -37,7 +37,7 @@ class DeleteParentWarningTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->setupEntityHierarchyField(static::ENTITY_TYPE, static::ENTITY_TYPE, static::FIELD_NAME);
     $this->additionalSetup();
@@ -46,7 +46,7 @@ class DeleteParentWarningTest extends BrowserTestBase {
   /**
    * Tests delete warning.
    */
-  public function testDeleteWarning() {
+  public function testDeleteWarning(): void {
     $entities = $this->createChildEntities($this->parent->id());
     $first_child = reset($entities);
     $grandchildren = $this->createChildEntities($first_child->id(), 3);

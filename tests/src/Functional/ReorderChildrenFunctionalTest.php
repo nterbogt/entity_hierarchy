@@ -45,7 +45,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->setupEntityHierarchyField(static::ENTITY_TYPE, static::ENTITY_TYPE, static::FIELD_NAME);
     $this->additionalSetup();
@@ -55,7 +55,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
   /**
    * Tests children reorder form.
    */
-  public function testReordering() {
+  public function testReordering(): void {
     $entities = $this->createChildEntities($this->parent->id());
     $root_node = $this->treeStorage->getNode($this->parentStub);
     $children = $this->treeStorage->findChildren($root_node->getNodeKey());
@@ -169,7 +169,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
   /**
    * Tests add child links.
    */
-  public function testAddChildLinks() {
+  public function testAddChildLinks(): void {
     $this->setupEntityFormDisplay(self::ENTITY_TYPE, self::ENTITY_TYPE, self::FIELD_NAME);
 
     // Login.

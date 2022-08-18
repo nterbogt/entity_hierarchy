@@ -14,7 +14,7 @@ class MicrositeLogoBrandingBlockTest extends MicrositeFunctionalTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->drupalPlaceBlock('entity_hierarchy_microsite_branding', [
       'field' => self::FIELD_NAME,

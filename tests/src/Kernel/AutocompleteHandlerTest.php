@@ -25,7 +25,7 @@ class AutocompleteHandlerTest extends EntityHierarchyKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $user = $this->createUser([], ['view test entity']);
     $this->container->get('account_switcher')->switchTo($user);
@@ -34,7 +34,7 @@ class AutocompleteHandlerTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests autocomplete handler.
    */
-  public function testAutoCompleteHandler() {
+  public function testAutoCompleteHandler(): void {
     $child = $this->createTestEntity($this->parent->id(), 'Child');
     $grandchild = $this->createTestEntity($child->id(), 'Grandchild');
     $great_grandchild = $this->createTestEntity($grandchild->id(), 'Great Grandchild');
@@ -54,10 +54,10 @@ class AutocompleteHandlerTest extends EntityHierarchyKernelTestBase {
    * @param string $input
    *   The label of the entity to query by.
    *
-   * @return mixed
+   * @return array
    *   The JSON value encoded in its appropriate PHP type.
    */
-  protected function getAutocompleteResult($input) {
+  protected function getAutocompleteResult($input): array {
     $request = Request::create('entity_reference_autocomplete/' . self::ENTITY_TYPE . '/entity_hierarchy');
     $request->query->set('q', $input);
 

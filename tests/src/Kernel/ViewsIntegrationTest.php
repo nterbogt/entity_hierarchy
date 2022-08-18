@@ -43,7 +43,6 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
     parent::additionalSetup();
     $this->installConfig($this->testViewModule);
     $this->installConfig('system');
-    $this->installSchema('system', ['key_value_expire']);
   }
 
   /**
@@ -62,7 +61,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests views integration.
    */
-  public function testViewsIntegrationDirectChildren() {
+  public function testViewsIntegrationDirectChildren(): void {
     $children = $this->createChildEntities($this->parent->id(), 3);
     $child = reset($children);
     $this->createChildEntities($child->id(), 5);
@@ -100,7 +99,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests views integration.
    */
-  public function testViewsIntegrationIncludingGrandChildren() {
+  public function testViewsIntegrationIncludingGrandChildren(): void {
     $children = $this->createChildEntities($this->parent->id(), 3);
     $child = reset($children);
     $this->createChildEntities($child->id(), 5);
@@ -158,7 +157,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests views integration.
    */
-  public function testViewsIntegrationParents() {
+  public function testViewsIntegrationParents(): void {
     $children = $this->createChildEntities($this->parent->id(), 1);
     $child = reset($children);
     $grandchildren = $this->createChildEntities($child->id(), 1);
@@ -186,7 +185,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests views sibling integration.
    */
-  public function testViewsIntegrationSiblings() {
+  public function testViewsIntegrationSiblings(): void {
     $children = $this->createChildEntities($this->parent->id(), 3);
     $child = reset($children);
     $this->createChildEntities($child->id(), 5);
@@ -220,7 +219,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests views sibling integration with show_self enabled.
    */
-  public function testViewsIntegrationSiblingsShowSelf() {
+  public function testViewsIntegrationSiblingsShowSelf(): void {
     $children = $this->createChildEntities($this->parent->id(), 3);
     $child = reset($children);
     $this->createChildEntities($child->id(), 5);
@@ -258,7 +257,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests the depth field.
    */
-  public function testDepthField() {
+  public function testDepthField(): void {
     $children = $this->createChildEntities($this->parent->id(), 1);
     $child = reset($children);
     $this->createChildEntities($child->id(), 1);
@@ -277,7 +276,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests the child summary field.
    */
-  public function testChildrenSummaryField() {
+  public function testChildrenSummaryField(): void {
     $children = $this->createChildEntities($this->parent->id(), 1, 'First');
     $child = reset($children);
     $children = $this->createChildEntities($child->id(), 2, 'Second');
@@ -302,7 +301,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests the relationship to the root node..
    */
-  public function testRelationshipRoot() {
+  public function testRelationshipRoot(): void {
     $children = $this->createChildEntities($this->parent->id(), 1, 'First');
     $child = reset($children);
     $children = $this->createChildEntities($child->id(), 2, 'Second');
@@ -330,7 +329,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests the relationship to the parent node.
    */
-  public function testRelationshipParent() {
+  public function testRelationshipParent(): void {
     $children = $this->createChildEntities($this->parent->id(), 1, 'First');
     $child = reset($children);
     $children = $this->createChildEntities($child->id(), 2, 'Second');
@@ -358,7 +357,7 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests the relationship to the children nodes.
    */
-  public function testRelationshipChildren() {
+  public function testRelationshipChildren(): void {
     $children = $this->createChildEntities($this->parent->id(), 1, 'First');
     $child = reset($children);
     $children = $this->createChildEntities($child->id(), 2, 'Second');

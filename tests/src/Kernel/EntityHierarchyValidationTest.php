@@ -14,7 +14,7 @@ class EntityHierarchyValidationTest extends EntityHierarchyKernelTestBase {
   /**
    * Tests validation.
    */
-  public function testValidation() {
+  public function testValidation(): void {
     // Create root user.
     $this->createUser();
     $child = $this->createTestEntity($this->parent->id());

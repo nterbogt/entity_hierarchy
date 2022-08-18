@@ -45,7 +45,7 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->placeBlock('local_tasks_block');
     $this->placeBlock('page_title_block');
@@ -72,7 +72,7 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
   /**
    * Tests that the reorder form is linked to the current revision when content_moderation is active.
    */
-  public function testReorderingForDraftParent() {
+  public function testReorderingForDraftParent(): void {
     $this->drupalLogin($this->rootUser);
     $this->treeStorage = $this->container->get('entity_hierarchy.nested_set_storage_factory')
       ->get(static::FIELD_NAME, static::ENTITY_TYPE);
@@ -102,7 +102,7 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
     }, $children));
 
     $this->drupalGet($this->parent->toUrl('edit-form'));
-    $this->drupalPostForm(NULL, [
+    $this->submitForm([
       'name[0][value]' => 'Parent - draft',
       'revision' => TRUE,
       'moderation_state[0][state]' => 'draft',
@@ -125,7 +125,7 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
     // Publish the draft and confirm we see same children.
     $this->drupalGet($this->parent->toUrl('edit-form'));
     $this->assertEquals('Current state Draft', $this->cssSelect('#edit-moderation-state-0-current')[0]->getText());
-    $this->drupalPostForm(NULL, [
+    $this->submitForm([
       'name[0][value]' => 'Parent - published',
       'revision' => TRUE,
       'moderation_state[0][state]' => 'published',

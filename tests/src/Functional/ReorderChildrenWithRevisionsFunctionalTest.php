@@ -79,7 +79,7 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->setupEntityHierarchyField(static::ENTITY_TYPE, static::ENTITY_TYPE, static::FIELD_NAME);
     $this->additionalSetup();
@@ -88,7 +88,7 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
   /**
    * Tests children reorder form.
    */
-  public function testReordering() {
+  public function testReordering(): void {
     $entities = $this->createChildEntities($this->parent->id());
     $root_node = $this->treeStorage->getNode($this->parentStub);
     $children = $this->treeStorage->findChildren($root_node->getNodeKey());

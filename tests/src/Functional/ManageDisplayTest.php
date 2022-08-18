@@ -42,7 +42,7 @@ class ManageDisplayTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->setupEntityHierarchyField(static::ENTITY_TYPE, static::ENTITY_TYPE, static::FIELD_NAME);
     $this->additionalSetup();
@@ -52,7 +52,7 @@ class ManageDisplayTest extends BrowserTestBase {
   /**
    * Tests manage display.
    */
-  public function testManageDisplay() {
+  public function testManageDisplay(): void {
     $this->drupalLogin($this->drupalCreateUser([
       'administer entity_test fields',
       'administer entity_test display',

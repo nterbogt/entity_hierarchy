@@ -29,7 +29,7 @@ class TreeRebuilderUnitTest extends UnitTestCase {
    * - 782
    * -- 783
    */
-  public function testTreeSort() {
+  public function testTreeSort(): void {
     $entity_type_manager = $this->prophesize(EntityTypeManagerInterface::class);
     $entity_field_manager = $this->prophesize(EntityFieldManager::class);
     $treeRebuilder = new TreeRebuilder($entity_type_manager->reveal(), $entity_field_manager->reveal());

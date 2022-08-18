@@ -140,7 +140,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       /** @var \PNX\NestedSet\Storage\DbalNestedSet $tree_storage */
       $tree_storage = $this->nestedSetStorageFactory->get($field_name, $entity_type_id);
       $entityStorage = $this->entityTypeManager->getStorage($entity_type_id);
-      $query = $entityStorage->getQuery();
+      $query = $entityStorage->getQuery()->accessCheck(FALSE);
       $tree = [];
       $or = $query->orConditionGroup();
       $boolean_fields = $this->configuration['boolean_fields'];
@@ -155,7 +155,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       if (!$valid_ids) {
         return $tree;
       }
-      $aggregate = $entityStorage->getAggregateQuery();
+      $aggregate = $entityStorage->getAggregateQuery()->accessCheck(FALSE);
       $aggregate->groupBy($entity_type->getKey('label'))
         ->groupBy($entity_type->getKey('id'));
       foreach ($boolean_fields as $boolean_field) {

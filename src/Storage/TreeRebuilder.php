@@ -65,6 +65,7 @@ class TreeRebuilder {
     $idKey = $entityType->getKey('id');
     $query = $this->entityTypeManager->getStorage($entity_type_id)
       ->getAggregateQuery()
+      ->accessCheck(FALSE)
       ->groupBy("$field_name.target_id")
       ->groupBy("$field_name.weight")
       ->groupBy($idKey)

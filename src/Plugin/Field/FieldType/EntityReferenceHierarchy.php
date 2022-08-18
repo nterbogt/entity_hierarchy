@@ -238,7 +238,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
     $siblingEntities = new \SplObjectStorage();
     $key = $entityType->hasKey('revision') ? $entityType->getKey('revision') : $entityType->getKey('id');
     $parentField = $fieldDefinition->getName();
-    $query = $entityStorage->getAggregateQuery();
+    $query = $entityStorage->getAggregateQuery()->accessCheck(FALSE);
     $ids = array_map(function (Node $item) {
       return $item->getRevisionId();
     }, $siblings);

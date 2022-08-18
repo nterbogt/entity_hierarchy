@@ -44,7 +44,7 @@ class ForwardRevisionNodeValidationTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $content_type = $this->drupalCreateContentType([
       'type' => 'article',
@@ -68,7 +68,7 @@ class ForwardRevisionNodeValidationTest extends BrowserTestBase {
   /**
    * Tests validation warning.
    */
-  public function testValidationWarning() {
+  public function testValidationWarning(): void {
     $entities = $this->createChildEntities($this->parent->id());
     $first_child = reset($entities);
     $this->drupalLogin($this->drupalCreateUser(array_keys($this->container->get('user.permissions')

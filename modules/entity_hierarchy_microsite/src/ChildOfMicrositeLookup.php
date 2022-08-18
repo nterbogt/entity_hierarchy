@@ -79,6 +79,7 @@ class ChildOfMicrositeLookup implements ChildOfMicrositeLookupInterface {
     $entityStorage = $this->entityTypeManager->getStorage('entity_hierarchy_microsite');
     return $entityStorage->loadMultiple($entityStorage
       ->getQuery()
+      ->accessCheck(FALSE)
       ->sort('id')
       ->condition('home', $ids, 'IN')
       ->execute());

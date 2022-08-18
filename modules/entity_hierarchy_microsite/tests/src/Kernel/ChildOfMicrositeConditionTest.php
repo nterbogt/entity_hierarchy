@@ -14,7 +14,7 @@ class ChildOfMicrositeConditionTest extends EntityHierarchyMicrositeKernelTestBa
   /**
    * {@inheritdoc}
    */
-  public function testCondition() {
+  public function testCondition(): void {
     $children = $this->createChildEntities($this->parent->id(), 1);
     $child = reset($children);
     $grandchildren = $this->createChildEntities($child->id(), 2);

@@ -15,7 +15,7 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
   /**
    * Tests the microsite menu link integration.
    */
-  public function testMicrositeMenuLinkDerivation() {
+  public function testMicrositeMenuLinkDerivation(): void {
     \Drupal::state()->set('entity_hierarchy_microsite_max_depth', 2);
     $media = $this->createImageMedia();
     $children = $this->createChildEntities($this->parent->id(), 5);
@@ -142,7 +142,7 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
   /**
    * Tests microsite menus do not exceed the maximum depth.
    */
-  public function testMicrositeMenuLinkMaxDepth() {
+  public function testMicrositeMenuLinkMaxDepth(): void {
     /** @var \Drupal\Core\Menu\MenuLinkTreeInterface $menu_link_tree */
     $menu_link_tree = \Drupal::service('menu.link_tree');
     $menu_max_depth = $menu_link_tree->maxDepth();
