@@ -76,6 +76,10 @@ class ReorderChildrenAccess implements AccessCheckInterface {
     $entity_type = $route->getOption(EntityHierarchyRouteProvider::ENTITY_HIERARCHY_ENTITY_TYPE);
     $entity = $this->routeMatch->getParameter($entity_type);
 
+    if (empty($entity)) {
+      return AccessResult::forbidden();
+    }
+
     // If a user has configured a local task with views at e.g.
     // node/{node}/media then the {node} object isn't upcast.
     // @todo revisit this when
