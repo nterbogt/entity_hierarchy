@@ -4,14 +4,9 @@ namespace Drupal\entity_hierarchy\Form;
 
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
-use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
-use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
-use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
 use Drupal\Core\Entity\ContentEntityForm;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

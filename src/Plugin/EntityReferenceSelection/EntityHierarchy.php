@@ -3,14 +3,8 @@
 namespace Drupal\entity_hierarchy\Plugin\EntityReferenceSelection;
 
 use Drupal\Component\Utility\Html;
-use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\Plugin\EntityReferenceSelection\DefaultSelection;
-use Drupal\Core\Extension\ModuleHandlerInterface;
-use Drupal\Core\Session\AccountInterface;
 use Drupal\entity_hierarchy\Information\AncestryLabelTrait;
-use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
-use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
-use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
