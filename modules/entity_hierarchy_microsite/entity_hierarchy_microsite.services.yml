@@ -24,3 +24,9 @@ services:
       - '@entity_hierarchy.information.parent_candidate'
     tags:
       - { name: cache.context }
+  entity_hierarchy_microsite.menu_rebuild_processor:
+    class: Drupal\entity_hierarchy_microsite\MenuRebuildProcessor
+    arguments:
+      - '@plugin.manager.menu.link'
+    tags:
+      - { name: needs_destruction }

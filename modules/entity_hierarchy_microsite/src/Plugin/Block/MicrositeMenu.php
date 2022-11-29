@@ -92,7 +92,6 @@ class MicrositeMenu extends SystemMenuBlock implements ContainerFactoryPluginInt
       if (count($parameters->activeTrail) >= $level) {
         // Active trail array is child-first. Reverse it, and pull the new menu
         // root based on the parent of the configured start level.
-        $menu_trail_ids = array_reverse(array_values($parameters->activeTrail));
         if ($depth > 0) {
           $parameters->setMaxDepth(min($level - 1 + $depth - 1, $this->menuTree->maxDepth()));
         }

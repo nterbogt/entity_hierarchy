@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\entity_hierarchy_microsite\Functional;
 
-use Drupal\Core\Menu\MenuTreeStorageInterface;
 use Drupal\entity_hierarchy_microsite\Entity\Microsite;
 use Drupal\FunctionalTests\Update\UpdatePathTestBase;
 

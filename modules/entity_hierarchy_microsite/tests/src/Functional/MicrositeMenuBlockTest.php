@@ -3,6 +3,7 @@
 namespace Drupal\Tests\entity_hierarchy_microsite\Functional;
 
 use Drupal\entity_hierarchy_microsite\Entity\Microsite;
+use Drupal\Tests\entity_hierarchy_microsite\Traits\MenuRebuildTrait;
 
 /**
  * Defines a class for testing microsite menu block.
@@ -10,6 +11,8 @@ use Drupal\entity_hierarchy_microsite\Entity\Microsite;
  * @group entity_hierarchy_microsite
  */
 class MicrositeMenuBlockTest extends MicrositeFunctionalTestBase {
+
+  use MenuRebuildTrait;
 
   /**
    * {@inheritdoc}
@@ -50,6 +53,7 @@ class MicrositeMenuBlockTest extends MicrositeFunctionalTestBase {
       'generate_menu' => TRUE,
     ]);
     $microsite->save();
+    $this->triggerMenuRebuild();
     $this->drupalGet($root->toUrl());
     $assert = $this->assertSession();
     $menu = $assert->elementExists('css', '#block-microsite-menu ul');

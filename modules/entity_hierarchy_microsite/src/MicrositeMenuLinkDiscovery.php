@@ -131,7 +131,10 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
           'description' => '',
           'weight' => $homeNode->getLeft(),
           'id' => 'entity_hierarchy_microsite:' . $home->uuid(),
-          'metadata' => ['entity_id' => $home->id(), 'entity_hierarchy_depth' => $homeNode->getDepth()],
+          'metadata' => [
+            'entity_id' => $home->id(),
+            'entity_hierarchy_depth' => $homeNode->getDepth(),
+          ],
           'form_class' => MenuLinkDefaultForm::class,
           'enabled' => 1,
           'expanded' => 1,
@@ -161,7 +164,7 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
             'id' => 'entity_hierarchy_microsite:' . $itemUuid,
             'metadata' => [
               'entity_id' => $item->id(),
-              'entity_hierarchy_depth' => $treeNode->getDepth()
+              'entity_hierarchy_depth' => $treeNode->getDepth(),
             ],
             'form_class' => MenuLinkDefaultForm::class,
             'enabled' => 1,
