@@ -112,9 +112,22 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
     $target_type = $this_entity->getEntityTypeId();
     /** @var \PNX\NestedSet\Storage\DbalNestedSet $storage */
     $storage = $this->nestedSetStorageFactory->get($value->getFieldDefinition()->getFieldStorageDefinition()->getName(), $target_type);
-    $children = array_map(function (Node $node) {
+    $descendant_nested_set_nodes = $storage->findDescendants($thisNode);
+    $descendant_nested_set_node_ids = array_map(function (Node $node) {
       return $node->getId();
-    }, $storage->findDescendants($thisNode));
+    }, $descendant_nested_set_nodes);
+    $descendant_entities = $this->entityTypeManager->getStorage($this_entity->getEntityTypeId())->loadMultiple($descendant_nested_set_node_ids);
+    $children = [];
+    foreach ($descendant_nested_set_nodes as $descendant_nested_set_node) {
+      $node_id = $descendant_nested_set_node->getId();
+      $entity = $descendant_entities[$node_id] ?? FALSE;
+      if (!$entity || ($entity->getEntityType()->hasKey('revision') && $descendant_nested_set_node->getRevisionId() != $entity->getRevisionId())) {
+        // Bypass non default revisions and deleted items.
+        continue;
+      }
+      $children[] = $node_id;
+    }
+    $children = array_unique($children);
     // Cannot reference self either.
     $children[] = $this_entity->id();
 

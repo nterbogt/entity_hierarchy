@@ -80,6 +80,19 @@ class ForwardRevisionNodeValidationTest extends BrowserTestBase {
     ], 'Save');
     $assert = $this->assertSession();
     $assert->pageTextContains(sprintf('This entity (node: %s) cannot be referenced as it is either a child or the same entity.', $first_child->id()));
+
+    // Remove parent in first child.
+    $this->drupalGet($first_child->toUrl('edit-form'));
+    $this->submitForm([
+      sprintf('%s[0][target_id][target_id]', static::FIELD_NAME) => '',
+    ], 'Save');
+    // Try to submit form with first child as parent.
+    $this->drupalGet($this->parent->toUrl('edit-form'));
+    $this->submitForm([
+      sprintf('%s[0][target_id][target_id]', static::FIELD_NAME) => sprintf('%s (%s)', $first_child->label(), $first_child->id()),
+    ], 'Save');
+    $assert = $this->assertSession();
+    $assert->pageTextNotContains(sprintf('This entity (node: %s) cannot be referenced as it is either a child or the same entity.', $first_child->id()));
   }
 
   /**
