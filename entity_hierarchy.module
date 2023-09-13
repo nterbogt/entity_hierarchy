@@ -66,6 +66,10 @@ function entity_hierarchy_entity_type_build(array &$entity_types) {
  * Implements hook_entity_update().
  */
 function entity_hierarchy_entity_update(EntityInterface $entity) {
+  if (\Drupal::state()->get('entity_hierarchy_disable_writes', FALSE)) {
+    return;
+  }
+
   if (!$entity instanceof ContentEntityInterface) {
     return;
   }
