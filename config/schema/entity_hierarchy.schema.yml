@@ -39,3 +39,6 @@ field.formatter.settings.entity_reference_hierarchy_label:
     weight_output:
       type: string
       label: 'Weight output'
+
+entity_reference_selection.entity_hierarchy:*:
+  type: entity_reference_selection.default
