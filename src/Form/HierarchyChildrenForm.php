@@ -97,6 +97,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
     }
     $queryBuilder = $this->hierarchyQueryBuliderFactory->get($fieldName, $this->entity->getEntityTypeId());
     $childEntities = $queryBuilder->findChildren($this->entity);
+    $childEntities = $queryBuilder->populateEntities($childEntities);
     $form_state->setTemporaryValue(self::CHILD_ENTITIES_STORAGE, $childEntities);
     $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
     $form['children'] = [
@@ -114,10 +115,11 @@ class HierarchyChildrenForm extends ContentEntityForm {
 
     $bundles = FALSE;
 
-    foreach ($childEntities as $weight => $childEntity) {
+    foreach ($childEntities as $record) {
+      $childEntity = $record->entity;
       $child = $childEntity->id();
       $form['children'][$child]['#attributes']['class'][] = 'draggable';
-      $form['children'][$child]['#weight'] = $weight;
+      $form['children'][$child]['#weight'] = $record->weight;
       $form['children'][$child]['title'] = $childEntity->toLink()
         ->toRenderable();
       if (!$bundles) {

@@ -60,6 +60,7 @@ class ChildEntityWarningBuilder implements ContainerInjectionInterface {
       foreach ($fields as $field_name) {
         $queryBuilder = $this->queryBuilderFactory->get($field_name, $entity->getEntityTypeId());
         $entities = $queryBuilder->findChildren($entity);
+        $entities = $queryBuilder->getEntities($entities);
         $parent = $queryBuilder->findParent($entity);
         $return[] = new ChildEntityWarning($entities, $cache, $parent);
       }

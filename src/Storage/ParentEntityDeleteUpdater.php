@@ -57,6 +57,7 @@ class ParentEntityDeleteUpdater extends ParentEntityReactionBase {
     foreach ($fields as $field_name) {
       $queryBuilder = $this->queryBuilderFactory->get($field_name, $entity->getEntityTypeId());
       if ($children = $queryBuilder->findChildren($entity)) {
+        $children = $queryBuilder->getEntities($children);
         $parent = $queryBuilder->findParent($entity);
         foreach ($children as $child_node) {
           $child_node->{$field_name}->target_id = ($parent ? $parent->id() : NULL);
