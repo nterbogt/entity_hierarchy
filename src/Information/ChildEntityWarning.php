@@ -3,6 +3,7 @@
 namespace Drupal\entity_hierarchy\Information;
 
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\StringTranslation\PluralTranslatableMarkup;
 use PNX\NestedSet\Node;
 
@@ -30,7 +31,7 @@ class ChildEntityWarning {
   /**
    * Node if parent exists.
    *
-   * @var null|\PNX\NestedSet\Node
+   * @var null|\Drupal\Core\Entity\ContentEntityInterface
    */
   protected $parent;
 
@@ -44,7 +45,7 @@ class ChildEntityWarning {
    * @param \PNX\NestedSet\Node|null $parent
    *   (optional) Parent if exists.
    */
-  public function __construct(\SplObjectStorage $relatedEntities, RefinableCacheableDependencyInterface $cache, Node $parent = NULL) {
+  public function __construct(array $relatedEntities, RefinableCacheableDependencyInterface $cache, ContentEntityInterface $parent = NULL) {
     $this->relatedEntities = $relatedEntities;
     $this->cache = $cache;
     $this->parent = $parent;
@@ -60,10 +61,10 @@ class ChildEntityWarning {
     $child_labels = [];
     $build = ['#theme' => 'item_list'];
     foreach ($this->relatedEntities as $node) {
-      if (!$this->relatedEntities->contains($node) || $node == $this->parent) {
+      if ($node == $this->parent) {
         continue;
       }
-      $child_labels[] = $this->relatedEntities->offsetGet($node)->label();
+      $child_labels[] = $node->label();
     }
     $build['#items'] = array_unique($child_labels);
     $this->cache->applyTo($build);
@@ -80,15 +81,15 @@ class ChildEntityWarning {
     if ($this->parent) {
       return new PluralTranslatableMarkup(
         // Related entities includes the parent, so we remove that.
-        $this->relatedEntities->count() - 1,
+        count($this->relatedEntities),
         'This Test entity has 1 child, deleting this item will change its parent to be @parent.',
         'This Test entity has @count children, deleting this item will change their parent to be @parent.',
         [
-          '@parent' => $this->relatedEntities->offsetGet($this->parent)->label(),
+          '@parent' => $this->parent->label(),
         ]);
     }
     return new PluralTranslatableMarkup(
-      $this->relatedEntities->count(),
+      count($this->relatedEntities),
       'This Test entity has 1 child, deleting this item will move that item to the root of the hierarchy.',
       'This Test entity has @count children, deleting this item will move those items to the root of the hierarchy.');
   }
