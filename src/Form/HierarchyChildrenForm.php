@@ -25,20 +25,6 @@ class HierarchyChildrenForm extends ContentEntityForm {
   protected $entity;
 
   /**
-   * Nested set storage factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
-   */
-  protected $nestedSetStorageFactory;
-
-  /**
-   * Nested set node key factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
-   */
-  protected $nodeKeyFactory;
-
-  /**
    * Parent candidate.
    *
    * @var \Drupal\entity_hierarchy\Information\ParentCandidateInterface
@@ -46,11 +32,9 @@ class HierarchyChildrenForm extends ContentEntityForm {
   protected $parentCandidate;
 
   /**
-   * Tree node mapper.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface
+   * @var \Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory;
    */
-  protected $entityTreeNodeMapper;
+  protected $hierarchyQueryBuliderFactory;
 
   /**
    * {@inheritdoc}
@@ -58,10 +42,8 @@ class HierarchyChildrenForm extends ContentEntityForm {
   public static function create(ContainerInterface $container) {
     /** @var self $instance */
     $instance = parent::create($container);
-    $instance->nestedSetStorageFactory = $container->get('entity_hierarchy.nested_set_storage_factory');
-    $instance->nodeKeyFactory = $container->get('entity_hierarchy.nested_set_node_factory');
     $instance->parentCandidate = $container->get('entity_hierarchy.information.parent_candidate');
-    $instance->entityTreeNodeMapper = $container->get('entity_hierarchy.entity_tree_node_mapper');
+    $instance->hierarchyQueryBuliderFactory = $container->get('entity_hierarchy.hierarchy_query_builder_factory');
     return $instance;
   }
 
@@ -113,11 +95,8 @@ class HierarchyChildrenForm extends ContentEntityForm {
         '#submit' => ['::updateField'],
       ];
     }
-    /** @var \PNX\NestedSet\Node[] $children */
-    /** @var \PNX\NestedSet\NestedSetInterface $storage */
-    $storage = $this->nestedSetStorageFactory->get($fieldName, $this->entity->getEntityTypeId());
-    $children = $storage->findChildren($this->nodeKeyFactory->fromEntity($this->entity));
-    $childEntities = $this->entityTreeNodeMapper->loadAndAccessCheckEntitysForTreeNodes($this->entity->getEntityTypeId(), $children, $cache);
+    $queryBuilder = $this->hierarchyQueryBuliderFactory->get($fieldName, $this->entity->getEntityTypeId());
+    $childEntities = $queryBuilder->findChildren($this->entity);
     $form_state->setTemporaryValue(self::CHILD_ENTITIES_STORAGE, $childEntities);
     $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
     $form['children'] = [
@@ -135,18 +114,8 @@ class HierarchyChildrenForm extends ContentEntityForm {
 
     $bundles = FALSE;
 
-    foreach ($children as $weight => $node) {
-      if (!$childEntities->contains($node)) {
-        // Doesn't exist or is access hidden.
-        continue;
-      }
-      /** @var \Drupal\Core\Entity\ContentEntityInterface $childEntity */
-      $childEntity = $childEntities->offsetGet($node);
-      if (!$childEntity->isDefaultRevision()) {
-        // We only update default revisions here.
-        continue;
-      }
-      $child = $node->getId();
+    foreach ($childEntities as $weight => $childEntity) {
+      $child = $childEntity->id();
       $form['children'][$child]['#attributes']['class'][] = 'draggable';
       $form['children'][$child]['#weight'] = $weight;
       $form['children'][$child]['title'] = $childEntity->toLink()
@@ -260,15 +229,10 @@ class HierarchyChildrenForm extends ContentEntityForm {
       'operations' => [],
       'finished' => [static::class, 'finished'],
     ];
-    foreach ($childEntities as $node) {
-      $childEntity = $childEntities->offsetGet($node);
-      if (!$childEntity->isDefaultRevision()) {
-        // We don't operate on other than the default revision.
-        continue;
-      }
+    foreach ($childEntities as $childEntity) {
       $batch['operations'][] = [
         [static::class, 'reorder'],
-        [$fieldName, $childEntity, $children[$node->getId()]['weight']],
+        [$fieldName, $childEntity, $children[$childEntity->id()]['weight']],
       ];
 
     }

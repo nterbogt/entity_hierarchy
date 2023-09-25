@@ -18,13 +18,6 @@ use Symfony\Component\Routing\Route;
 class ReorderChildrenAccess implements AccessCheckInterface {
 
   /**
-   * Route match.
-   *
-   * @var \Drupal\Core\Routing\RouteMatchInterface
-   */
-  protected $routeMatch;
-
-  /**
    * Parent candidate service.
    *
    * @var \Drupal\entity_hierarchy\Information\ParentCandidateInterface
@@ -43,11 +36,10 @@ class ReorderChildrenAccess implements AccessCheckInterface {
    *
    * @param \Drupal\entity_hierarchy\Information\ParentCandidateInterface $parentCandidate
    *   Parent candidate service.
-   * @param \Drupal\Core\Routing\RouteMatchInterface $routeMatch
-   *   Route match.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   Entity type manager service.
    */
-  public function __construct(ParentCandidateInterface $parentCandidate, RouteMatchInterface $routeMatch, EntityTypeManagerInterface $entityTypeManager) {
-    $this->routeMatch = $routeMatch;
+  public function __construct(ParentCandidateInterface $parentCandidate, EntityTypeManagerInterface $entityTypeManager) {
     $this->parentCandidate = $parentCandidate;
     $this->entityTypeManager = $entityTypeManager;
   }
@@ -64,17 +56,17 @@ class ReorderChildrenAccess implements AccessCheckInterface {
    *
    * @param \Symfony\Component\Routing\Route $route
    *   Route being access checked.
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The request object.
+   * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
+   *   The parametrized route
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The currently logged in account.
    *
    * @return \Drupal\Core\Access\AccessResultInterface
    *   The access result.
    */
-  public function access(Route $route, Request $request = NULL, AccountInterface $account = NULL) {
+  public function access(Route $route, RouteMatchInterface $route_match, AccountInterface $account) {
     $entity_type = $route->getOption(EntityHierarchyRouteProvider::ENTITY_HIERARCHY_ENTITY_TYPE);
-    $entity = $this->routeMatch->getParameter($entity_type);
+    $entity = $route_match->getParameter($entity_type);
 
     if (empty($entity)) {
       return AccessResult::forbidden();
