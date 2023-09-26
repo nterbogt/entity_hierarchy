@@ -61,9 +61,6 @@ class ChildEntityWarning {
     $child_labels = [];
     $build = ['#theme' => 'item_list'];
     foreach ($this->relatedEntities as $node) {
-      if ($node == $this->parent) {
-        continue;
-      }
       $child_labels[] = $node->label();
     }
     $build['#items'] = array_unique($child_labels);

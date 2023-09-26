@@ -57,8 +57,8 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
    */
   public function testReordering(): void {
     $entities = $this->createChildEntities($this->parent->id());
-    $root_node = $this->treeStorage->getNode($this->parentStub);
-    $children = $this->treeStorage->findChildren($root_node->getNodeKey());
+    $root_node = $this->parent;
+    $children = $this->queryBuilder->findChildren($root_node);
     $this->assertCount(5, $children);
     $this->assertEquals(array_map(function ($name) use ($entities) {
       return $entities[$name]->id();
@@ -68,13 +68,13 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 3',
       'Child 2',
       'Child 1',
-    ]), array_map(function (Node $node) {
-      return $node->getId();
+    ]), array_map(function (\StdClass $node) {
+      return $node->entity_id;
     }, $children));
     // Now insert one in the middle.
     $name = 'Child 6';
     $entities[$name] = $this->createTestEntity($this->parent->id(), $name, -2);
-    $children = $this->treeStorage->findChildren($root_node->getNodeKey());
+    $children = $this->queryBuilder->findChildren($root_node);
     $this->assertCount(6, $children);
     $this->assertEquals(array_map(function ($name) use ($entities) {
       return $entities[$name]->id();
@@ -85,8 +85,8 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 2',
       'Child 6',
       'Child 1',
-    ]), array_map(function (Node $node) {
-      return $node->getId();
+    ]), array_map(function (\StdClass $node) {
+      return $node->entity_id;
     }, $children));
     // Now we visit the form for reordering.
     $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
@@ -110,7 +110,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     $this->submitForm([
       'children[' . $entities[$name]->id() . '][weight]' => -10,
     ], 'Update child order');
-    $children = $this->treeStorage->findChildren($root_node->getNodeKey());
+    $children = $this->queryBuilder->findChildren($root_node);
     $this->assertCount(6, $children);
     $this->assertEquals(array_map(function ($name) use ($entities) {
       return $entities[$name]->id();
@@ -121,8 +121,8 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 3',
       'Child 2',
       'Child 1',
-    ]), array_map(function (Node $node) {
-      return $node->getId();
+    ]), array_map(function (\StdClass $node) {
+      return $node->entity_id;
     }, $children));
     $this->drupalGet($this->parent->toUrl());
     $assert->linkExists('Children');

@@ -34,14 +34,12 @@ class EntityHierarchyQueryBuilder {
     return $entity->get($this->fieldStorageDefinition->getName())->entity;
   }
 
-  public function populateEntities($records) {
-    $new_records = [];
+  public function populateEntities(&$records) {
     foreach ($records as $record) {
       // @todo Optimise loading.
       $record->entity = $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($record->entity_id);
-      $new_records[] = $record;
     }
-    return $new_records;
+    return $records;
   }
 
   public function getEntities($records) {
@@ -63,7 +61,11 @@ class EntityHierarchyQueryBuilder {
     $result = $query->condition($this->getPropertyColumnName('target_id'), $entity->id())
       ->orderBy($column_weight)
       ->execute();
-    return $result;
+    $records = [];
+    foreach ($result as $record) {
+      $records[] = $record;
+    }
+    return $records;
   }
 
   protected function getAncestorSql(): string {
@@ -113,7 +115,11 @@ CTESQL;
       ':entity_id' => $entity->id(),
       ':revision_id' => $entity->getRevisionId(),
     ]);
-    return $result;
+    $records = [];
+    foreach ($result as $record) {
+      $records[] = $record;
+    }
+    return $records;
   }
 
   protected function getDescendantSql(): string {
@@ -124,11 +130,11 @@ CTESQL;
     $sql = <<<CTESQL
 WITH RECURSIVE cte AS
 (
-  SELECT $column_entity_id, $column_target_id, CAST($column_target_id AS CHAR(200)) AS path, 1 AS depth
+  SELECT $column_entity_id, $column_target_id, revision_id, CAST($column_target_id AS CHAR(200)) AS path, 1 AS depth
   FROM {$table_name}
   WHERE $column_target_id = :entity_id
   UNION ALL
-  SELECT c.$column_entity_id, c.$column_target_id, CONCAT(cte.path, ',', c.$column_target_id), cte.depth+1
+  SELECT c.$column_entity_id, c.$column_target_id, c.revision_id, CONCAT(cte.path, ',', c.$column_target_id), cte.depth+1
   FROM {$table_name} c
   JOIN cte ON cte.$column_entity_id=c.$column_target_id
 ) 
@@ -138,7 +144,7 @@ CTESQL;
 
   public function findDescendants(ContentEntityInterface $entity, int $depth = 0, int $start = 1) {
     $column_entity_id = 'entity_id';
-    $sql = $this->getDescendantSql() . "SELECT $column_entity_id, path, depth FROM cte WHERE depth >= :start";
+    $sql = $this->getDescendantSql() . "SELECT $column_entity_id, revision_id, path, depth FROM cte WHERE depth >= :start";
     $params = [
       ':entity_id' => $entity->id(),
       ':start' => $start,
@@ -148,7 +154,11 @@ CTESQL;
       $params[':depth'] = $start + $depth;
     }
     $result = $this->database->query($sql, $params);
-    return $result;
+    $records = [];
+    foreach ($result as $record) {
+      $records[] = $record;
+    }
+    return $records;
   }
 
 }

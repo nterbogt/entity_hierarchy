@@ -56,6 +56,8 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
     $workflow->save();
     // Force ContentModerationRouteSubscriber to fire, setting the latest revision as the default for the edit route.
     \Drupal::service('router.builder')->rebuild();
+
+    $this->additionalSetup();
   }
 
   /**
@@ -74,9 +76,6 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
    */
   public function testReorderingForDraftParent(): void {
     $this->drupalLogin($this->rootUser);
-    $this->treeStorage = $this->container->get('entity_hierarchy.nested_set_storage_factory')
-      ->get(static::FIELD_NAME, static::ENTITY_TYPE);
-    $this->nodeFactory = $this->container->get('entity_hierarchy.nested_set_node_factory');
 
     $this->parent = $this->doCreateTestEntity([
       'type' => static::ENTITY_TYPE,
@@ -86,9 +85,8 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
     $this->parent->save();
 
     $entities = $this->createChildEntities($this->parent->id());
-    $this->parentStub = $this->nodeFactory->fromEntity($this->parent);
-    $root_node = $this->treeStorage->getNode($this->parentStub);
-    $children = $this->treeStorage->findChildren($root_node->getNodeKey());
+    $root_node = $this->parent;
+    $children = $this->queryBuilder->findChildren($root_node);
     $this->assertEquals(array_map(function ($name) use ($entities) {
       return $entities[$name]->id();
     }, [
@@ -97,8 +95,8 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
       'Child 3',
       'Child 2',
       'Child 1',
-    ]), array_map(function (Node $node) {
-      return $node->getId();
+    ]), array_map(function (\StdClass $node) {
+      return $node->entity_id;
     }, $children));
 
     $this->drupalGet($this->parent->toUrl('edit-form'));

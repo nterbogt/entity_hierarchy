@@ -41,6 +41,10 @@ trait EntityHierarchyTestTrait {
    */
   protected $nodeFactory;
 
+  protected $queryBuilderFactory;
+
+  protected $queryBuilder;
+
   /**
    * Perform additional setup.
    */
@@ -51,6 +55,9 @@ trait EntityHierarchyTestTrait {
     $this->parent = $this->createTestEntity(NULL, 'Parent');
     $this->nodeFactory = $this->container->get('entity_hierarchy.nested_set_node_factory');
     $this->parentStub = $this->nodeFactory->fromEntity($this->parent);
+
+    $this->queryBuilderFactory =  $this->container->get('entity_hierarchy.hierarchy_query_builder_factory');
+    $this->queryBuilder = $this->queryBuilderFactory->get(static::FIELD_NAME, static::ENTITY_TYPE);
   }
 
   /**
