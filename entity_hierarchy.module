@@ -63,23 +63,6 @@ function entity_hierarchy_entity_type_build(array &$entity_types) {
 }
 
 /**
- * Implements hook_entity_update().
- */
-function entity_hierarchy_entity_update(EntityInterface $entity) {
-  if (\Drupal::state()->get('entity_hierarchy_disable_writes', FALSE)) {
-    return;
-  }
-
-  if (!$entity instanceof ContentEntityInterface) {
-    return;
-  }
-  if (isset($entity->original)) {
-    \Drupal::service('class_resolver')->getInstanceFromDefinition(ParentEntityRevisionUpdater::class)
-      ->moveChildren($entity->original, $entity);
-  }
-}
-
-/**
  * Implements hook_entity_delete().
  */
 function entity_hierarchy_entity_delete(EntityInterface $entity) {

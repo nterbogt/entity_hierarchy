@@ -48,7 +48,9 @@ class EntityHierarchyQueryBuilder {
     $new_records = [];
     foreach ($records as $record) {
       // @todo Optimise loading.
-      $new_records[] = $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($record->entity_id);
+      if ($entity = $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($record->entity_id)) {
+        $new_records[] = $entity;
+      }
     }
     return $new_records;
   }
@@ -72,7 +74,7 @@ class EntityHierarchyQueryBuilder {
     $sql = <<<CTESQL
 WITH RECURSIVE cte AS
 (
-  SELECT $column_entity_id, $column_target_id, 0 as depth FROM {$table_name} WHERE entity_id = :entity_id
+  SELECT $column_entity_id, $column_target_id, 0 as depth FROM {node_revision__field_parent} WHERE entity_id = :entity_id and revision_id = :revision_id
   UNION ALL
   SELECT c.$column_entity_id, c.$column_target_id, cte.depth-1 FROM {$table_name} c
   JOIN cte ON c.$column_entity_id=cte.$column_target_id
@@ -85,7 +87,8 @@ CTESQL;
     $column_target_id = $this->getPropertyColumnName('target_id');
     $sql = $this->getAncestorSql() . "SELECT $column_target_id FROM cte ORDER BY depth LIMIT 1";
     $result = $this->database->query($sql, [
-      ':entity_id' => $entity->id()
+      ':entity_id' => $entity->id(),
+      ':revision_id' => $entity->getRevisionId(),
     ]);
     $id = $result->fetchObject()->$column_target_id;
     return $id ? $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($id) : NULL;
@@ -94,7 +97,8 @@ CTESQL;
   public function findDepth(ContentEntityInterface $entity): ?int {
     $sql = $this->getAncestorSql() . "SELECT depth FROM cte ORDER BY depth LIMIT 1";
     $result = $this->database->query($sql, [
-      ':entity_id' => $entity->id()
+      ':entity_id' => $entity->id(),
+      ':revision_id' => $entity->getRevisionId(),
     ]);
     if ($depth = $result->fetchObject()?->depth) {
       return $depth * -1;
@@ -106,7 +110,8 @@ CTESQL;
     $column_target_id = $this->getPropertyColumnName('target_id');
     $sql = $this->getAncestorSql() . "SELECT $column_target_id as entity_id, depth FROM cte ORDER BY depth";
     $result = $this->database->query($sql, [
-      ':entity_id' => $entity->id()
+      ':entity_id' => $entity->id(),
+      ':revision_id' => $entity->getRevisionId(),
     ]);
     return $result;
   }

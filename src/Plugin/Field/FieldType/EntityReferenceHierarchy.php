@@ -120,64 +120,64 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
    * {@inheritdoc}
    */
   public function postSave($update) {
-    if (\Drupal::state()->get('entity_hierarchy_disable_writes', FALSE)) {
-      return;
-    }
-    // Get the key factory and tree storage services.
-    $nodeKeyFactory = $this->getNodeKeyFactory();
-    $storage = $this->getTreeStorage();
-
-    // Get the field name.
-    $fieldDefinition = $this->getFieldDefinition();
-    $fieldName = $fieldDefinition->getName();
-    $entityTypeId = $fieldDefinition->getTargetEntityTypeId();
-    $this->lockTree($fieldName, $entityTypeId);
-
-    // Get the parent/child entities and their node-keys in the nested set.
-    $parentEntity = $this->get('entity')->getValue();
-    if (!$parentEntity) {
-      // Parent entity has been deleted.
-      // If this node was in the tree, it needs to be moved to a root node.
-      $stubNode = $nodeKeyFactory->fromEntity($this->getEntity());
-      if (($existingNode = $storage->getNode($stubNode)) && $existingNode->getDepth() > 0) {
-        $storage->moveSubTreeToRoot($existingNode);
-      }
-      $this->releaseLock($fieldName, $entityTypeId);
-      return;
-    }
-    $parentKey = $nodeKeyFactory->fromEntity($parentEntity);
-    $childEntity = $this->getEntity();
-    $childKey = $nodeKeyFactory->fromEntity($childEntity);
-
-    // Determine if this is a new node in the tree.
-    $isNewNode = FALSE;
-    if (!$childNode = $storage->getNode($childKey)) {
-      $isNewNode = TRUE;
-      // As we're going to be adding instead of moving, a key is all we require.
-      $childNode = $childKey;
-    }
-
-    // Does the parent already exist in the tree.
-    if ($existingParent = $storage->getNode($parentKey)) {
-      // If there are no siblings, we simply insert/move below.
-      $insertPosition = new InsertPosition($existingParent, $isNewNode, InsertPosition::DIRECTION_BELOW);
-
-      // But if there are siblings, we need to ascertain the correct position in
-      // the order.
-      if ($siblingEntities = $this->getSiblingEntityWeights($storage, $existingParent, $childNode)) {
-        // Group the siblings by their weight.
-        $weightOrderedSiblings = $this->groupSiblingsByWeight($siblingEntities, $fieldName);
-        $weight = $this->get('weight')->getValue();
-        $insertPosition = $this->getInsertPosition($weightOrderedSiblings, $weight, $isNewNode) ?: $insertPosition;
-      }
-      $insertPosition->performInsert($storage, $childNode);
-      $this->releaseLock($fieldName, $entityTypeId);
-      return;
-    }
-    // We need to create a node for the parent in the tree.
-    $parentNode = $storage->addRootNode($parentKey);
-    (new InsertPosition($parentNode, $isNewNode, InsertPosition::DIRECTION_BELOW))->performInsert($storage, $childNode);
-    $this->releaseLock($fieldName, $entityTypeId);
+//    if (\Drupal::state()->get('entity_hierarchy_disable_writes', FALSE)) {
+//      return;
+//    }
+//    // Get the key factory and tree storage services.
+//    $nodeKeyFactory = $this->getNodeKeyFactory();
+//    $storage = $this->getTreeStorage();
+//
+//    // Get the field name.
+//    $fieldDefinition = $this->getFieldDefinition();
+//    $fieldName = $fieldDefinition->getName();
+//    $entityTypeId = $fieldDefinition->getTargetEntityTypeId();
+//    $this->lockTree($fieldName, $entityTypeId);
+//
+//    // Get the parent/child entities and their node-keys in the nested set.
+//    $parentEntity = $this->get('entity')->getValue();
+//    if (!$parentEntity) {
+//      // Parent entity has been deleted.
+//      // If this node was in the tree, it needs to be moved to a root node.
+//      $stubNode = $nodeKeyFactory->fromEntity($this->getEntity());
+//      if (($existingNode = $storage->getNode($stubNode)) && $existingNode->getDepth() > 0) {
+//        $storage->moveSubTreeToRoot($existingNode);
+//      }
+//      $this->releaseLock($fieldName, $entityTypeId);
+//      return;
+//    }
+//    $parentKey = $nodeKeyFactory->fromEntity($parentEntity);
+//    $childEntity = $this->getEntity();
+//    $childKey = $nodeKeyFactory->fromEntity($childEntity);
+//
+//    // Determine if this is a new node in the tree.
+//    $isNewNode = FALSE;
+//    if (!$childNode = $storage->getNode($childKey)) {
+//      $isNewNode = TRUE;
+//      // As we're going to be adding instead of moving, a key is all we require.
+//      $childNode = $childKey;
+//    }
+//
+//    // Does the parent already exist in the tree.
+//    if ($existingParent = $storage->getNode($parentKey)) {
+//      // If there are no siblings, we simply insert/move below.
+//      $insertPosition = new InsertPosition($existingParent, $isNewNode, InsertPosition::DIRECTION_BELOW);
+//
+//      // But if there are siblings, we need to ascertain the correct position in
+//      // the order.
+//      if ($siblingEntities = $this->getSiblingEntityWeights($storage, $existingParent, $childNode)) {
+//        // Group the siblings by their weight.
+//        $weightOrderedSiblings = $this->groupSiblingsByWeight($siblingEntities, $fieldName);
+//        $weight = $this->get('weight')->getValue();
+//        $insertPosition = $this->getInsertPosition($weightOrderedSiblings, $weight, $isNewNode) ?: $insertPosition;
+//      }
+//      $insertPosition->performInsert($storage, $childNode);
+//      $this->releaseLock($fieldName, $entityTypeId);
+//      return;
+//    }
+//    // We need to create a node for the parent in the tree.
+//    $parentNode = $storage->addRootNode($parentKey);
+//    (new InsertPosition($parentNode, $isNewNode, InsertPosition::DIRECTION_BELOW))->performInsert($storage, $childNode);
+//    $this->releaseLock($fieldName, $entityTypeId);
   }
 
   /**
