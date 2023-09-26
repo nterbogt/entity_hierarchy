@@ -23,7 +23,14 @@ class EntityHierarchyQueryBuilder {
   }
 
   private function getTableName(): string {
-    return $this->getTableMapping()->getFieldTableName($this->fieldStorageDefinition->getName());
+    $prefix = $this->database->tablePrefix();
+    return $prefix . $this->getTableMapping()->getFieldTableName($this->fieldStorageDefinition->getName());
+  }
+
+  private function getRevisionTableName(): string {
+    $prefix = $this->database->tablePrefix();
+    $table_names = $this->getTableMapping()->getAllFieldTableNames($this->fieldStorageDefinition->getName());
+    return $prefix . (!empty($table_names[1]) ? $table_names[1] : $table_names[0]);
   }
 
   private function getPropertyColumnName(string $property): string {
@@ -71,14 +78,15 @@ class EntityHierarchyQueryBuilder {
   protected function getAncestorSql(): string {
     // @todo Fix entity_id reference.
     $table_name = $this->getTableName();
+    $revision_table_name = $this->getRevisionTableName();
     $column_target_id = $this->getPropertyColumnName('target_id');
     $column_entity_id = 'entity_id';
     $sql = <<<CTESQL
 WITH RECURSIVE cte AS
 (
-  SELECT $column_entity_id, $column_target_id, 0 as depth FROM {node_revision__field_parent} WHERE entity_id = :entity_id and revision_id = :revision_id
+  SELECT $column_entity_id, $column_target_id, 0 as depth FROM $revision_table_name WHERE entity_id = :entity_id and revision_id = :revision_id
   UNION ALL
-  SELECT c.$column_entity_id, c.$column_target_id, cte.depth-1 FROM {$table_name} c
+  SELECT c.$column_entity_id, c.$column_target_id, cte.depth-1 FROM $table_name c
   JOIN cte ON c.$column_entity_id=cte.$column_target_id
 ) 
 CTESQL;
@@ -113,7 +121,7 @@ CTESQL;
     $sql = $this->getAncestorSql() . "SELECT $column_target_id as entity_id, depth FROM cte ORDER BY depth";
     $result = $this->database->query($sql, [
       ':entity_id' => $entity->id(),
-      ':revision_id' => $entity->getRevisionId(),
+      ':revision_id' => ($entity->getEntityType()->hasKey('revision') ? $entity->getRevisionId() : $entity->id()),
     ]);
     $records = [];
     foreach ($result as $record) {
@@ -131,11 +139,11 @@ CTESQL;
 WITH RECURSIVE cte AS
 (
   SELECT $column_entity_id, $column_target_id, revision_id, CAST($column_target_id AS CHAR(200)) AS path, 1 AS depth
-  FROM {$table_name}
+  FROM $table_name
   WHERE $column_target_id = :entity_id
   UNION ALL
   SELECT c.$column_entity_id, c.$column_target_id, c.revision_id, CONCAT(cte.path, ',', c.$column_target_id), cte.depth+1
-  FROM {$table_name} c
+  FROM $table_name c
   JOIN cte ON cte.$column_entity_id=c.$column_target_id
 ) 
 CTESQL;
