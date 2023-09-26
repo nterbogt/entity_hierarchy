@@ -8,12 +8,5 @@
     "require-dev": {
         "drupal/workbench_access": "*"
     },
-    "license": "GPL-2.0-or-later",
-    "extra": {
-        "drush": {
-            "services": {
-                "drush.services.yml": "^9"
-            }
-        }
-    }
+    "license": "GPL-2.0-or-later"
 }
