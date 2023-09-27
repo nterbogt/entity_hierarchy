@@ -126,7 +126,6 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   public function testRemoveParentReferenceWithGrandChildren(): void {
     $child = $this->createTestEntity($this->parent->id());
     $grand_child = $this->createTestEntity($child->id(), 'Grandchild 1', 1);
-    $root_node = $this->treeStorage->getNode($this->parentStub);
     $this->assertSimpleParentChild($child);
     $this->assertSimpleParentChild($grand_child, $child, 1);
     $child->set(static::FIELD_NAME, NULL);
@@ -267,7 +266,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
       'Child 6',
       'Child 1',
     ]);
-    $this->parent->save();
+    $this->resaveParent();
     $this->assertChildOrder($this->parent, $entities, [
       'Child 5',
       'Child 4',
@@ -276,6 +275,13 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
       'Child 6',
       'Child 1',
     ]);
+  }
+
+  /**
+   * Re-saves the parent, with option to include new revision.
+   */
+  protected function resaveParent() {
+    $this->parent->save();
   }
 
   /**

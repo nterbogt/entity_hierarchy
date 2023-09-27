@@ -89,19 +89,19 @@ class EntityHierarchyQueryBuilder {
     $column_revision_id = $this->columns['revision_id'];
     $column_target_id = $this->columns['target_id'];
     $sql = <<<CTESQL
-WITH RECURSIVE cte AS
+WITH RECURSIVE ancestors AS
 (
-  SELECT $column_id, $column_target_id AS target_id, 0 AS depth FROM $revision_table_name WHERE $column_id = :id AND $column_revision_id = :revision_id
+  SELECT $column_id AS id, $column_target_id AS target_id, 0 AS depth FROM $revision_table_name WHERE $column_id = :id AND $column_revision_id = :revision_id
   UNION ALL
-  SELECT c.$column_id, c.$column_target_id AS target_id, cte.depth-1 FROM $table_name c
-  JOIN cte ON c.$column_id=cte.target_id
+  SELECT c.$column_id AS id, c.$column_target_id AS target_id, ancestors.depth-1 FROM $table_name c
+  JOIN ancestors ON c.$column_id=ancestors.target_id
 ) 
 CTESQL;
     return $sql;
   }
 
   public function findRoot(ContentEntityInterface $entity): ?ContentEntityInterface {
-    $sql = $this->getAncestorSql() . "SELECT target_id FROM cte ORDER BY depth LIMIT 1";
+    $sql = $this->getAncestorSql() . "SELECT target_id FROM ancestors ORDER BY depth LIMIT 1";
     $result = $this->database->query($sql, [
       ':id' => $entity->id(),
       ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
@@ -112,8 +112,8 @@ CTESQL;
     return NULL;
   }
 
-  public function findDepth(ContentEntityInterface $entity): ?int {
-    $sql = $this->getAncestorSql() . "SELECT depth FROM cte ORDER BY depth LIMIT 1";
+  public function findDepth(ContentEntityInterface $entity) {
+    $sql = $this->getAncestorSql() . "SELECT depth FROM ancestors ORDER BY depth LIMIT 1";
     $result = $this->database->query($sql, [
       ':id' => $entity->id(),
       ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
@@ -122,7 +122,7 @@ CTESQL;
       $depth = $object->depth * -1;
       if (!$this->fieldStorageDefinition->isBaseField()) {
         // Non base fields don't have a record where parent is null. Compensate.
-        $depth =+ 1;
+        $depth = $depth + 1;
       }
       return $depth;
     }
@@ -130,7 +130,7 @@ CTESQL;
   }
 
   public function findAncestors(ContentEntityInterface $entity) {
-    $sql = $this->getAncestorSql() . "SELECT id, depth FROM cte ORDER BY depth";
+    $sql = $this->getAncestorSql() . "SELECT id, depth FROM ancestors ORDER BY depth";
     $result = $this->database->query($sql, [
       ':id' => $entity->id(),
       ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
@@ -149,22 +149,22 @@ CTESQL;
     $column_revision_id = $this->columns['revision_id'];
     $column_target_id = $this->columns['target'];
     $sql = <<<CTESQL
-WITH RECURSIVE cte AS
+WITH RECURSIVE descendants AS
 (
   SELECT $column_id as id, $column_target_id as target_id, $column_revision_id as revision_id, CAST($column_target_id AS CHAR(200)) AS path, 1 AS depth
   FROM $table_name
   WHERE $column_target_id = :target_id
   UNION ALL
-  SELECT c.$column_id as id, c.$column_target_id as target_id, c.$column_revision_id as revision_id, CONCAT(cte.path, ',', c.$column_target_id), cte.depth+1
+  SELECT c.$column_id as id, c.$column_target_id as target_id, c.$column_revision_id as revision_id, CONCAT(cte.path, ',', c.$column_target_id), descendants.depth+1
   FROM $table_name c
-  JOIN cte ON cte.id=c.$column_target_id
+  JOIN descendants ON descendants.id=c.$column_target_id
 ) 
 CTESQL;
     return $sql;
   }
 
   public function findDescendants(ContentEntityInterface $entity, int $depth = 0, int $start = 1) {
-    $sql = $this->getDescendantSql() . "SELECT id, revision_id, path, depth FROM cte WHERE depth >= :start";
+    $sql = $this->getDescendantSql() . "SELECT id, revision_id, path, depth FROM descendants WHERE depth >= :start";
     $params = [
       ':target_id' => $entity->id(),
       ':start' => $start,
