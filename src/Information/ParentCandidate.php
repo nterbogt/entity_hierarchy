@@ -12,20 +12,6 @@ use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 class ParentCandidate implements ParentCandidateInterface {
 
   /**
-   * Entity field manager.
-   *
-   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
-   */
-  protected $entityFieldManager;
-
-  /**
-   * Bundle info.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface
-   */
-  protected $bundleInfo;
-
-  /**
    * Constructs a new ReorderChildrenAccess object.
    *
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
@@ -33,10 +19,10 @@ class ParentCandidate implements ParentCandidateInterface {
    * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $bundleInfo
    *   Bundle Info.
    */
-  public function __construct(EntityFieldManagerInterface $entityFieldManager, EntityTypeBundleInfoInterface $bundleInfo) {
-    $this->entityFieldManager = $entityFieldManager;
-    $this->bundleInfo = $bundleInfo;
-  }
+  public function __construct(
+    protected EntityFieldManagerInterface $entityFieldManager,
+    protected EntityTypeBundleInfoInterface $bundleInfo
+  ) {}
 
   /**
    * {@inheritdoc}

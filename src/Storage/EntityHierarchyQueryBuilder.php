@@ -130,7 +130,7 @@ CTESQL;
   }
 
   public function findAncestors(ContentEntityInterface $entity) {
-    $sql = $this->getAncestorSql() . "SELECT id, depth FROM ancestors ORDER BY depth";
+    $sql = $this->getAncestorSql() . "SELECT target_id as id, depth FROM ancestors ORDER BY depth";
     $result = $this->database->query($sql, [
       ':id' => $entity->id(),
       ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
@@ -147,7 +147,7 @@ CTESQL;
     $table_name = $this->getTablePrefix() . $this->tables['entity'];
     $column_id = $this->columns['id'];
     $column_revision_id = $this->columns['revision_id'];
-    $column_target_id = $this->columns['target'];
+    $column_target_id = $this->columns['target_id'];
     $sql = <<<CTESQL
 WITH RECURSIVE descendants AS
 (
@@ -155,7 +155,7 @@ WITH RECURSIVE descendants AS
   FROM $table_name
   WHERE $column_target_id = :target_id
   UNION ALL
-  SELECT c.$column_id as id, c.$column_target_id as target_id, c.$column_revision_id as revision_id, CONCAT(cte.path, ',', c.$column_target_id), descendants.depth+1
+  SELECT c.$column_id as id, c.$column_target_id as target_id, c.$column_revision_id as revision_id, CONCAT(descendants.path, ',', c.$column_target_id), descendants.depth+1
   FROM $table_name c
   JOIN descendants ON descendants.id=c.$column_target_id
 ) 

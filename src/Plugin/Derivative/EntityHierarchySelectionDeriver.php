@@ -13,21 +13,14 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class EntityHierarchySelectionDeriver extends DeriverBase implements ContainerDeriverInterface {
 
   /**
-   * Entity field manager.
-   *
-   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
-   */
-  protected $entityFieldManager;
-
-  /**
    * Creates an EntityHierarchySelectionDeriverobject.
    *
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
    *   Entity field manager.
    */
-  public function __construct(EntityFieldManagerInterface $entityFieldManager) {
-    $this->entityFieldManager = $entityFieldManager;
-  }
+  public function __construct(
+    protected EntityFieldManagerInterface $entityFieldManager
+  ) {}
 
   /**
    * {@inheritdoc}
