@@ -69,7 +69,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 2',
       'Child 1',
     ]), array_map(function (\StdClass $node) {
-      return $node->entity_id;
+      return $node->id;
     }, $children));
     // Now insert one in the middle.
     $name = 'Child 6';
@@ -86,7 +86,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 6',
       'Child 1',
     ]), array_map(function (\StdClass $node) {
-      return $node->entity_id;
+      return $node->id;
     }, $children));
     // Now we visit the form for reordering.
     $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
@@ -122,7 +122,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 2',
       'Child 1',
     ]), array_map(function (\StdClass $node) {
-      return $node->entity_id;
+      return $node->id;
     }, $children));
     $this->drupalGet($this->parent->toUrl());
     $assert->linkExists('Children');

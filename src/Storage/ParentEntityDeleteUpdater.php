@@ -2,6 +2,7 @@
 
 namespace Drupal\entity_hierarchy\Storage;
 
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -9,31 +10,24 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Defines a class for updating the tree when a parent is deleted.
  */
-class ParentEntityDeleteUpdater extends ParentEntityReactionBase {
+class ParentEntityDeleteUpdater implements ContainerInjectionInterface {
 
   /**
    * Constructs a new ParentEntityRevisionUpdater object.
    *
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory $nestedSetStorageFactory
-   *   Nested set storage factory.
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $nodeKeyFactory
-   *   Node key factory.
    * @param \Drupal\entity_hierarchy\Information\ParentCandidateInterface $parentCandidate
    *   Parent candidate service.
-   * @param \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface $treeNodeMapper
-   *   Tree node mapper.
    */
-  public function __construct(NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, ParentCandidateInterface $parentCandidate, protected EntityHierarchyQueryBuilderFactory $queryBuilderFactory) {
-    parent::__construct($nestedSetStorageFactory, $nodeKeyFactory, $parentCandidate);
-  }
+  public function __construct(
+    protected ParentCandidateInterface $parentCandidate,
+    protected EntityHierarchyQueryBuilderFactory $queryBuilderFactory
+  ) {}
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity_hierarchy.nested_set_storage_factory'),
-      $container->get('entity_hierarchy.nested_set_node_factory'),
       $container->get('entity_hierarchy.information.parent_candidate'),
       $container->get('entity_hierarchy.hierarchy_query_builder_factory')
     );

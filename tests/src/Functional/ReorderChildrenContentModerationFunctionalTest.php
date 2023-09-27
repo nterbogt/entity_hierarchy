@@ -96,7 +96,7 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
       'Child 2',
       'Child 1',
     ]), array_map(function (\StdClass $node) {
-      return $node->entity_id;
+      return $node->id;
     }, $children));
 
     $this->drupalGet($this->parent->toUrl('edit-form'));

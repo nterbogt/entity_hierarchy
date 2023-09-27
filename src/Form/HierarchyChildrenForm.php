@@ -234,7 +234,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
     foreach ($childEntities as $childEntity) {
       $batch['operations'][] = [
         [static::class, 'reorder'],
-        [$fieldName, $childEntity->entity, $children[$childEntity->entity_id]['weight']],
+        [$fieldName, $childEntity->entity, $children[$childEntity->id]['weight']],
       ];
 
     }

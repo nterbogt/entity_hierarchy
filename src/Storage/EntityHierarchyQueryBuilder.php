@@ -66,7 +66,7 @@ class EntityHierarchyQueryBuilder {
     return $new_records;
   }
 
-  public function findChildren(ContentEntityInterface $entity) {
+  public function findChildren(ContentEntityInterface $entity): array {
     $query = $this->database->select($this->tables['entity'], 'e');
     $query->addField('e', $this->columns['id'], 'id');
     $query->addField('e', $this->columns['revision_id'], 'revision_id');

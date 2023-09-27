@@ -5,6 +5,7 @@ namespace Drupal\entity_hierarchy\Plugin\views\field;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory;
 use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
 use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
@@ -41,7 +42,7 @@ class HierarchyTreeSummary extends FieldPluginBase {
    * @param \Drupal\Core\Database\Connection $database
    *   Database connection.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, NestedSetStorageFactory $nestedSetStorageFactory, EntityTypeManagerInterface $entityTypeManager, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTreeNodeMapperInterface $tree_mapper, Connection $database) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, NestedSetStorageFactory $nestedSetStorageFactory, EntityTypeManagerInterface $entityTypeManager, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTreeNodeMapperInterface $tree_mapper, Connection $database, protected EntityHierarchyQueryBuilderFactory $queryBuilderFactory) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->nestedSetStorageFactory = $nestedSetStorageFactory;
     $this->entityTypeManager = $entityTypeManager;
@@ -63,7 +64,8 @@ class HierarchyTreeSummary extends FieldPluginBase {
       $container->get('entity_type.manager'),
       $container->get('entity_hierarchy.nested_set_node_factory'),
       $container->get('entity_hierarchy.entity_tree_node_mapper'),
-      $container->get('database')
+      $container->get('database'),
+      $container->get('entity_hierarchy.hierarchy_query_builder_factory')
     );
   }
 
@@ -111,6 +113,7 @@ class HierarchyTreeSummary extends FieldPluginBase {
       $output = [];
       if ($entity = $this->getEntity($values)) {
         $stub = $this->nodeKeyFactory->fromEntity($entity);
+        //$queryBuilder = $this->queryBuilderFactory->get($this->field)
         $level = 1;
         while ($entities = $storage->findDescendants($stub, 1, $level)) {
           // This is inefficient and one reason why this is only an admin tool.
