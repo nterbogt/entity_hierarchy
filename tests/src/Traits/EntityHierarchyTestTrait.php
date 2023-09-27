@@ -43,6 +43,9 @@ trait EntityHierarchyTestTrait {
 
   protected $queryBuilderFactory;
 
+  /**
+   * @var \Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilder
+   */
   protected $queryBuilder;
 
   /**

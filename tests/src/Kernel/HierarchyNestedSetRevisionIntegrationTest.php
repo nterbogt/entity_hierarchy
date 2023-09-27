@@ -2,9 +2,9 @@
 
 namespace Drupal\Tests\entity_hierarchy\Kernel;
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\entity_test\Entity\EntityTestRev;
-use PNX\NestedSet\Node;
 
 /**
  * Tests integration with entity_hierarchy and a revisionable entity.
@@ -66,16 +66,16 @@ class HierarchyNestedSetRevisionIntegrationTest extends HierarchyNestedSetIntegr
   /**
    * {@inheritdoc}
    */
-  protected function getChildren(Node $parent_node) {
-    $children = parent::getChildren($parent_node);
+  protected function getChildren(ContentEntityInterface $parent) {
+    $children = parent::getChildren($parent);
     // Limit to latest revisions only.
     $entity_storage = $this->container->get('entity_type.manager')->getStorage(static::ENTITY_TYPE);
     $entities = $entity_storage->loadMultiple();
     $revisions = array_map(function (EntityInterface $entity) {
       return $entity->getRevisionId();
     }, $entities);
-    $children = array_values(array_filter($children, function (Node $node) use ($revisions) {
-      return in_array($node->getRevisionId(), $revisions, TRUE);
+    $children = array_values(array_filter($children, function (\StdClass $node) use ($revisions) {
+      return in_array($node->revision_id, $revisions, TRUE);
     }));
     return $children;
   }

@@ -5,46 +5,52 @@ namespace Drupal\entity_hierarchy\Storage;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Entity\Sql\TableMappingInterface;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Psr\Log\LoggerInterface;
 
 class EntityHierarchyQueryBuilder {
+
+  protected $tables = [];
+
+  protected $columns = [];
 
   public function __construct(
     protected FieldStorageDefinitionInterface $fieldStorageDefinition,
     protected EntityTypeManagerInterface $entityTypeManager,
     protected Connection $database,
     protected LoggerInterface $logger
-  ) {}
+  ) {
+    $tableMapping = $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->getTableMapping();
 
-  private function getTableMapping(): TableMappingInterface {
-    return $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->getTableMapping();
+    // Get table definitions.
+    $table_names = $tableMapping->getAllFieldTableNames($this->fieldStorageDefinition->getName());
+    $this->tables = [
+      'entity' => $table_names[0],
+    ];
+    $this->tables['entity_revision'] = !empty($table_names[1]) ? $table_names[1] : $table_names[0];
+
+    // Get column definitions.
+    $base_field_id = $this->fieldStorageDefinition->isBaseField() ? 'id' : 'entity_id';
+    $this->columns = [
+      'id' => $base_field_id,
+      'revision_id' => $this->fieldStorageDefinition->isRevisionable() ? 'revision_id' : $base_field_id,
+      'target_id' => $tableMapping->getFieldColumnName($this->fieldStorageDefinition, 'target_id'),
+      'weight' => $tableMapping->getFieldColumnName($this->fieldStorageDefinition, 'weight'),
+    ];
   }
 
-  private function getTableName(): string {
-    $prefix = $this->database->tablePrefix();
-    return $prefix . $this->getTableMapping()->getFieldTableName($this->fieldStorageDefinition->getName());
+  private function getTablePrefix() {
+    return $this->database->tablePrefix();
   }
 
-  private function getRevisionTableName(): string {
-    $prefix = $this->database->tablePrefix();
-    $table_names = $this->getTableMapping()->getAllFieldTableNames($this->fieldStorageDefinition->getName());
-    return $prefix . (!empty($table_names[1]) ? $table_names[1] : $table_names[0]);
-  }
-
-  private function getPropertyColumnName(string $property): string {
-    return $this->getTableMapping()->getFieldColumnName($this->fieldStorageDefinition, $property);
-  }
-
-  public function findParent(ContentEntityInterface $entity):? ContentEntityInterface {
+  public function findParent(ContentEntityInterface $entity): ?ContentEntityInterface {
     return $entity->get($this->fieldStorageDefinition->getName())->entity;
   }
 
   public function populateEntities(&$records) {
     foreach ($records as $record) {
       // @todo Optimise loading.
-      $record->entity = $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($record->entity_id);
+      $record->entity = $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($record->id);
     }
     return $records;
   }
@@ -53,7 +59,7 @@ class EntityHierarchyQueryBuilder {
     $new_records = [];
     foreach ($records as $record) {
       // @todo Optimise loading.
-      if ($entity = $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($record->entity_id)) {
+      if ($entity = $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($record->id)) {
         $new_records[] = $entity;
       }
     }
@@ -61,12 +67,12 @@ class EntityHierarchyQueryBuilder {
   }
 
   public function findChildren(ContentEntityInterface $entity) {
-    $column_weight = $this->getPropertyColumnName('weight');
-    $query = $this->database->select($this->getTableName(), 'eh');
-    $query->addField('eh', 'entity_id');
-    $query->addField('eh', $column_weight, 'weight');
-    $result = $query->condition($this->getPropertyColumnName('target_id'), $entity->id())
-      ->orderBy($column_weight)
+    $query = $this->database->select($this->tables['entity'], 'e');
+    $query->addField('e', $this->columns['id'], 'id');
+    $query->addField('e', $this->columns['revision_id'], 'revision_id');
+    $query->addField('e', $this->columns['weight'], 'weight');
+    $result = $query->condition($this->columns['target_id'], $entity->id())
+      ->orderBy($this->columns['weight'])
       ->execute();
     $records = [];
     foreach ($result as $record) {
@@ -77,51 +83,57 @@ class EntityHierarchyQueryBuilder {
 
   protected function getAncestorSql(): string {
     // @todo Fix entity_id reference.
-    $table_name = $this->getTableName();
-    $revision_table_name = $this->getRevisionTableName();
-    $column_target_id = $this->getPropertyColumnName('target_id');
-    $column_entity_id = 'entity_id';
+    $table_name = $this->getTablePrefix() . $this->tables['entity'];
+    $revision_table_name = $this->getTablePrefix() . $this->tables['entity_revision'];
+    $column_id = $this->columns['id'];
+    $column_revision_id = $this->columns['revision_id'];
+    $column_target_id = $this->columns['target_id'];
     $sql = <<<CTESQL
 WITH RECURSIVE cte AS
 (
-  SELECT $column_entity_id, $column_target_id, 0 as depth FROM $revision_table_name WHERE entity_id = :entity_id and revision_id = :revision_id
+  SELECT $column_id, $column_target_id AS target_id, 0 AS depth FROM $revision_table_name WHERE $column_id = :id AND $column_revision_id = :revision_id
   UNION ALL
-  SELECT c.$column_entity_id, c.$column_target_id, cte.depth-1 FROM $table_name c
-  JOIN cte ON c.$column_entity_id=cte.$column_target_id
+  SELECT c.$column_id, c.$column_target_id AS target_id, cte.depth-1 FROM $table_name c
+  JOIN cte ON c.$column_id=cte.target_id
 ) 
 CTESQL;
     return $sql;
   }
 
   public function findRoot(ContentEntityInterface $entity): ?ContentEntityInterface {
-    $column_target_id = $this->getPropertyColumnName('target_id');
-    $sql = $this->getAncestorSql() . "SELECT $column_target_id FROM cte ORDER BY depth LIMIT 1";
+    $sql = $this->getAncestorSql() . "SELECT target_id FROM cte ORDER BY depth LIMIT 1";
     $result = $this->database->query($sql, [
-      ':entity_id' => $entity->id(),
-      ':revision_id' => $entity->getRevisionId(),
+      ':id' => $entity->id(),
+      ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
     ]);
-    $id = $result->fetchObject()->$column_target_id;
-    return $id ? $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($id) : NULL;
+    if ($record = $result->fetchObject()) {
+      return $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($record->target_id);
+    }
+    return NULL;
   }
 
   public function findDepth(ContentEntityInterface $entity): ?int {
     $sql = $this->getAncestorSql() . "SELECT depth FROM cte ORDER BY depth LIMIT 1";
     $result = $this->database->query($sql, [
-      ':entity_id' => $entity->id(),
-      ':revision_id' => $entity->getRevisionId(),
+      ':id' => $entity->id(),
+      ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
     ]);
-    if ($depth = $result->fetchObject()?->depth) {
-      return $depth * -1;
+    if ($object = $result->fetchObject()) {
+      $depth = $object->depth * -1;
+      if (!$this->fieldStorageDefinition->isBaseField()) {
+        // Non base fields don't have a record where parent is null. Compensate.
+        $depth =+ 1;
+      }
+      return $depth;
     }
-    return NULL;
+    return 0;
   }
 
   public function findAncestors(ContentEntityInterface $entity) {
-    $column_target_id = $this->getPropertyColumnName('target_id');
-    $sql = $this->getAncestorSql() . "SELECT $column_target_id as entity_id, depth FROM cte ORDER BY depth";
+    $sql = $this->getAncestorSql() . "SELECT id, depth FROM cte ORDER BY depth";
     $result = $this->database->query($sql, [
-      ':entity_id' => $entity->id(),
-      ':revision_id' => ($entity->getEntityType()->hasKey('revision') ? $entity->getRevisionId() : $entity->id()),
+      ':id' => $entity->id(),
+      ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
     ]);
     $records = [];
     foreach ($result as $record) {
@@ -132,29 +144,29 @@ CTESQL;
 
   protected function getDescendantSql(): string {
     // @todo Fix entity_id reference.
-    $table_name = $this->getTableName();
-    $column_target_id = $this->getPropertyColumnName('target_id');
-    $column_entity_id = 'entity_id';
+    $table_name = $this->getTablePrefix() . $this->tables['entity'];
+    $column_id = $this->columns['id'];
+    $column_revision_id = $this->columns['revision_id'];
+    $column_target_id = $this->columns['target'];
     $sql = <<<CTESQL
 WITH RECURSIVE cte AS
 (
-  SELECT $column_entity_id, $column_target_id, revision_id, CAST($column_target_id AS CHAR(200)) AS path, 1 AS depth
+  SELECT $column_id as id, $column_target_id as target_id, $column_revision_id as revision_id, CAST($column_target_id AS CHAR(200)) AS path, 1 AS depth
   FROM $table_name
-  WHERE $column_target_id = :entity_id
+  WHERE $column_target_id = :target_id
   UNION ALL
-  SELECT c.$column_entity_id, c.$column_target_id, c.revision_id, CONCAT(cte.path, ',', c.$column_target_id), cte.depth+1
+  SELECT c.$column_id as id, c.$column_target_id as target_id, c.$column_revision_id as revision_id, CONCAT(cte.path, ',', c.$column_target_id), cte.depth+1
   FROM $table_name c
-  JOIN cte ON cte.$column_entity_id=c.$column_target_id
+  JOIN cte ON cte.id=c.$column_target_id
 ) 
 CTESQL;
     return $sql;
   }
 
   public function findDescendants(ContentEntityInterface $entity, int $depth = 0, int $start = 1) {
-    $column_entity_id = 'entity_id';
-    $sql = $this->getDescendantSql() . "SELECT $column_entity_id, revision_id, path, depth FROM cte WHERE depth >= :start";
+    $sql = $this->getDescendantSql() . "SELECT id, revision_id, path, depth FROM cte WHERE depth >= :start";
     $params = [
-      ':entity_id' => $entity->id(),
+      ':target_id' => $entity->id(),
       ':start' => $start,
     ];
     if ($depth > 0) {
