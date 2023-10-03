@@ -117,6 +117,7 @@ function entity_hierarchy_form_alter(&$form, FormStateInterface $form_state, $fo
         if (
           $entity->hasField($field_name)
           && $requestQuery->has($field_name)
+          && isset($form[$field_name])
           && (isset($form[$field_name]['widget'][0]['target_id']['target_id']) || $form[$field_name]['widget'][0]['target_id']['#type'] === 'select')
           && ($target_entity = \Drupal::entityTypeManager()->getStorage($entity->getEntityTypeId())->load($requestQuery->get($field_name)))
           && $target_entity->access('view')
