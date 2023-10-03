@@ -107,7 +107,7 @@ class MicrositeMenuItemForm extends ContentEntityForm {
     /** @var \Drupal\menu_link_content\MenuLinkContentInterface $entity */
     $entity = parent::buildEntity($form, $form_state);
 
-    list(, $parent) = explode(':', $form_state->getValue('menu_parent'), 2);
+    [, $parent] = explode(':', $form_state->getValue('menu_parent'), 2);
 
     $entity->parent->value = $parent;
     $entity->enabled->value = (!$form_state->isValueEmpty(['enabled', 'value']));

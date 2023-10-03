@@ -4,9 +4,9 @@ namespace Drupal\entity_hierarchy\Plugin\Field\FieldType;
 
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
-use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\TypedData\DataDefinition;
 use Drupal\entity_hierarchy\Storage\InsertPosition;
 use Drupal\entity_hierarchy\Storage\NestedSetStorage;
 use Drupal\entity_hierarchy\Storage\TreeLockTrait;
@@ -249,7 +249,7 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
       ->condition($key, $ids, 'IN')
       ->execute();
     $weightSeparator = $fieldDefinition instanceof BaseFieldDefinition ? '__' : '_';
-    $entities = array_combine(array_column($entities, $key), array_column($entities, $parentField . $weightSeparator. 'weight'));
+    $entities = array_combine(array_column($entities, $key), array_column($entities, $parentField . $weightSeparator . 'weight'));
     foreach ($siblings as $node) {
       if (!isset($entities[$node->getRevisionId()])) {
         continue;

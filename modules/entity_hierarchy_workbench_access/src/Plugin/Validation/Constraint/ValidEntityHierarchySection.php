@@ -12,7 +12,7 @@ use Symfony\Component\Validator\Constraint;
  *   label = @Translation("Valid hierarchy selection", context = "Validation"),
  * )
  */
-class ValidEntityHierarchySection extends Constraint  {
+class ValidEntityHierarchySection extends Constraint {
 
   /**
    * Violation message. Use the same message as FormValidator.

@@ -31,9 +31,9 @@ class EntityHierarchyCommands extends DrushCommands {
    * Rebuild tree.
    *
    * @param string $field_name
-   *   Field machine name
+   *   Field machine name.
    * @param string $entity_type_id
-   *   Entity type id
+   *   Entity type id.
    *
    * @usage drush entity-hierarchy:rebuild-tree field_parents node
    *   Rebuild tree for node field named field_parents.

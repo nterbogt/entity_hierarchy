@@ -3,8 +3,8 @@
 namespace Drupal\entity_hierarchy_microsite;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
-use Drupal\Core\Menu\MenuLinkTreeInterface;
 use Drupal\Core\Menu\MenuLinkManagerInterface;
+use Drupal\Core\Menu\MenuLinkTreeInterface;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
 use Drupal\entity_hierarchy_microsite\Entity\MicrositeInterface;
 use Drupal\entity_hierarchy_microsite\Entity\MicrositeMenuItemOverrideInterface;

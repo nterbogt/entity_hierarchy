@@ -2,9 +2,9 @@
 
 namespace Drupal\entity_hierarchy\Plugin\Field\FieldWidget;
 
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\Plugin\Field\FieldWidget\EntityReferenceAutocompleteWidget;
+use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 
 /**
@@ -78,7 +78,7 @@ class EntityReferenceHierarchyAutocomplete extends EntityReferenceAutocompleteWi
     if ($this->getSetting(self::HIDE_WEIGHT)) {
       $widget['weight'] = [
         '#type' => 'value',
-        '#value' => isset($items[$delta]->weight) ? $items[$delta]->weight : 0,
+        '#value' => $items[$delta]->weight ?? 0,
       ];
     }
     else {

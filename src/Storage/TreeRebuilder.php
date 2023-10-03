@@ -32,7 +32,7 @@ class TreeRebuilder {
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   Entity type manager.
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
-   *   Entity field manager
+   *   Entity field manager.
    */
   public function __construct(EntityTypeManagerInterface $entityTypeManager, EntityFieldManagerInterface $entity_field_manager) {
     $this->entityTypeManager = $entityTypeManager;
@@ -202,7 +202,7 @@ class TreeRebuilder {
     $sets = [];
     $base_field_definitions = $this->entityFieldManager->getBaseFieldDefinitions($entity_type_id);
     $weight_separator = isset($base_field_definitions[$field_name]) ? '__' : '_';
-    foreach ($records as $ix => $item) {
+    foreach ($records as $item) {
       $parent = $item["$field_name{$weight_separator}target_id"];
       $sets[$parent][] = $item[$idKey];
       $items[$item[$idKey]] = $parent;

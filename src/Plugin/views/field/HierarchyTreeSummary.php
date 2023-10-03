@@ -86,7 +86,7 @@ class HierarchyTreeSummary extends FieldPluginBase {
       '#type' => 'select',
       '#required' => TRUE,
       '#options' => [
-        'child_counts' => 'Number of children at each level below',
+        'child_counts' => $this->t('Number of children at each level below'),
       ],
       '#title' => $this->t('Summary type'),
       '#default_value' => $this->options['summary_type'],

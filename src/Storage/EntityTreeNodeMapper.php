@@ -38,7 +38,7 @@ class EntityTreeNodeMapper implements EntityTreeNodeMapperInterface {
     $loadedEntities = new \SplObjectStorage();
     foreach ($nodes as $node) {
       $nodeId = $node->getId();
-      $entity = isset($entities[$nodeId]) ? $entities[$nodeId] : FALSE;
+      $entity = $entities[$nodeId] ?? FALSE;
       if (!$entity || ($entity->getEntityType()->hasKey('revision') && $node->getRevisionId() != $entity->getRevisionId())) {
         // Bypass non default revisions and deleted items.
         continue;
