@@ -118,6 +118,9 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
     );
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function defaultConfiguration() {
     return parent::defaultConfiguration() + [
       'bundles' => [],
@@ -195,7 +198,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
             'description' => '',
           ];
           $tree[$parent][$id] = $entry;
-          $this->cacheBackend->set($cid, $entry,Cache::PERMANENT, $entry_tags);
+          $this->cacheBackend->set($cid, $entry, Cache::PERMANENT, $entry_tags);
           $tags = array_merge($tags, $entry_tags);
         }
       }
@@ -387,4 +390,5 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
     $this->configuration['bundles'] = $bundles;
     return $changed;
   }
+
 }

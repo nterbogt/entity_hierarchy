@@ -3,11 +3,11 @@
 namespace Drupal\entity_hierarchy\Form;
 
 use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\Core\Entity\ContentEntityForm;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -187,16 +187,16 @@ class HierarchyChildrenForm extends ContentEntityForm {
       $handler = new $handlerClass();
 
       $links = [];
-      foreach($childBundles[$fieldName] as $id => $info) {
+      foreach ($childBundles[$fieldName] as $id => $info) {
         $url = $handler->getAddChildUrl($entityType, $this->entity, $id, $fieldName);
-        if($url->access()) {
+        if ($url->access()) {
           $links[$id] = [
             'title' => $this->t('Create new @bundle', ['@bundle' => $info['label']]),
-            'url' => $url
+            'url' => $url,
           ];
         }
       }
-      if(count($links) > 1) {
+      if (count($links) > 1) {
         $actions['add_child'] = [
           '#type' => 'dropbutton',
           '#links' => $links,

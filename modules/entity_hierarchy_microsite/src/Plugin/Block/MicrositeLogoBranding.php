@@ -2,9 +2,9 @@
 
 namespace Drupal\entity_hierarchy_microsite\Plugin\Block;
 
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\entity_hierarchy_microsite\Plugin\MicrositePluginTrait;
 use Drupal\node\NodeInterface;

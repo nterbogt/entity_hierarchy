@@ -11,7 +11,6 @@ use Drupal\node\Entity\Node;
 use Drupal\Tests\entity_hierarchy\Kernel\EntityHierarchyKernelTestBase;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\workbench_access\Entity\AccessScheme;
-use Drupal\workbench_access\WorkbenchAccessManagerInterface;
 
 /**
  * Tests interaction between entity_hierarchy and workbench_access.
@@ -74,7 +73,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     $this->installConfig(['node', 'workbench_access']);
     $this->installSchema('node', ['node_access']);
     $this->parentNodeType = $this->createContentType(['type' => 'section']);
-    $this->childNodeType =  $this->createContentType(['type' => 'children']);
+    $this->childNodeType = $this->createContentType(['type' => 'children']);
     // Only the child has the field.
     $this->setupEntityHierarchyField(static::ENTITY_TYPE, $this->childNodeType->id(), static::FIELD_NAME);
     $this->scheme = AccessScheme::create([
@@ -136,7 +135,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
    */
   protected function doCreateTestEntity(array $values) {
     $entity = Node::create([
-      'title' => isset($values['title']) ? $values['title'] : $this->randomMachineName(),
+      'title' => $values['title'] ?? $this->randomMachineName(),
       'type' => $this->childNodeType->id(),
       'status' => 1,
       'uid' => 1,

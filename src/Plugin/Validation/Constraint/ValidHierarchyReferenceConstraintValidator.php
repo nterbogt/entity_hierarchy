@@ -96,7 +96,7 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
       $has_revisions = $this_entity->getEntityType()->hasKey('revision');
       $descendant_entities = \Drupal::entityQuery($this_entity->getEntityTypeId())
         ->condition($this_entity->getEntityType()->getKey('id'), $descendant_record_ids, 'IN')
-        ->accessCheck(false)
+        ->accessCheck(FALSE)
         ->execute();
       $descendant_entities = array_flip($descendant_entities);
       foreach ($descendant_records as $record) {

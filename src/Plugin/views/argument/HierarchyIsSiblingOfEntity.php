@@ -37,7 +37,7 @@ class HierarchyIsSiblingOfEntity extends EntityHierarchyArgumentPluginBase {
           $depth_token => $node->getDepth() + 1,
         ];
         if (!$this->options['show_self']) {
-          $self_token = ':self'  . $this->tableAlias;
+          $self_token = ':self' . $this->tableAlias;
           $expression .= " AND $this->tableAlias.id != {$self_token}";
           $arguments[$self_token] = $stub->getId();
         }

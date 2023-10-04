@@ -4,8 +4,8 @@ namespace Drupal\entity_hierarchy\Plugin\Field\FieldWidget;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Field\FieldItemListInterface;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Field\Plugin\Field\FieldWidget\OptionsWidgetBase;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Select widget.
@@ -34,13 +34,13 @@ class EntityReferenceHierarchySelect extends OptionsWidgetBase {
    */
   public function settingsForm(array $form, FormStateInterface $form_state) {
     return parent::settingsForm($form, $form_state) + [
-        'hide_weight' => [
-          '#type' => 'checkbox',
-          '#title' => $this->t('Hide weight field'),
-          '#description' => $this->t('Hide the weight field and use the default value instead'),
-          '#default_value' => $this->getSetting(self::HIDE_WEIGHT),
-        ],
-      ];
+      'hide_weight' => [
+        '#type' => 'checkbox',
+        '#title' => $this->t('Hide weight field'),
+        '#description' => $this->t('Hide the weight field and use the default value instead'),
+        '#default_value' => $this->getSetting(self::HIDE_WEIGHT),
+      ],
+    ];
   }
 
   /**
@@ -62,7 +62,7 @@ class EntityReferenceHierarchySelect extends OptionsWidgetBase {
     $element += [
       '#type' => 'select',
       '#options' => $this->getOptions($items->getEntity()),
-      '#default_value' => isset($items[$delta]->target_id) ? $items[$delta]->target_id : '',
+      '#default_value' => $items[$delta]->target_id ?? '',
     ];
 
     $widget = [
@@ -73,7 +73,7 @@ class EntityReferenceHierarchySelect extends OptionsWidgetBase {
     if ($this->getSetting(self::HIDE_WEIGHT)) {
       $widget['weight'] = [
         '#type' => 'value',
-        '#value' => isset($items[$delta]->weight) ? $items[$delta]->weight : 0,
+        '#value' => $items[$delta]->weight ?? 0,
       ];
     }
     else {
@@ -119,10 +119,10 @@ class EntityReferenceHierarchySelect extends OptionsWidgetBase {
     // and a 'select a value' option for required fields that do not come
     // with a value selected.
     if (!$this->required) {
-      return t('- None -');
+      return $this->t('- None -');
     }
     if (!$this->has_value) {
-      return t('- Select a value -');
+      return $this->t('- Select a value -');
     }
   }
 

@@ -9,7 +9,6 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Route;
 
 /**
@@ -57,7 +56,7 @@ class ReorderChildrenAccess implements AccessCheckInterface {
    * @param \Symfony\Component\Routing\Route $route
    *   Route being access checked.
    * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
-   *   The parametrized route
+   *   The parametrized route.
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The currently logged in account.
    *

@@ -2,17 +2,17 @@
 
 namespace Drupal\entity_hierarchy_workbench_access\Plugin\Validation\Constraint;
 
-use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
-use Symfony\Component\Validator\ConstraintValidator;
-use Symfony\Component\Validator\ConstraintValidatorInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\workbench_access\Entity\AccessSchemeInterface;
 use Drupal\workbench_access\WorkbenchAccessManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\ConstraintValidator;
+use Symfony\Component\Validator\ConstraintValidatorInterface;
 
 /**
  * Defines a class for validating entity hierarchy selection with access.

@@ -93,7 +93,10 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
     $executable = Views::getView('entity_hierarchy_test_children_view');
     $executable->preview('block_1', [$this->getArgumentFromEntity($this->parent)]);
     $this->assertCount(3, $executable->result);
-    $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
+    $this->assertIdenticalResultset($executable, $expected, [
+      'name' => 'name',
+      'id' => 'id',
+    ]);
   }
 
   /**
@@ -151,7 +154,10 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
     $executable = Views::getView('entity_hierarchy_test_children_view');
     $executable->preview('block_2', [$this->getArgumentFromEntity($this->parent)]);
     $this->assertCount(8, $executable->result);
-    $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
+    $this->assertIdenticalResultset($executable, $expected, [
+      'name' => 'name',
+      'id' => 'id',
+    ]);
   }
 
   /**
@@ -179,7 +185,10 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
     $executable = Views::getView('entity_hierarchy_test_children_view');
     $executable->preview('block_3', [$this->getArgumentFromEntity(reset($grandchildren))]);
     $this->assertCount(2, $executable->result);
-    $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
+    $this->assertIdenticalResultset($executable, $expected, [
+      'name' => 'name',
+      'id' => 'id',
+    ]);
   }
 
   /**
@@ -213,7 +222,10 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
     $executable = Views::getView('entity_hierarchy_test_children_view');
     $executable->preview('block_4', [$this->getArgumentFromEntity($child)]);
     $this->assertCount(2, $executable->result);
-    $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
+    $this->assertIdenticalResultset($executable, $expected, [
+      'name' => 'name',
+      'id' => 'id',
+    ]);
   }
 
   /**
@@ -251,7 +263,10 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
     $executable = Views::getView('entity_hierarchy_test_children_view');
     $executable->preview('block_5', [$this->getArgumentFromEntity($child)]);
     $this->assertCount(3, $executable->result);
-    $this->assertIdenticalResultset($executable, $expected, ['name' => 'name', 'id' => 'id']);
+    $this->assertIdenticalResultset($executable, $expected, [
+      'name' => 'name',
+      'id' => 'id',
+    ]);
   }
 
   /**

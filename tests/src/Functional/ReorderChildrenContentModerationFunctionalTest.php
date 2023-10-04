@@ -54,7 +54,8 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
     $workflow = $this->createEditorialWorkflow();
     $workflow->getTypePlugin()->addEntityTypeAndBundle(static::ENTITY_TYPE, static::ENTITY_TYPE);
     $workflow->save();
-    // Force ContentModerationRouteSubscriber to fire, setting the latest revision as the default for the edit route.
+    // Force ContentModerationRouteSubscriber to fire, setting the latest
+    // revision as the default for the edit route.
     \Drupal::service('router.builder')->rebuild();
 
     $this->additionalSetup();
@@ -72,7 +73,7 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
   }
 
   /**
-   * Tests that the reorder form is linked to the current revision when content_moderation is active.
+   * Tests that the reorder form is linked to the current revision.
    */
   public function testReorderingForDraftParent(): void {
     $this->drupalLogin($this->rootUser);
@@ -106,7 +107,8 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
       'moderation_state[0][state]' => 'draft',
     ], 'Save');
 
-    // Ensure the latest content revision is a draft and we can reorder the children, which are linked to the current published version.
+    // Ensure the latest content revision is a draft and we can reorder the
+    // children, which are linked to the current published version.
     $this->drupalGet($this->parent->toUrl('edit-form'));
     $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
     $assert = $this->assertSession();
@@ -114,7 +116,8 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
       $assert->linkExists($entity->label());
     }
 
-    // Now insert one, and confirm we see this change while the parent is still in draft.
+    // Now insert one, and confirm we see this change while the parent is still
+    // in draft.
     $name = 'Child 6';
     $entities[$name] = $this->createTestEntity($this->parent->id(), $name, -2);
     $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
