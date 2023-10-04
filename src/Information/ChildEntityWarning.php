@@ -5,7 +5,6 @@ namespace Drupal\entity_hierarchy\Information;
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\StringTranslation\PluralTranslatableMarkup;
-use PNX\NestedSet\Node;
 
 /**
  * Defines a value object for a child entity warning.

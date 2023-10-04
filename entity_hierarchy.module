@@ -18,7 +18,6 @@ use Drupal\entity_hierarchy\Handler\NodeEntityHierarchyHandler;
 use Drupal\entity_hierarchy\Information\ChildEntityWarningBuilder;
 use Drupal\entity_hierarchy\Routing\EntityHierarchyRouteProvider;
 use Drupal\entity_hierarchy\Storage\ParentEntityDeleteUpdater;
-use Drupal\entity_hierarchy\Storage\ParentEntityRevisionUpdater;
 
 /**
  * Implements @see hook_help().

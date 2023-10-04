@@ -5,6 +5,7 @@ namespace Drupal\entity_hierarchy\Plugin\Field\FieldType;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\TypedData\DataDefinition;
 
 /**
  * Plugin implementation of the 'entity_reference_hierarchy' field type.

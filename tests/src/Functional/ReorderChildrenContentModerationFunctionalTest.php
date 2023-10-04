@@ -7,7 +7,6 @@ use Drupal\Tests\block\Traits\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\content_moderation\Traits\ContentModerationTestTrait;
 use Drupal\Tests\entity_hierarchy\Traits\EntityHierarchyTestTrait;
-use PNX\NestedSet\Node;
 
 /**
  * Defines a class for testing the reorder children form.

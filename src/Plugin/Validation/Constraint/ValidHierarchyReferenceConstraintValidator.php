@@ -5,9 +5,6 @@ namespace Drupal\entity_hierarchy\Plugin\Validation\Constraint;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory;
-use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
-use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
-use PNX\NestedSet\Node;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -22,6 +19,8 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager.
+   * @param \Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory $queryBuilderFactory
+   *   The query builder factory.
    */
   public function __construct(
     protected EntityTypeManagerInterface $entityTypeManager,
@@ -94,7 +93,7 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
     $children = [$this_entity->id()];
     if (!empty($descendant_record_ids)) {
       $has_revisions = $this_entity->getEntityType()->hasKey('revision');
-      $descendant_entities = \Drupal::entityQuery($this_entity->getEntityTypeId())
+      $descendant_entities = $this->entityTypeManager->getStorage($this_entity->getEntityTypeId())->getQuery()
         ->condition($this_entity->getEntityType()->getKey('id'), $descendant_record_ids, 'IN')
         ->accessCheck(FALSE)
         ->execute();

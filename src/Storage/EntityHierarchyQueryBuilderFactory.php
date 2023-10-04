@@ -20,6 +20,16 @@ class EntityHierarchyQueryBuilderFactory {
   protected $cache = [];
 
   /**
+   * Constructs a new EntityHierarchyQueryBuilderFactory object.
+   *
+   * @param \Drupal\Core\Database\Connection $database
+   *   The database service.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   The entity type manager service.
+   * @param \Psr\Log\LoggerInterface $logger
+   *   The logger service.
+   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
+   *   The entity field manager service.
    */
   public function __construct(
     protected Connection $database,

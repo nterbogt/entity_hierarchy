@@ -6,9 +6,6 @@ use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory;
-use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
-use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
-use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -16,23 +13,18 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class ChildEntityWarningBuilder implements ContainerInjectionInterface {
 
-  protected $parentCandidate;
-
-  /**
-   * @var \Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory
-   */
-  protected $queryBuilderFactory;
-
   /**
    * Constructs a new ChildEntityWarningBuilder object.
    *
    * @param \Drupal\entity_hierarchy\Information\ParentCandidateInterface $parentCandidate
    *   Parent candidate service.
+   * @param \Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory $queryBuilderFactory
+   *   Query builder factory.
    */
-  public function __construct(ParentCandidateInterface $parentCandidate, EntityHierarchyQueryBuilderFactory $queryBuilderFactory) {
-    $this->parentCandidate = $parentCandidate;
-    $this->queryBuilderFactory = $queryBuilderFactory;
-  }
+  public function __construct(
+    protected ParentCandidateInterface $parentCandidate,
+    protected EntityHierarchyQueryBuilderFactory $queryBuilderFactory
+  ) {}
 
   /**
    * {@inheritdoc}

@@ -17,6 +17,8 @@ class ParentEntityDeleteUpdater implements ContainerInjectionInterface {
    *
    * @param \Drupal\entity_hierarchy\Information\ParentCandidateInterface $parentCandidate
    *   Parent candidate service.
+   * @param \Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory $queryBuilderFactory
+   *   Query builder factory.
    */
   public function __construct(
     protected ParentCandidateInterface $parentCandidate,
