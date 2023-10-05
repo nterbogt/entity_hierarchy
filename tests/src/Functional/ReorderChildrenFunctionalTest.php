@@ -3,6 +3,7 @@
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
 use Drupal\Core\Url;
+use Drupal\entity_hierarchy\Storage\Record;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\field\Entity\FieldConfig;
@@ -67,8 +68,8 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 3',
       'Child 2',
       'Child 1',
-    ]), array_map(function (\StdClass $node) {
-      return $node->id;
+    ]), array_map(function (Record $node) {
+      return $node->getId();
     }, $children));
     // Now insert one in the middle.
     $name = 'Child 6';
@@ -84,8 +85,8 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 2',
       'Child 6',
       'Child 1',
-    ]), array_map(function (\StdClass $node) {
-      return $node->id;
+    ]), array_map(function (Record $node) {
+      return $node->getId();
     }, $children));
     // Now we visit the form for reordering.
     $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
@@ -120,8 +121,8 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 3',
       'Child 2',
       'Child 1',
-    ]), array_map(function (\StdClass $node) {
-      return $node->id;
+    ]), array_map(function (Record $node) {
+      return $node->getId();
     }, $children));
     $this->drupalGet($this->parent->toUrl());
     $assert->linkExists('Children');

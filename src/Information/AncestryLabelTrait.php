@@ -25,6 +25,8 @@ trait AncestryLabelTrait {
    */
   protected function generateEntityLabelWithAncestry(ContentEntityInterface $entity, EntityHierarchyQueryBuilder $queryBuilder, &$tags = []) {
     $ancestors = $queryBuilder->findAncestors($entity);
+    // Remove ourself.
+    array_pop($ancestors);
     $ancestor_entities = $queryBuilder->getEntities($ancestors);
     $ancestors_labels = [];
     foreach ($ancestor_entities as $ancestor_node) {

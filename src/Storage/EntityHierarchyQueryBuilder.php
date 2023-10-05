@@ -76,25 +76,10 @@ class EntityHierarchyQueryBuilder {
    * @return \Drupal\entity_hierarchy\Storage\Record[]
    */
   public function findChildren(ContentEntityInterface $entity): array {
-    $query = $this->database->select($this->tables['entity'], 'e');
-    $query->addField('e', $this->columns['id'], 'id');
-    $query->addField('e', $this->columns['revision_id'], 'revision_id');
-    $query->addField('e', $this->columns['target_id'], 'target_id');
-    $query->addField('e', $this->columns['weight'], 'weight');
-    $result = $query->condition($this->columns['target_id'], $entity->id())
-      ->orderBy($this->columns['weight'])
-      ->execute();
-    $records = $result->fetchAll(PDO::FETCH_CLASS, '\Drupal\entity_hierarchy\Storage\Record');
-    $type = $this->fieldStorageDefinition->getTargetEntityTypeId();
-    array_walk($records, function ($record) use ($type) {
-      $record->setType($type);
-      $record->setDepth(1);
-    });
-    return $records;
+    return $this->findDescendants($entity, 1);
   }
 
   protected function getAncestorSql(): string {
-    // @todo Fix entity_id reference.
     $table_name = $this->getTablePrefix() . $this->tables['entity'];
     $revision_table_name = $this->getTablePrefix() . $this->tables['entity_revision'];
     $column_id = $this->columns['id'];
@@ -104,17 +89,17 @@ class EntityHierarchyQueryBuilder {
     $sql = <<<CTESQL
 WITH RECURSIVE ancestors AS
 (
-  SELECT $column_id AS id, $column_target_id AS target_id, $column_weight AS weight, $column_revision_id as revision_id, 0 AS depth FROM $revision_table_name WHERE $column_id = :id AND $column_revision_id = :revision_id
+  SELECT $column_id AS id, $column_revision_id as revision_id, $column_target_id AS target_id, $column_weight AS weight, 0 AS depth FROM $revision_table_name WHERE $column_id = :id AND $column_revision_id = :revision_id
   UNION ALL
-  SELECT c.$column_id AS id, c.$column_target_id AS target_id, c.$column_weight AS weight, c.$column_revision_id as revision_id, ancestors.depth-1 FROM $table_name c
+  SELECT c.$column_id, c.$column_revision_id, c.$column_target_id, c.$column_weight, ancestors.depth-1 FROM $table_name c
   JOIN ancestors ON c.$column_id=ancestors.target_id
-) 
+)
 CTESQL;
     return $sql;
   }
 
   public function findRoot(ContentEntityInterface $entity): ?ContentEntityInterface {
-    $sql = $this->getAncestorSql() . "SELECT target_id FROM ancestors ORDER BY depth LIMIT 1";
+    $sql = $this->getAncestorSql() . " SELECT target_id FROM ancestors ORDER BY depth LIMIT 1";
     $result = $this->database->query($sql, [
       ':id' => $entity->id(),
       ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
@@ -125,8 +110,8 @@ CTESQL;
     return NULL;
   }
 
-  public function findDepth(ContentEntityInterface $entity) {
-    $sql = $this->getAncestorSql() . "SELECT depth FROM ancestors ORDER BY depth LIMIT 1";
+  public function findDepth(ContentEntityInterface $entity): int {
+    $sql = $this->getAncestorSql() . " SELECT depth FROM ancestors ORDER BY depth LIMIT 1";
     $result = $this->database->query($sql, [
       ':id' => $entity->id(),
       ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
@@ -146,14 +131,14 @@ CTESQL;
    * @return \Drupal\entity_hierarchy\Storage\Record[]
    */
   public function findAncestors(ContentEntityInterface $entity) {
-    $sql = $this->getAncestorSql() . "SELECT * FROM ancestors ORDER BY depth";
+    $sql = $this->getAncestorSql() . " SELECT * FROM ancestors ORDER BY depth";
     $result = $this->database->query($sql, [
       ':id' => $entity->id(),
       ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
     ]);
     $records = $result->fetchAll(PDO::FETCH_CLASS, '\Drupal\entity_hierarchy\Storage\Record');
     $type = $this->fieldStorageDefinition->getTargetEntityTypeId();
-    array_walk($records, function ($record) use ($type) {
+    array_walk($records, function (Record $record) use ($type) {
       $record->setType($type);
     });
     if (!$this->fieldStorageDefinition->isBaseField()) {
@@ -166,7 +151,6 @@ CTESQL;
   }
 
   protected function getDescendantSql(): string {
-    // @todo Fix entity_id reference.
     $table_name = $this->getTablePrefix() . $this->tables['entity'];
     $column_id = $this->columns['id'];
     $column_revision_id = $this->columns['revision_id'];
@@ -175,20 +159,23 @@ CTESQL;
     $sql = <<<CTESQL
 WITH RECURSIVE descendants AS
 (
-  SELECT $column_id as id, $column_target_id as target_id, $column_revision_id as revision_id, $column_weight as weight, 1 AS depth
+  SELECT $column_id as id, $column_revision_id as revision_id, $column_target_id as target_id, $column_weight as weight, 1 AS depth
   FROM $table_name
   WHERE $column_target_id = :target_id
   UNION ALL
-  SELECT c.$column_id as id, c.$column_target_id as target_id, c.$column_revision_id as revision_id, c.$column_weight as weight, descendants.depth+1
+  SELECT c.$column_id, c.$column_revision_id, c.$column_target_id, c.$column_weight, descendants.depth+1
   FROM $table_name c
   JOIN descendants ON descendants.id=c.$column_target_id
-) 
+)
 CTESQL;
     return $sql;
   }
 
+  /**
+   * @return \Drupal\entity_hierarchy\Storage\Record[]
+   */
   public function findDescendants(ContentEntityInterface $entity, int $depth = 0, int $start = 1) {
-    $sql = $this->getDescendantSql() . "SELECT * FROM descendants WHERE depth >= :start";
+    $sql = $this->getDescendantSql() . " SELECT id, revision_id, target_id, weight, depth FROM descendants WHERE depth >= :start";
     $params = [
       ':target_id' => $entity->id(),
       ':start' => $start,
@@ -197,11 +184,13 @@ CTESQL;
       $sql .= " AND depth < :depth";
       $params[':depth'] = $start + $depth;
     }
+    $sql .= " ORDER by weight, id";
     $result = $this->database->query($sql, $params);
-    $records = [];
-    foreach ($result as $record) {
-      $records[] = $record;
-    }
+    $records = $result->fetchAll(PDO::FETCH_CLASS, '\Drupal\entity_hierarchy\Storage\Record');
+    $type = $this->fieldStorageDefinition->getTargetEntityTypeId();
+    array_walk($records, function (Record $record) use ($type) {
+      $record->setType($type);
+    });
     return $records;
   }
 

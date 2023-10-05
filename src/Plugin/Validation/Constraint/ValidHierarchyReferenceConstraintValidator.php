@@ -86,7 +86,7 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
     $descendant_records = $queryBuilder->findDescendants($this_entity);
     $descendant_record_ids = [];
     foreach ($descendant_records as $record) {
-      $descendant_record_ids[] = $record->id;
+      $descendant_record_ids[] = $record->getId();
     }
 
     // Cannot reference self.
@@ -99,11 +99,11 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
         ->execute();
       $descendant_entities = array_flip($descendant_entities);
       foreach ($descendant_records as $record) {
-        $node_id = $record->id;
+        $node_id = $record->getId();
         if (!isset($descendant_entities[$node_id])) {
           continue;
         }
-        if ($has_revisions && $record->revision_id != $descendant_entities[$node_id]) {
+        if ($has_revisions && $record->getRevisionId() != $descendant_entities[$node_id]) {
           continue;
         }
         $children[] = $node_id;

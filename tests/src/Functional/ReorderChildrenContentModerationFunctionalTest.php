@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
+use Drupal\entity_hierarchy\Storage\Record;
 use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\Tests\block\Traits\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
@@ -95,8 +96,8 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
       'Child 3',
       'Child 2',
       'Child 1',
-    ]), array_map(function (\StdClass $node) {
-      return $node->id;
+    ]), array_map(function (Record $node) {
+      return $node->getId();
     }, $children));
 
     $this->drupalGet($this->parent->toUrl('edit-form'));

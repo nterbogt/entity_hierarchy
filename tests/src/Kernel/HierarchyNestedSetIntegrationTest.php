@@ -4,6 +4,7 @@ namespace Drupal\Tests\entity_hierarchy\Kernel;
 
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\entity_hierarchy\Storage\Record;
 
 /**
  * Tests integration with entity_hierarchy.
@@ -318,8 +319,8 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     $children = $this->getChildren($parent);
     $this->assertCount(1, $children);
     $first = reset($children);
-    $this->assertEquals($child->id(), $first->id);
-    $this->assertEquals($this->getEntityRevisionId($child), $first->revision_id);
+    $this->assertEquals($child->id(), $first->getId());
+    $this->assertEquals($this->getEntityRevisionId($child), $first->getRevisionId());
     $this->assertEquals(1 + $baseDepth, $this->queryBuilder->findDepth($child));
   }
 
@@ -335,12 +336,12 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     $children = $this->getChildren($this->parent);
     $this->assertCount(2, $children);
     $first = reset($children);
-    $this->assertEquals($child->id(), $first->id);
-    $this->assertEquals($this->getEntityRevisionId($child), $first->revision_id);
+    $this->assertEquals($child->id(), $first->getId());
+    $this->assertEquals($this->getEntityRevisionId($child), $first->getRevisionId());
     $this->assertEquals(1, $this->queryBuilder->findDepth($child));
     $last = end($children);
-    $this->assertEquals($sibling->id(), $last->id);
-    $this->assertEquals($this->getEntityRevisionId($sibling), $last->revision_id);
+    $this->assertEquals($sibling->id(), $last->getId());
+    $this->assertEquals($this->getEntityRevisionId($sibling), $last->getRevisionId());
     $this->assertEquals(1, $this->queryBuilder->findDepth($sibling));
   }
 
@@ -367,7 +368,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
    * @param \Drupal\Core\Entity\ContentEntityInterface $parent
    *   Parent node.
    *
-   * @return \StdClass[]
+   * @return \Drupal\entity_hierarchy\Storage\Record[]
    *   Children
    */
   protected function getChildren(ContentEntityInterface $parent) {
@@ -397,8 +398,8 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     $this->assertCount(count($order), $children);
     $this->assertEquals(array_map(function ($name) use ($entities) {
       return $entities[$name]->id();
-    }, $order), array_map(function (\StdClass $node) {
-      return $node->id;
+    }, $order), array_map(function (Record $node) {
+      return $node->getId();
     }, $children));
   }
 

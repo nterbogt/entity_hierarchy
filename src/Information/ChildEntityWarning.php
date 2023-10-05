@@ -14,27 +14,6 @@ use Drupal\Core\StringTranslation\PluralTranslatableMarkup;
 class ChildEntityWarning {
 
   /**
-   * Related entities.
-   *
-   * @var \SplObjectStorage
-   */
-  protected $relatedEntities;
-
-  /**
-   * Cache metadata.
-   *
-   * @var \Drupal\Core\Cache\RefinableCacheableDependencyInterface
-   */
-  protected $cache;
-
-  /**
-   * Node if parent exists.
-   *
-   * @var null|\Drupal\Core\Entity\ContentEntityInterface
-   */
-  protected $parent;
-
-  /**
    * Constructs a new ChildEntityWarning object.
    *
    * @param \SplObjectStorage $relatedEntities
@@ -44,11 +23,11 @@ class ChildEntityWarning {
    * @param \PNX\NestedSet\Node|null $parent
    *   (optional) Parent if exists.
    */
-  public function __construct(array $relatedEntities, RefinableCacheableDependencyInterface $cache, ContentEntityInterface $parent = NULL) {
-    $this->relatedEntities = $relatedEntities;
-    $this->cache = $cache;
-    $this->parent = $parent;
-  }
+  public function __construct(
+    protected array $relatedEntities,
+    protected RefinableCacheableDependencyInterface $cache,
+    protected ?ContentEntityInterface $parent = NULL
+  ) {}
 
   /**
    * Gets render array for child entity list.

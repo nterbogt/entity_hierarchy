@@ -4,6 +4,7 @@ namespace Drupal\Tests\entity_hierarchy\Kernel;
 
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\entity_hierarchy\Storage\Record;
 use Drupal\entity_test\Entity\EntityTestRev;
 
 /**
@@ -74,8 +75,8 @@ class HierarchyNestedSetRevisionIntegrationTest extends HierarchyNestedSetIntegr
     $revisions = array_map(function (EntityInterface $entity) {
       return $entity->getRevisionId();
     }, $entities);
-    $children = array_values(array_filter($children, function (\StdClass $node) use ($revisions) {
-      return in_array($node->revision_id, $revisions, TRUE);
+    $children = array_values(array_filter($children, function (Record $record) use ($revisions) {
+      return in_array($record->getRevisionId(), $revisions, TRUE);
     }));
     return $children;
   }
