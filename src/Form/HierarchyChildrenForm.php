@@ -116,10 +116,10 @@ class HierarchyChildrenForm extends ContentEntityForm {
     $bundles = FALSE;
 
     foreach ($childEntities as $record) {
-      $childEntity = $record->entity;
+      $childEntity = $record->getEntity();
       $child = $childEntity->id();
       $form['children'][$child]['#attributes']['class'][] = 'draggable';
-      $form['children'][$child]['#weight'] = $record->weight;
+      $form['children'][$child]['#weight'] = $record->getWeight();
       $form['children'][$child]['title'] = $childEntity->toLink()
         ->toRenderable();
       if (!$bundles) {
@@ -131,7 +131,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
         '#delta' => 50,
         '#title' => t('Weight for @title', ['@title' => $childEntity->label()]),
         '#title_display' => 'invisible',
-        '#default_value' => $childEntity->{$fieldName}->weight,
+        '#default_value' => $record->getWeight(),
         // Classify the weight element for #tabledrag.
         '#attributes' => ['class' => ['children-order-weight']],
       ];
