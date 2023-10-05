@@ -97,7 +97,6 @@ class HierarchyChildrenForm extends ContentEntityForm {
     }
     $queryBuilder = $this->hierarchyQueryBuliderFactory->get($fieldName, $this->entity->getEntityTypeId());
     $childEntities = $queryBuilder->findChildren($this->entity);
-    $childEntities = $queryBuilder->populateEntities($childEntities);
     $form_state->setTemporaryValue(self::CHILD_ENTITIES_STORAGE, $childEntities);
     $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
     $form['children'] = [

@@ -21,8 +21,6 @@ class Record {
 
   protected string $type;
 
-  protected ?ContentEntityInterface $entity;
-
   static public function create(string $type, int $id, int $weight, int $depth) {
     $record = new Record();
     $record->type = $type;
@@ -48,12 +46,8 @@ class Record {
     return $this->weight;
   }
 
-  public function getDepth(): ?int {
+  public function getDepth(): int {
     return $this->depth;
-  }
-
-  public function setDepth(int $depth): void {
-    $this->depth = $depth;
   }
 
   public function getType(): string {
@@ -65,11 +59,7 @@ class Record {
   }
 
   public function getEntity(): ?ContentEntityInterface {
-    return $this->entity;
-  }
-
-  public function setEntity(ContentEntityInterface $entity): void {
-    $this->entity = $entity;
+    return \Drupal::entityTypeManager()->getStorage($this->type)->load($this->id);
   }
 
 }

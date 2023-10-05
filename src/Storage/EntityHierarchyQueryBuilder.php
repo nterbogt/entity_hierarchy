@@ -48,17 +48,6 @@ class EntityHierarchyQueryBuilder {
     return $entity->get($this->fieldStorageDefinition->getName())->entity;
   }
 
-  /**
-   * @return \Drupal\entity_hierarchy\Storage\Record[]
-   */
-  public function populateEntities($records): array {
-    foreach ($records as $record) {
-      // @todo Optimise loading.
-      $record->setEntity($this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($record->getId()));
-    }
-    return $records;
-  }
-
   public function getEntities($records) {
     $new_records = [];
     foreach ($records as $record) {
