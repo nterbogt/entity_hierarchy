@@ -73,7 +73,7 @@ class HierarchyNestedSetRevisionIntegrationTest extends HierarchyNestedSetIntegr
     $entity_storage = $this->container->get('entity_type.manager')->getStorage(static::ENTITY_TYPE);
     $entities = $entity_storage->loadMultiple();
     $revisions = array_map(function (EntityInterface $entity) {
-      return $entity->getRevisionId();
+      return (int) $entity->getRevisionId();
     }, $entities);
     $children = array_values(array_filter($children, function (Record $record) use ($revisions) {
       return in_array($record->getRevisionId(), $revisions, TRUE);
