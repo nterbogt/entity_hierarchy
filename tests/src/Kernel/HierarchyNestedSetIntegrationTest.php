@@ -377,7 +377,12 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
 
   protected function getDescendants(ContentEntityInterface $parent, $depth = 0, $start = 1): array {
     $descendants = $this->queryBuilder->findDescendants($parent, $depth, $start);
-    return $this->queryBuilder->getEntities($descendants);
+    $entities = [];
+    $manipulators = [
+      ['callable' => 'entity_hierarchy.default_manipulators:collectEntities', 'args' => [&$entities]],
+    ];
+    $this->queryBuilder->transform($descendants, $manipulators);
+    return $entities;
   }
 
   /**

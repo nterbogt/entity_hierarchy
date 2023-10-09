@@ -2,6 +2,7 @@
 
 namespace Drupal\entity_hierarchy\Storage;
 
+use Drupal\Core\Controller\ControllerResolverInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -35,7 +36,8 @@ class EntityHierarchyQueryBuilderFactory {
     protected Connection $database,
     protected EntityTypeManagerInterface $entityTypeManager,
     protected LoggerInterface $logger,
-    protected EntityFieldManagerInterface $entityFieldManager
+    protected EntityFieldManagerInterface $entityFieldManager,
+    protected ControllerResolverInterface $controllerResolver
   ) {}
 
   /**
@@ -54,7 +56,7 @@ class EntityHierarchyQueryBuilderFactory {
     if (!isset($this->cache[$cache_key])) {
       $field_definitions = $this->entityFieldManager->getFieldStorageDefinitions($entity_type_id);
       $field_storage = $field_definitions[$field_name];
-      $this->cache[$cache_key] = new EntityHierarchyQueryBuilder($field_storage, $this->entityTypeManager, $this->database, $this->logger);
+      $this->cache[$cache_key] = new EntityHierarchyQueryBuilder($field_storage, $this->entityTypeManager, $this->database, $this->logger, $this->controllerResolver);
     }
     return $this->cache[$cache_key];
   }

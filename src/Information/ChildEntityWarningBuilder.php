@@ -51,8 +51,12 @@ class ChildEntityWarningBuilder implements ContainerInjectionInterface {
       $cache = new CacheableMetadata();
       foreach ($fields as $field_name) {
         $queryBuilder = $this->queryBuilderFactory->get($field_name, $entity->getEntityTypeId());
-        $entities = $queryBuilder->findChildren($entity);
-        $entities = $queryBuilder->getEntities($entities);
+        $records = $queryBuilder->findChildren($entity);
+        $entities = [];
+        $manipulators = [
+          ['callable' => 'entity_hierarchy.default_manipulators:collectEntities', 'args' => [&$entities]],
+        ];
+        $queryBuilder->transform($records, $manipulators);
         $parent = $queryBuilder->findParent($entity);
         $return[] = new ChildEntityWarning($entities, $cache, $parent);
       }

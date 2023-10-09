@@ -27,7 +27,11 @@ trait AncestryLabelTrait {
     $ancestors = $queryBuilder->findAncestors($entity);
     // Remove ourself.
     array_pop($ancestors);
-    $ancestor_entities = $queryBuilder->getEntities($ancestors);
+    $ancestor_entities = [];
+    $manipulators = [
+      ['callable' => 'entity_hierarchy.default_manipulators:collectEntities', 'args' => [&$ancestor_entities]],
+    ];
+    $queryBuilder->transform($ancestors, $manipulators);
     $ancestors_labels = [];
     foreach ($ancestor_entities as $ancestor_node) {
       $ancestors_labels[] = $ancestor_node->label();

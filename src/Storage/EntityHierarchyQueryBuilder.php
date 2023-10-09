@@ -2,6 +2,7 @@
 
 namespace Drupal\entity_hierarchy\Storage;
 
+use Drupal\Core\Controller\ControllerResolverInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -19,7 +20,8 @@ class EntityHierarchyQueryBuilder {
     protected FieldStorageDefinitionInterface $fieldStorageDefinition,
     protected EntityTypeManagerInterface $entityTypeManager,
     protected Connection $database,
-    protected LoggerInterface $logger
+    protected LoggerInterface $logger,
+    protected ControllerResolverInterface $controllerResolver
   ) {
     $tableMapping = $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->getTableMapping();
 
@@ -44,28 +46,21 @@ class EntityHierarchyQueryBuilder {
     return $this->database->tablePrefix();
   }
 
-  public function findParent(ContentEntityInterface $entity): ?ContentEntityInterface {
-    return $entity->get($this->fieldStorageDefinition->getName())->entity;
-  }
-
-  public function getEntities($records) {
-    $new_records = [];
-    foreach ($records as $record) {
-      // @todo Optimise loading.
-      if ($entity = $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($record->getId())) {
-        $new_records[] = $entity;
+  public function transform(array $records, array $manipulators) {
+    foreach ($manipulators as $manipulator) {
+      $callable = $manipulator['callable'];
+      $callable = $this->controllerResolver->getControllerFromDefinition($callable);
+      // Prepare the arguments for the menu tree manipulator callable; the first
+      // argument is always the menu link tree.
+      if (isset($manipulator['args'])) {
+        array_unshift($manipulator['args'], $records);
+        $records = call_user_func_array($callable, $manipulator['args']);
+      }
+      else {
+        $records = call_user_func($callable, $records);
       }
     }
-    return $new_records;
-  }
-
-  /**
-   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
-   *
-   * @return \Drupal\entity_hierarchy\Storage\Record[]
-   */
-  public function findChildren(ContentEntityInterface $entity): array {
-    return $this->findDescendants($entity, 1);
+    return $records;
   }
 
   protected function getAncestorSql(): string {
@@ -85,35 +80,6 @@ WITH RECURSIVE ancestors AS
 )
 CTESQL;
     return $sql;
-  }
-
-  public function findRoot(ContentEntityInterface $entity): ?ContentEntityInterface {
-    $sql = $this->getAncestorSql() . " SELECT target_id FROM ancestors ORDER BY depth LIMIT 1";
-    $result = $this->database->query($sql, [
-      ':id' => $entity->id(),
-      ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
-    ]);
-    if ($record = $result->fetchObject()) {
-      return $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->load($record->target_id);
-    }
-    return NULL;
-  }
-
-  public function findDepth(ContentEntityInterface $entity): int {
-    $sql = $this->getAncestorSql() . " SELECT depth FROM ancestors ORDER BY depth LIMIT 1";
-    $result = $this->database->query($sql, [
-      ':id' => $entity->id(),
-      ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
-    ]);
-    if ($object = $result->fetchObject()) {
-      $depth = $object->depth * -1;
-      if (!$this->fieldStorageDefinition->isBaseField()) {
-        // Non base fields don't have a record where parent is null. Compensate.
-        $depth = $depth + 1;
-      }
-      return $depth;
-    }
-    return 0;
   }
 
   /**
@@ -137,6 +103,32 @@ CTESQL;
       array_unshift($records, $record);
     }
     return $records;
+  }
+
+  public function findRoot(ContentEntityInterface $entity): ?Record {
+    $ancestors = $this->findAncestors($entity);
+    return reset($ancestors);
+  }
+
+  public function findParent(ContentEntityInterface $entity): ?ContentEntityInterface {
+    return $entity->get($this->fieldStorageDefinition->getName())->entity;
+  }
+
+  public function findDepth(ContentEntityInterface $entity): int {
+    $sql = $this->getAncestorSql() . " SELECT depth FROM ancestors ORDER BY depth LIMIT 1";
+    $result = $this->database->query($sql, [
+      ':id' => $entity->id(),
+      ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
+    ]);
+    if ($object = $result->fetchObject()) {
+      $depth = $object->depth * -1;
+      if (!$this->fieldStorageDefinition->isBaseField()) {
+        // Non base fields don't have a record where parent is null. Compensate.
+        $depth = $depth + 1;
+      }
+      return $depth;
+    }
+    return 0;
   }
 
   protected function getDescendantSql(): string {
@@ -181,6 +173,15 @@ CTESQL;
       $record->setType($type);
     });
     return $records;
+  }
+
+  /**
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *
+   * @return \Drupal\entity_hierarchy\Storage\Record[]
+   */
+  public function findChildren(ContentEntityInterface $entity): array {
+    return $this->findDescendants($entity, 1);
   }
 
 }
