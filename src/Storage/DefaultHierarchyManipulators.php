@@ -3,6 +3,7 @@
 namespace Drupal\entity_hierarchy\Storage;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\user\UserInterface;
 
 /**
  * Defines default tree manipulators for entity hierarchy.
@@ -40,6 +41,10 @@ class DefaultHierarchyManipulators {
     $first = reset($records);
     $entities = $this->entityTypeManager->getStorage($first->getType())->loadMultiple($ids);
     return $records;
+  }
+
+  public function filterAccess(array $records) {
+    $ids = $this->collectEntityIds($records);
   }
 
 }

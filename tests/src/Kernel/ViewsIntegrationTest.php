@@ -11,7 +11,7 @@ use Drupal\views\Views;
  *
  * @group entity_hierarchy
  */
-class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
+abstract class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
 
   use ViewResultAssertionTrait;
 

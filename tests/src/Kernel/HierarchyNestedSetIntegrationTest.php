@@ -5,6 +5,7 @@ namespace Drupal\Tests\entity_hierarchy\Kernel;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\entity_hierarchy\Storage\Record;
+use Drupal\entity_hierarchy\Storage\RecordCollection;
 
 /**
  * Tests integration with entity_hierarchy.
@@ -318,7 +319,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     $this->assertEquals(0 + $baseDepth, $this->queryBuilder->findDepth($parent));
     $children = $this->getChildren($parent);
     $this->assertCount(1, $children);
-    $first = reset($children);
+    $first = $children->getIterator()->current();
     $this->assertEquals($child->id(), $first->getId());
     $this->assertEquals($this->getEntityRevisionId($child), $first->getRevisionId());
     $this->assertEquals(1 + $baseDepth, $this->queryBuilder->findDepth($child));
@@ -333,7 +334,10 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
    *   Sibling node.
    */
   protected function assertParentWithTwoChildren(EntityInterface $child, EntityInterface $sibling) {
-    $children = $this->getChildren($this->parent);
+    // Just turn all the records into a flat array to make the test easier.
+    $children = $this->getChildren($this->parent)->map(function (Record $record) {
+      return $record;
+    });
     $this->assertCount(2, $children);
     $first = reset($children);
     $this->assertEquals($child->id(), $first->getId());
@@ -368,21 +372,16 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
    * @param \Drupal\Core\Entity\ContentEntityInterface $parent
    *   Parent node.
    *
-   * @return \Drupal\entity_hierarchy\Storage\Record[]
-   *   Children
    */
-  protected function getChildren(ContentEntityInterface $parent) {
+  protected function getChildren(ContentEntityInterface $parent): RecordCollection {
     return $this->queryBuilder->findChildren($parent);
   }
 
   protected function getDescendants(ContentEntityInterface $parent, $depth = 0, $start = 1): array {
     $descendants = $this->queryBuilder->findDescendants($parent, $depth, $start);
-    $entities = [];
-    $manipulators = [
-      ['callable' => 'entity_hierarchy.default_manipulators:collectEntities', 'args' => [&$entities]],
-    ];
-    $this->queryBuilder->transform($descendants, $manipulators);
-    return $entities;
+    return $descendants->map(function (Record $record) {
+      return $record->getEntity();
+    });
   }
 
   /**
@@ -403,9 +402,9 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     $this->assertCount(count($order), $children);
     $this->assertEquals(array_map(function ($name) use ($entities) {
       return $entities[$name]->id();
-    }, $order), array_map(function (Record $node) {
+    }, $order), $children->map(function (Record $node) {
       return $node->getId();
-    }, $children));
+    }));
   }
 
 }

@@ -53,13 +53,9 @@ class ParentEntityDeleteUpdater implements ContainerInjectionInterface {
     foreach ($fields as $field_name) {
       $queryBuilder = $this->queryBuilderFactory->get($field_name, $entity->getEntityTypeId());
       if ($records = $queryBuilder->findChildren($entity)) {
-        $children = [];
-        $manipulators = [
-          ['callable' => 'entity_hierarchy.default_manipulators:collectEntities', 'args' => [&$children]],
-        ];
-        $queryBuilder->transform($records, $manipulators);
         $parent = $queryBuilder->findParent($entity);
-        foreach ($children as $child_node) {
+        foreach ($records as $record) {
+          $child_node = $record->getEntity();
           $child_node->{$field_name}->target_id = ($parent ? $parent->id() : NULL);
           if ($child_node->getEntityType()->hasKey('revision')) {
             // We don't want a new revision here.

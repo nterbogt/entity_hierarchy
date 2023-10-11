@@ -4,6 +4,7 @@ namespace Drupal\entity_hierarchy\Information;
 
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilder;
+use Drupal\entity_hierarchy\Storage\Record;
 
 /**
  * Provides a trait for ancestry labels.
@@ -24,18 +25,16 @@ trait AncestryLabelTrait {
    *   Label with ancestry if applicable.
    */
   protected function generateEntityLabelWithAncestry(ContentEntityInterface $entity, EntityHierarchyQueryBuilder $queryBuilder, &$tags = []) {
-    $ancestors = $queryBuilder->findAncestors($entity);
-    // Remove ourself.
-    array_pop($ancestors);
-    $ancestor_entities = [];
-    $manipulators = [
-      ['callable' => 'entity_hierarchy.default_manipulators:collectEntities', 'args' => [&$ancestor_entities]],
-    ];
-    $queryBuilder->transform($ancestors, $manipulators);
+    $ancestors = $queryBuilder->findAncestors($entity)
+      ->filter(function (Record $record) use ($entity) {
+        // Remove ourself.
+        return $record->getId() != $entity->id();
+      });
     $ancestors_labels = [];
-    foreach ($ancestor_entities as $ancestor_node) {
-      $ancestors_labels[] = $ancestor_node->label();
-      foreach ($ancestor_node->getCacheTags() as $tag) {
+    foreach ($ancestors as $record) {
+      $node = $record->getEntity();
+      $ancestors_labels[] = $node->label();
+      foreach ($node->getCacheTags() as $tag) {
         $tags[] = $tag;
       }
     }

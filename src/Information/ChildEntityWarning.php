@@ -5,6 +5,7 @@ namespace Drupal\entity_hierarchy\Information;
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\StringTranslation\PluralTranslatableMarkup;
+use Drupal\entity_hierarchy\Storage\RecordCollection;
 
 /**
  * Defines a value object for a child entity warning.
@@ -24,7 +25,7 @@ class ChildEntityWarning {
    *   (optional) Parent if exists.
    */
   public function __construct(
-    protected array $relatedEntities,
+    protected RecordCollection $records,
     protected RefinableCacheableDependencyInterface $cache,
     protected ?ContentEntityInterface $parent = NULL
   ) {}
@@ -38,8 +39,8 @@ class ChildEntityWarning {
   public function getList() {
     $child_labels = [];
     $build = ['#theme' => 'item_list'];
-    foreach ($this->relatedEntities as $node) {
-      $child_labels[] = $node->label();
+    foreach ($this->records as $record) {
+      $child_labels[] = $record->getEntity()->label();
     }
     $build['#items'] = array_unique($child_labels);
     $this->cache->applyTo($build);
@@ -56,7 +57,7 @@ class ChildEntityWarning {
     if ($this->parent) {
       return new PluralTranslatableMarkup(
         // Related entities includes the parent, so we remove that.
-        count($this->relatedEntities),
+        count($this->records),
         'This Test entity has 1 child, deleting this item will change its parent to be @parent.',
         'This Test entity has @count children, deleting this item will change their parent to be @parent.',
         [
@@ -64,7 +65,7 @@ class ChildEntityWarning {
         ]);
     }
     return new PluralTranslatableMarkup(
-      count($this->relatedEntities),
+      count($this->records),
       'This Test entity has 1 child, deleting this item will move that item to the root of the hierarchy.',
       'This Test entity has @count children, deleting this item will move those items to the root of the hierarchy.');
   }

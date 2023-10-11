@@ -10,7 +10,7 @@ use Drupal\entity_test\Entity\EntityTestRev;
  *
  * @group entity_reference
  */
-class ViewsRevisionableIntegrationTest extends ViewsIntegrationTest {
+abstract class ViewsRevisionableIntegrationTest extends ViewsIntegrationTest {
 
   /**
    * {@inheritdoc}

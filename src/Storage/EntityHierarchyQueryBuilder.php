@@ -85,7 +85,7 @@ CTESQL;
   /**
    * @return \Drupal\entity_hierarchy\Storage\Record[]
    */
-  public function findAncestors(ContentEntityInterface $entity) {
+  public function findAncestors(ContentEntityInterface $entity): RecordCollection {
     $sql = $this->getAncestorSql() . " SELECT * FROM ancestors ORDER BY depth";
     $result = $this->database->query($sql, [
       ':id' => $entity->id(),
@@ -102,12 +102,13 @@ CTESQL;
       $record = Record::create($type, $first_record->getTargetId(), 0, $first_record->getDepth() - 1);
       array_unshift($records, $record);
     }
-    return $records;
+    return new RecordCollection($records);
   }
 
   public function findRoot(ContentEntityInterface $entity): ?Record {
     $ancestors = $this->findAncestors($entity);
-    return reset($ancestors);
+    // Convert FALSE to NULL.
+    return $ancestors->getIterator()->current() ?: NULL;
   }
 
   public function findParent(ContentEntityInterface $entity): ?ContentEntityInterface {
@@ -153,9 +154,8 @@ CTESQL;
   }
 
   /**
-   * @return \Drupal\entity_hierarchy\Storage\Record[]
    */
-  public function findDescendants(ContentEntityInterface $entity, int $depth = 0, int $start = 1) {
+  public function findDescendants(ContentEntityInterface $entity, int $depth = 0, int $start = 1): RecordCollection {
     $sql = $this->getDescendantSql() . " SELECT id, revision_id, target_id, weight, depth FROM descendants WHERE depth >= :start";
     $params = [
       ':target_id' => $entity->id(),
@@ -172,15 +172,14 @@ CTESQL;
     array_walk($records, function (Record $record) use ($type) {
       $record->setType($type);
     });
-    return $records;
+    return new RecordCollection($records);
   }
 
   /**
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
    *
-   * @return \Drupal\entity_hierarchy\Storage\Record[]
    */
-  public function findChildren(ContentEntityInterface $entity): array {
+  public function findChildren(ContentEntityInterface $entity): RecordCollection {
     return $this->findDescendants($entity, 1);
   }
 

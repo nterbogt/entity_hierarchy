@@ -7,6 +7,7 @@ use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\entity_hierarchy\Storage\Record;
 
 /**
  * Defines a class for building a list of child entity warnings.
@@ -52,13 +53,11 @@ class ChildEntityWarningBuilder implements ContainerInjectionInterface {
       foreach ($fields as $field_name) {
         $queryBuilder = $this->queryBuilderFactory->get($field_name, $entity->getEntityTypeId());
         $records = $queryBuilder->findChildren($entity);
-        $entities = [];
-        $manipulators = [
-          ['callable' => 'entity_hierarchy.default_manipulators:collectEntities', 'args' => [&$entities]],
-        ];
-        $queryBuilder->transform($records, $manipulators);
+        if (empty($records)) {
+          continue;
+        }
         $parent = $queryBuilder->findParent($entity);
-        $return[] = new ChildEntityWarning($entities, $cache, $parent);
+        $return[] = new ChildEntityWarning($records, $cache, $parent);
       }
     }
     return $return;
