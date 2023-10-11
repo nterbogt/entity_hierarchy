@@ -10,7 +10,7 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Psr\Log\LoggerInterface;
 use PDO;
 
-class EntityHierarchyQueryBuilder {
+class QueryBuilder {
 
   protected $tables = [];
 
@@ -44,23 +44,6 @@ class EntityHierarchyQueryBuilder {
 
   private function getTablePrefix() {
     return $this->database->tablePrefix();
-  }
-
-  public function transform(array $records, array $manipulators) {
-    foreach ($manipulators as $manipulator) {
-      $callable = $manipulator['callable'];
-      $callable = $this->controllerResolver->getControllerFromDefinition($callable);
-      // Prepare the arguments for the menu tree manipulator callable; the first
-      // argument is always the menu link tree.
-      if (isset($manipulator['args'])) {
-        array_unshift($manipulator['args'], $records);
-        $records = call_user_func_array($callable, $manipulator['args']);
-      }
-      else {
-        $records = call_user_func($callable, $records);
-      }
-    }
-    return $records;
   }
 
   protected function getAncestorSql(): string {

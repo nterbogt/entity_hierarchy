@@ -5,7 +5,7 @@ namespace Drupal\entity_hierarchy\Plugin\views\field;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory;
+use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
 use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
 use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
@@ -42,7 +42,7 @@ class HierarchyTreeSummary extends FieldPluginBase {
    * @param \Drupal\Core\Database\Connection $database
    *   Database connection.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, NestedSetStorageFactory $nestedSetStorageFactory, EntityTypeManagerInterface $entityTypeManager, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTreeNodeMapperInterface $tree_mapper, Connection $database, protected EntityHierarchyQueryBuilderFactory $queryBuilderFactory) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, NestedSetStorageFactory $nestedSetStorageFactory, EntityTypeManagerInterface $entityTypeManager, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTreeNodeMapperInterface $tree_mapper, Connection $database, protected QueryBuilderFactory $queryBuilderFactory) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->nestedSetStorageFactory = $nestedSetStorageFactory;
     $this->entityTypeManager = $entityTypeManager;
@@ -65,7 +65,7 @@ class HierarchyTreeSummary extends FieldPluginBase {
       $container->get('entity_hierarchy.nested_set_node_factory'),
       $container->get('entity_hierarchy.entity_tree_node_mapper'),
       $container->get('database'),
-      $container->get('entity_hierarchy.hierarchy_query_builder_factory')
+      $container->get('entity_hierarchy.query_builder_factory')
     );
   }
 

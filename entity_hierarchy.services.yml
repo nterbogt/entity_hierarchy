@@ -21,9 +21,6 @@ services:
   entity_hierarchy.tree_rebuilder:
     class: Drupal\entity_hierarchy\Storage\TreeRebuilder
     arguments: ['@entity_type.manager', '@entity_field.manager']
-  entity_hierarchy.hierarchy_query_builder_factory:
-    class: Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory
+  entity_hierarchy.query_builder_factory:
+    class: Drupal\entity_hierarchy\Storage\QueryBuilderFactory
     arguments: ['@database', '@entity_type.manager', '@entity_hierarchy.logger', '@entity_field.manager', '@controller_resolver']
-  entity_hierarchy.default_manipulators:
-    class: Drupal\entity_hierarchy\Storage\DefaultHierarchyManipulators
-    arguments: [ '@entity_type.manager' ]

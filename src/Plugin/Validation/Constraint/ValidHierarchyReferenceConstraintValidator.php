@@ -4,7 +4,7 @@ namespace Drupal\entity_hierarchy\Plugin\Validation\Constraint;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory;
+use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -19,12 +19,12 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager.
-   * @param \Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory $queryBuilderFactory
+   * @param \Drupal\entity_hierarchy\Storage\QueryBuilderFactory $queryBuilderFactory
    *   The query builder factory.
    */
   public function __construct(
     protected EntityTypeManagerInterface $entityTypeManager,
-    protected EntityHierarchyQueryBuilderFactory $queryBuilderFactory
+    protected QueryBuilderFactory $queryBuilderFactory
   ) {}
 
   /**
@@ -33,7 +33,7 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('entity_type.manager'),
-      $container->get('entity_hierarchy.hierarchy_query_builder_factory')
+      $container->get('entity_hierarchy.query_builder_factory')
     );
   }
 

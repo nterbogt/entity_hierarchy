@@ -5,7 +5,7 @@ namespace Drupal\entity_hierarchy\Information;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory;
+use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\entity_hierarchy\Storage\Record;
 
@@ -19,12 +19,12 @@ class ChildEntityWarningBuilder implements ContainerInjectionInterface {
    *
    * @param \Drupal\entity_hierarchy\Information\ParentCandidateInterface $parentCandidate
    *   Parent candidate service.
-   * @param \Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory $queryBuilderFactory
+   * @param \Drupal\entity_hierarchy\Storage\QueryBuilderFactory $queryBuilderFactory
    *   Query builder factory.
    */
   public function __construct(
     protected ParentCandidateInterface $parentCandidate,
-    protected EntityHierarchyQueryBuilderFactory $queryBuilderFactory
+    protected QueryBuilderFactory $queryBuilderFactory
   ) {}
 
   /**
@@ -33,7 +33,7 @@ class ChildEntityWarningBuilder implements ContainerInjectionInterface {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('entity_hierarchy.information.parent_candidate'),
-      $container->get('entity_hierarchy.hierarchy_query_builder_factory')
+      $container->get('entity_hierarchy.query_builder_factory')
     );
   }
 

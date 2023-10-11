@@ -30,7 +30,7 @@ class EntityHierarchy extends DefaultSelection {
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     /** @var self $instance */
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
-    $instance->queryBuilderFactory = $container->get('entity_hierarchy.hierarchy_query_builder_factory');
+    $instance->queryBuilderFactory = $container->get('entity_hierarchy.query_builder_factory');
     return $instance;
   }
 

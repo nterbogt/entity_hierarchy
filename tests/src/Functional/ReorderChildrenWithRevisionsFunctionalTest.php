@@ -6,6 +6,7 @@ use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\Tests\block\Traits\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\entity_hierarchy\Traits\EntityHierarchyTestTrait;
+use Drupal\entity_hierarchy\Storage\Record;
 
 /**
  * Tests reordering with revisions.
@@ -89,15 +90,12 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
    * Tests children reorder form.
    */
   public function testReordering(): void {
-    $children = [];
-    $manipulators = [
-      ['callable' => 'entity_hierarchy.default_manipulators:collectEntities', 'args' => [&$children]],
-    ];
     $entities = $this->createChildEntities($this->parent->id());
     $root_node = $this->parent;
-    $records = $this->queryBuilder->findChildren($root_node);
-    $children = [];
-    $this->queryBuilder->transform($records, $manipulators);
+    $children = $this->queryBuilder->findChildren($root_node)
+      ->map(function (Record $record) {
+        return $record->getEntity();
+      });
     $labels = $this->getLabels($children);
     $this->assertEquals([
       'Child 5',
@@ -109,9 +107,10 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
     // Now insert one in the middle.
     $name = 'Child 6';
     $entities[$name] = $this->createTestEntity($this->parent->id(), $name, -2);
-    $records = $this->queryBuilder->findChildren($root_node);
-    $children = [];
-    $this->queryBuilder->transform($records, $manipulators);
+    $children = $this->queryBuilder->findChildren($root_node)
+      ->map(function (Record $record) {
+        return $record->getEntity();
+      });
     $labels = $this->getLabels($children);
     $this->assertEquals([
       'Child 5',
@@ -137,9 +136,10 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
     $this->submitForm([
       'children[' . $entities[$name]->id() . '][weight]' => -10,
     ], 'Update child order');
-    $records = $this->queryBuilder->findChildren($root_node);
-    $children = [];
-    $this->queryBuilder->transform($records, $manipulators);
+    $children = $this->queryBuilder->findChildren($root_node)
+      ->map(function (Record $record) {
+        return $record->getEntity();
+      });
     $labels = $this->getLabels($children);
     $this->assertEquals([
       'Child 6',

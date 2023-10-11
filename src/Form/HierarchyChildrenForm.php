@@ -32,7 +32,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
   protected $parentCandidate;
 
   /**
-   * @var \Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilderFactory;
+   * @var \Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
    */
   protected $hierarchyQueryBuliderFactory;
 
@@ -43,7 +43,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
     /** @var self $instance */
     $instance = parent::create($container);
     $instance->parentCandidate = $container->get('entity_hierarchy.information.parent_candidate');
-    $instance->hierarchyQueryBuliderFactory = $container->get('entity_hierarchy.hierarchy_query_builder_factory');
+    $instance->hierarchyQueryBuliderFactory = $container->get('entity_hierarchy.query_builder_factory');
     return $instance;
   }
 

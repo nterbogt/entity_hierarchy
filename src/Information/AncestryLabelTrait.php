@@ -3,7 +3,7 @@
 namespace Drupal\entity_hierarchy\Information;
 
 use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilder;
+use Drupal\entity_hierarchy\Storage\QueryBuilder;
 use Drupal\entity_hierarchy\Storage\Record;
 
 /**
@@ -24,7 +24,7 @@ trait AncestryLabelTrait {
    * @return string
    *   Label with ancestry if applicable.
    */
-  protected function generateEntityLabelWithAncestry(ContentEntityInterface $entity, EntityHierarchyQueryBuilder $queryBuilder, &$tags = []) {
+  protected function generateEntityLabelWithAncestry(ContentEntityInterface $entity, QueryBuilder $queryBuilder, &$tags = []) {
     $ancestors = $queryBuilder->findAncestors($entity)
       ->filter(function (Record $record) use ($entity) {
         // Remove ourself.

@@ -11,7 +11,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Defines a factory for creating a nested set storage handler for hierarchies.
  */
-class EntityHierarchyQueryBuilderFactory {
+class QueryBuilderFactory {
 
   /**
    * Static cache.
@@ -21,7 +21,7 @@ class EntityHierarchyQueryBuilderFactory {
   protected $cache = [];
 
   /**
-   * Constructs a new EntityHierarchyQueryBuilderFactory object.
+   * Constructs a new QueryBuilderFactory object.
    *
    * @param \Drupal\Core\Database\Connection $database
    *   The database service.
@@ -48,7 +48,7 @@ class EntityHierarchyQueryBuilderFactory {
    * @param string $entity_type_id
    *   Entity Type ID.
    *
-   * @return \Drupal\entity_hierarchy\Storage\EntityHierarchyQueryBuilder
+   * @return \Drupal\entity_hierarchy\Storage\QueryBuilder
    *   Handler for making requests to the database based on hierarchy.
    */
   public function get($field_name, $entity_type_id) {
@@ -56,7 +56,7 @@ class EntityHierarchyQueryBuilderFactory {
     if (!isset($this->cache[$cache_key])) {
       $field_definitions = $this->entityFieldManager->getFieldStorageDefinitions($entity_type_id);
       $field_storage = $field_definitions[$field_name];
-      $this->cache[$cache_key] = new EntityHierarchyQueryBuilder($field_storage, $this->entityTypeManager, $this->database, $this->logger, $this->controllerResolver);
+      $this->cache[$cache_key] = new QueryBuilder($field_storage, $this->entityTypeManager, $this->database, $this->logger, $this->controllerResolver);
     }
     return $this->cache[$cache_key];
   }

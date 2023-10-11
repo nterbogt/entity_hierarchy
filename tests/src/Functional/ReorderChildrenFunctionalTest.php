@@ -68,9 +68,9 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 3',
       'Child 2',
       'Child 1',
-    ]), array_map(function (Record $node) {
+    ]), $children->map(function (Record $node) {
       return $node->getId();
-    }, $children));
+    }));
     // Now insert one in the middle.
     $name = 'Child 6';
     $entities[$name] = $this->createTestEntity($this->parent->id(), $name, -2);
@@ -85,9 +85,9 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 2',
       'Child 6',
       'Child 1',
-    ]), array_map(function (Record $node) {
+    ]), $children->map(function (Record $node) {
       return $node->getId();
-    }, $children));
+    }));
     // Now we visit the form for reordering.
     $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
     $assert = $this->assertSession();
@@ -121,9 +121,9 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 3',
       'Child 2',
       'Child 1',
-    ]), array_map(function (Record $node) {
+    ]), $children->map(function (Record $node) {
       return $node->getId();
-    }, $children));
+    }));
     $this->drupalGet($this->parent->toUrl());
     $assert->linkExists('Children');
     $different_test_entity = EntityTestRev::create([
