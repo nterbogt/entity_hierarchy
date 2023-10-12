@@ -21,12 +21,17 @@ class Record {
 
   protected string $type;
 
-  static public function create(string $type, int $id, int $weight, int $depth) {
+  protected ?array $children;
+
+  static public function create(string $type, int $id, int $weight, int $depth, int $target_id = NULL) {
     $record = new Record();
     $record->type = $type;
     $record->id = $id;
     $record->weight = $weight;
     $record->depth = $depth;
+    $record->target_id = $target_id;
+    $record->children = NULL;
+    $record->revision_id = NULL;
     return $record;
   }
 
@@ -60,6 +65,14 @@ class Record {
 
   public function getEntity(): ?ContentEntityInterface {
     return \Drupal::entityTypeManager()->getStorage($this->type)->load($this->id);
+  }
+
+  public function getChildren(): ?array {
+    return $this->children;
+  }
+
+  public function setChildren(array $children) {
+    $this->children = $children;
   }
 
 }
