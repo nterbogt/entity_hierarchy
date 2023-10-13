@@ -13,6 +13,8 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
 use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
 use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
+use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
+use Drupal\entity_hierarchy\Storage\Record;
 use Symfony\Component\Routing\Route;
 
 /**
@@ -21,67 +23,18 @@ use Symfony\Component\Routing\Route;
 class HierarchyBasedBreadcrumbBuilder implements BreadcrumbBuilderInterface {
 
   /**
-   * The nested set storage factory service.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
-   */
-  protected $storageFactory;
-
-  /**
-   * The node key factory service.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
-   */
-  protected $nodeKeyFactory;
-
-  /**
-   * The entity tree node mapper service.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface
-   */
-  protected $mapper;
-
-  /**
-   * The entity field manager service.
-   *
-   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
-   */
-  protected $entityFieldManager;
-
-  /**
-   * The admin context service.
-   *
-   * @var \Drupal\Core\Routing\AdminContext
-   */
-  protected $adminContext;
-
-  /**
    * HierarchyBasedBreadcrumbBuilder constructor.
    *
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory $storage_factory
-   *   The nested set storage factory service.
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $node_key_factory
-   *   The node key factory service.
-   * @param \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface $mapper
-   *   The entity tree node mapper service.
-   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
+   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
    *   The entity field manager service.
-   * @param \Drupal\Core\Routing\AdminContext $admin_context
+   * @param \Drupal\Core\Routing\AdminContext $adminContext
    *   The admin context service.
    */
   public function __construct(
-    NestedSetStorageFactory $storage_factory,
-    NestedSetNodeKeyFactory $node_key_factory,
-    EntityTreeNodeMapperInterface $mapper,
-    EntityFieldManagerInterface $entity_field_manager,
-    AdminContext $admin_context
-  ) {
-    $this->storageFactory = $storage_factory;
-    $this->nodeKeyFactory = $node_key_factory;
-    $this->mapper = $mapper;
-    $this->entityFieldManager = $entity_field_manager;
-    $this->adminContext = $admin_context;
-  }
+    protected EntityFieldManagerInterface $entityFieldManager,
+    protected AdminContext $adminContext,
+    protected QueryBuilderFactory $queryBuilderFactory
+  ) {}
 
   /**
    * {@inheritdoc}
@@ -108,18 +61,20 @@ class HierarchyBasedBreadcrumbBuilder implements BreadcrumbBuilderInterface {
     $route_entity = $this->getEntityFromRouteMatch($route_match);
 
     $entity_type = $route_entity->getEntityTypeId();
-    $storage = $this->storageFactory->get($this->getHierarchyFieldFromEntity($route_entity), $entity_type);
-    $ancestors = $storage->findAncestors($this->nodeKeyFactory->fromEntity($route_entity));
+    $queryBuilder = $this->queryBuilderFactory->get($this->getHierarchyFieldFromEntity($route_entity), $entity_type);
     // Pass in the breadcrumb object for caching.
-    $ancestor_entities = $this->mapper->loadAndAccessCheckEntitysForTreeNodes($entity_type, $ancestors, $breadcrumb);
+    $ancestors = $queryBuilder->findAncestors($route_entity)
+      ->filter(function (Record $record) {
+        if ($entity = $record->getEntity()) {
+          return $entity->access('view label');
+        }
+        return FALSE;
+    });
 
     $links = [];
-    foreach ($ancestor_entities as $ancestor_entity) {
-      if (!$ancestor_entities->contains($ancestor_entity)) {
-        // Doesn't exist or is access hidden.
-        continue;
-      }
-      $entity = $ancestor_entities->offsetGet($ancestor_entity);
+    foreach ($ancestors as $ancestor) {
+      $entity = $ancestor->getEntity();
+      $breadcrumb->addCacheableDependency($entity);
       // Show just the label for the entity from the route.
       if ($entity->id() == $route_entity->id()) {
         $links[] = Link::createFromRoute($entity->label(), '<none>');
