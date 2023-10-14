@@ -43,9 +43,7 @@ class RecordCollectionTest extends UnitTestCase {
   }
 
   public function testMap() {
-    $ids = $this->collection->map(function (Record $record) {
-      return $record->getId();
-    });
+    $ids = $this->collection->map(fn (Record $record) => $record->getId());
     $expected = range(1, 8);
     $this->assertEqualsCanonicalizing($expected, $ids);
   }

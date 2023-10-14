@@ -6,7 +6,7 @@ use RecursiveIteratorIterator;
 use Traversable;
 
 /**
- * Defines a factory for creating a nested set storage handler for hierarchies.
+ *
  */
 class RecordCollection implements \IteratorAggregate, \Countable {
 
@@ -20,7 +20,7 @@ class RecordCollection implements \IteratorAggregate, \Countable {
 
   public function getIterator(): Traversable {
     return new RecursiveIteratorIterator(
-      new RecordIterator($this->records),
+      new RecordRecursiveIterator($this->records),
       RecursiveIteratorIterator::SELF_FIRST
     );
   }

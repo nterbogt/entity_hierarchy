@@ -335,9 +335,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
    */
   protected function assertParentWithTwoChildren(EntityInterface $child, EntityInterface $sibling) {
     // Just turn all the records into a flat array to make the test easier.
-    $children = $this->getChildren($this->parent)->map(function (Record $record) {
-      return $record;
-    });
+    $children = $this->getChildren($this->parent)->map(fn (Record $record) => $record);
     $this->assertCount(2, $children);
     $first = reset($children);
     $this->assertEquals($child->id(), $first->getId());
@@ -379,9 +377,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
 
   protected function getDescendants(ContentEntityInterface $parent, $depth = 0, $start = 1): array {
     $descendants = $this->queryBuilder->findDescendants($parent, $depth, $start);
-    return $descendants->map(function (Record $record) {
-      return $record->getEntity();
-    });
+    return $descendants->map(fn (Record $record) => $record->getEntity());
   }
 
   /**
@@ -402,9 +398,7 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     $this->assertCount(count($order), $children);
     $this->assertEquals(array_map(function ($name) use ($entities) {
       return $entities[$name]->id();
-    }, $order), $children->map(function (Record $node) {
-      return $node->getId();
-    }));
+    }, $order), $children->map(fn (Record $node) => $node->getId()));
   }
 
 }

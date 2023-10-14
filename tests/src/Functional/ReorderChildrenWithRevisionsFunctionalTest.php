@@ -93,9 +93,7 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
     $entities = $this->createChildEntities($this->parent->id());
     $root_node = $this->parent;
     $children = $this->queryBuilder->findChildren($root_node)
-      ->map(function (Record $record) {
-        return $record->getEntity();
-      });
+      ->map(fn (Record $record) => $record->getEntity());
     $labels = $this->getLabels($children);
     $this->assertEquals([
       'Child 5',
@@ -108,9 +106,7 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
     $name = 'Child 6';
     $entities[$name] = $this->createTestEntity($this->parent->id(), $name, -2);
     $children = $this->queryBuilder->findChildren($root_node)
-      ->map(function (Record $record) {
-        return $record->getEntity();
-      });
+      ->map(fn (Record $record) => $record->getEntity());
     $labels = $this->getLabels($children);
     $this->assertEquals([
       'Child 5',
@@ -137,9 +133,7 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
       'children[' . $entities[$name]->id() . '][weight]' => -10,
     ], 'Update child order');
     $children = $this->queryBuilder->findChildren($root_node)
-      ->map(function (Record $record) {
-        return $record->getEntity();
-      });
+      ->map(fn (Record $record) => $record->getEntity());
     $labels = $this->getLabels($children);
     $this->assertEquals([
       'Child 6',

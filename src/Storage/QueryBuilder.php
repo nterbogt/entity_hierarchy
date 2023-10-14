@@ -81,8 +81,12 @@ CTESQL;
     });
     if (!$this->fieldStorageDefinition->isBaseField()) {
       // Drupal doesn't store an empty row for a NULL parent. Add it back in.
-      $first_record = reset($records);
-      $record = Record::create($type, $first_record->getTargetId(), 0, $first_record->getDepth() - 1);
+      if ($first_record = reset($records)) {
+        $record = Record::create($type, $first_record->getTargetId(), 0, $first_record->getDepth() - 1);
+      }
+      else {
+        $record = Record::create($type, $entity->id(), 0, 0);
+      }
       array_unshift($records, $record);
     }
     return new RecordCollection($records);

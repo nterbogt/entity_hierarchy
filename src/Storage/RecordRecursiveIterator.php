@@ -5,20 +5,20 @@ namespace Drupal\entity_hierarchy\Storage;
 /**
  * Defines a factory for creating a nested set storage handler for hierarchies.
  */
-class RecordIterator extends \RecursiveArrayIterator {
+class RecordRecursiveIterator extends \RecursiveArrayIterator {
 
   /**
-   * @inheritdoc
+   * {@inheritDoc}
    */
   public function hasChildren(): bool {
     return !empty($this->current()->getChildren());
   }
 
   /**
-   * @inheritdoc
+   * {@inheritDoc}
    */
-  public function getChildren(): ?RecordIterator {
-    return new RecordIterator($this->current()->getChildren());
+  public function getChildren(): ?RecordRecursiveIterator {
+    return new RecordRecursiveIterator($this->current()->getChildren());
   }
 
 }

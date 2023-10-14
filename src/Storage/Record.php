@@ -11,7 +11,7 @@ class Record {
 
   protected int $id;
 
-  protected ?int $revision_id;
+  protected ?int $revision_id = NULL;
 
   protected ?int $target_id;
 
@@ -21,7 +21,7 @@ class Record {
 
   protected string $type;
 
-  protected ?array $children;
+  protected ?array $children = NULL;
 
   static public function create(string $type, int $id, int $weight, int $depth, int $target_id = NULL) {
     $record = new Record();
@@ -30,8 +30,6 @@ class Record {
     $record->weight = $weight;
     $record->depth = $depth;
     $record->target_id = $target_id;
-    $record->children = NULL;
-    $record->revision_id = NULL;
     return $record;
   }
 
