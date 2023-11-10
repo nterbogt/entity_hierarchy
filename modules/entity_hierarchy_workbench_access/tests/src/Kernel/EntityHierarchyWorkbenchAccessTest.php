@@ -88,10 +88,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     ]);
     $this->scheme->save();
 
-    $this->treeStorage = $this->container->get('entity_hierarchy.nested_set_storage_factory')
-      ->get(static::FIELD_NAME, static::ENTITY_TYPE);
-
-    $this->nodeFactory = $this->container->get('entity_hierarchy.nested_set_node_factory');
+    $this->additionalSetup();
 
     // Setup a boolean field on both node types.
     $this->setupBooleanEditorialField(static::ENTITY_TYPE, $this->childNodeType->id(), self::BOOLEAN_FIELD);
@@ -169,8 +166,8 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     // Check the tree labels.
     $tree = $this->scheme->getAccessScheme()->getTree();
     $this->assertSame([
-      1 => 'Section',
-      6 => 'Child 5 (Section)',
+      2 => 'Section',
+      7 => 'Child 5 (Section)',
     ], array_map(function ($item) {
       return $item['label'];
     }, $tree[self::BOOLEAN_FIELD . '_value']));

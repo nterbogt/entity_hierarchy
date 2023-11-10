@@ -8,14 +8,11 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity_hierarchy\Information\AncestryLabelTrait;
-use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
-use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
-use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
+use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
 use Drupal\field\FieldConfigInterface;
 use Drupal\workbench_access\AccessControlHierarchyBase;
 use Drupal\workbench_access\UserSectionStorageInterface;
@@ -39,34 +36,6 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
   const CACHE_ID = 'entity_hierarchy_tree';
 
   /**
-   * Entity field manager service.
-   *
-   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
-   */
-  protected $entityFieldManager;
-
-  /**
-   * Storage factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
-   */
-  protected $nestedSetStorageFactory;
-
-  /**
-   * Entity type manager.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
-   * Cache bin.
-   *
-   * @var \Drupal\Core\Cache\CacheBackendInterface
-   */
-  protected $cacheBackend;
-
-  /**
    * Constructs a new EntityHierarchy object.
    *
    * @param array $configuration
@@ -77,26 +46,29 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    *   Definition.
    * @param \Drupal\workbench_access\UserSectionStorageInterface $userSectionStorage
    *   User section storage.
-   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
-   *   Entity Field manager.
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory $nestedSetStorageFactory
-   *   Storage factory.
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $nodeKeyFactory
-   *   Key factory.
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
-   *   Entity type manager.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
    *   Config factory.
-   * @param \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface $entityTreeNodeMapper
-   *   Tree node mapper.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   Entity type manager.
+   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
+   *   Entity Field manager.
+   * @param \Drupal\Core\Cache\CacheBackendInterface $cacheBackend
+   *   Cache backend service.
+   * @param \Drupal\entity_hierarchy\Storage\QueryBuilderFactory $queryBuilderFactory
+   *   Query builder factory.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, UserSectionStorageInterface $userSectionStorage, EntityFieldManagerInterface $entityFieldManager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory, EntityTreeNodeMapperInterface $entityTreeNodeMapper, CacheBackendInterface $cacheBackend) {
+  public function __construct(
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
+    UserSectionStorageInterface $userSectionStorage,
+    ConfigFactoryInterface $configFactory,
+    EntityTypeManagerInterface $entityTypeManager,
+    protected EntityFieldManagerInterface $entityFieldManager,
+    protected CacheBackendInterface $cacheBackend,
+    protected QueryBuilderFactory $queryBuilderFactory
+  ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $userSectionStorage, $configFactory, $entityTypeManager);
-    $this->entityFieldManager = $entityFieldManager;
-    $this->nestedSetStorageFactory = $nestedSetStorageFactory;
-    $this->keyFactory = $nodeKeyFactory;
-    $this->entityTreeNodeMapper = $entityTreeNodeMapper;
-    $this->cacheBackend = $cacheBackend;
   }
 
   /**
@@ -108,13 +80,11 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
       $plugin_id,
       $plugin_definition,
       $container->get('workbench_access.user_section_storage'),
-      $container->get('entity_field.manager'),
-      $container->get('entity_hierarchy.nested_set_storage_factory'),
-      $container->get('entity_hierarchy.nested_set_node_factory'),
-      $container->get('entity_type.manager'),
       $container->get('config.factory'),
-      $container->get('entity_hierarchy.entity_tree_node_mapper'),
-      $container->get('cache.entity_hierarchy_workbench_access')
+      $container->get('entity_type.manager'),
+      $container->get('entity_field.manager'),
+      $container->get('cache.entity_hierarchy_workbench_access'),
+      $container->get('entity_hierarchy.query_builder_factory'),
     );
   }
 
@@ -132,100 +102,86 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    * {@inheritdoc}
    */
   public function getTree() {
-    if (!isset($this->tree)) {
-      if ($data = $this->cacheBackend->get(self::CACHE_ID)) {
-        $this->tree = $data->data;
-        return $this->tree;
-      }
-      $entity_type_id = $this->pluginDefinition['entity'];
-      $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
-      $field_name = $this->pluginDefinition['field_name'];
-      /** @var \PNX\NestedSet\Storage\DbalNestedSet $tree_storage */
-      $tree_storage = $this->nestedSetStorageFactory->get($field_name, $entity_type_id);
-      $entityStorage = $this->entityTypeManager->getStorage($entity_type_id);
-      $query = $entityStorage->getQuery()->accessCheck(FALSE);
-      $tree = [];
-      $or = $query->orConditionGroup();
-      $boolean_fields = $this->configuration['boolean_fields'];
-      foreach ($boolean_fields as $boolean_field) {
-        $or->condition($boolean_field, 1);
-        $tree[$boolean_field] = [];
-      }
-      if ($boolean_fields) {
-        $query->condition($or);
-      }
-      $valid_ids = $query->execute();
-      if (!$valid_ids) {
-        return $tree;
-      }
-      $aggregate = $entityStorage->getAggregateQuery()->accessCheck(FALSE);
-      $aggregate->groupBy($entity_type->getKey('label'))
-        ->groupBy($entity_type->getKey('id'));
-      foreach ($boolean_fields as $boolean_field) {
-        $aggregate->groupBy($boolean_field);
-      }
-      $aggregate->condition($entity_type->getKey('id'), $valid_ids, 'IN');
-      $details = $aggregate->execute();
-      $boolean_parents = array_combine(array_column($details, $entity_type->getKey('id')), array_map(function ($item) use ($entity_type) {
-        // Remove the label/id fields.
-        unset($item[$entity_type->getKey('label')], $item[$entity_type->getKey('id')]);
-        // Return just the boolean fields that were checked.
-        return array_keys(array_filter($item));
-      }, $details));
-      $entities = $entityStorage->loadMultiple($valid_ids);
-      $tags = $entityStorage->getEntityType()->getListCacheTags();
-      foreach ($entities as $id => $entity) {
-        /** @var \PNX\NestedSet\Node $node */
-        $key = $this->keyFactory->fromEntity($entity);
-        $node = $tree_storage->getNode($key);
-        if (!$node) {
+    if (isset($this->tree)) {
+      return $this->tree;
+    }
+
+    if ($data = $this->cacheBackend->get(self::CACHE_ID)) {
+      $this->tree = $data->data;
+      return $this->tree;
+    }
+
+    $entity_type_id = $this->pluginDefinition['entity'];
+    $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
+    $field_name = $this->pluginDefinition['field_name'];
+    /** @var \Drupal\entity_hierarchy\Storage\QueryBuilder $query_builder */
+    $query_builder = $this->queryBuilderFactory->get($field_name, $entity_type_id);
+    $entityStorage = $this->entityTypeManager->getStorage($entity_type_id);
+    $query = $entityStorage->getQuery()->accessCheck(FALSE);
+    $tree = [];
+    $or = $query->orConditionGroup();
+    $boolean_fields = $this->configuration['boolean_fields'];
+    foreach ($boolean_fields as $boolean_field) {
+      $or->condition($boolean_field, 1);
+      $tree[$boolean_field] = [];
+    }
+    if ($boolean_fields) {
+      $query->condition($or);
+    }
+    $valid_ids = $query->execute();
+    if (!$valid_ids) {
+      return $tree;
+    }
+
+    $aggregate = $entityStorage->getAggregateQuery()->accessCheck(FALSE);
+    $aggregate->groupBy($entity_type->getKey('label'))
+      ->groupBy($entity_type->getKey('id'));
+    foreach ($boolean_fields as $boolean_field) {
+      $aggregate->groupBy($boolean_field);
+    }
+    $aggregate->condition($entity_type->getKey('id'), $valid_ids, 'IN');
+    $details = $aggregate->execute();
+    $boolean_parents = array_combine(array_column($details, $entity_type->getKey('id')), array_map(function ($item) use ($entity_type) {
+      // Remove the label/id fields.
+      unset($item[$entity_type->getKey('label')], $item[$entity_type->getKey('id')]);
+      // Return just the boolean fields that were checked.
+      return array_keys(array_filter($item));
+    }, $details));
+    $tags = $entityStorage->getEntityType()->getListCacheTags();
+    foreach ($valid_ids as $id) {
+      $entity = $entityStorage->load($id);
+
+      $tags = array_merge($tags, $entity->getCacheTags());
+      foreach ($boolean_parents[$id] as $parent) {
+        $cid = sprintf('%s:%s', self::CACHE_ID, $id);
+        if ($entry = $this->cacheBackend->get($cid)) {
+          $tree[$parent][$id] = $entry->data;
+          // Cache hit.
           continue;
         }
-        $tags = array_merge($tags, $entities[$id]->getCacheTags());
-        foreach ($boolean_parents[$id] as $parent) {
-          $cid = sprintf('%s:%s', self::CACHE_ID, $id);
-          if ($entry = $this->cacheBackend->get($cid)) {
-            $tree[$parent][$id] = $entry->data;
-            // Cache hit.
-            continue;
-          }
-          $entry_tags = [];
-          $entry = [
-            'label' => $this->generateEntityLabelWithAncestry($entity, $tree_storage, $entity_type_id, $entry_tags),
-            'depth' => $node->getDepth(),
-            'parents' => [],
-            'weight' => $node->getLeft(),
-            'description' => '',
-          ];
-          $tree[$parent][$id] = $entry;
-          $this->cacheBackend->set($cid, $entry, Cache::PERMANENT, $entry_tags);
-          $tags = array_merge($tags, $entry_tags);
-        }
+        $entry_tags = [];
+        $entry = [
+          'label' => $this->generateEntityLabelWithAncestry($entity, $query_builder, $entry_tags),
+          'depth' => $query_builder->findDepth($entity),
+          'parents' => [],
+          'weight' => 1,
+          'description' => '',
+        ];
+        $tree[$parent][$id] = $entry;
+        $this->cacheBackend->set($cid, $entry, Cache::PERMANENT, $entry_tags);
+        $tags = array_merge($tags, $entry_tags);
       }
-      foreach (array_keys($tree) as $parent) {
-        uasort($tree[$parent], function (array $a, array $b) {
-          // @todo Replace this with null coalesce and spaceship operator when
-          // we only support PHP 7.0 or greater.
-          $a_weight = 0;
-          $b_weight = 0;
-          if (isset($a['weight'])) {
-            $a_weight = $a['weight'];
-          }
-          if (isset($b['weight'])) {
-            $b_weight = $b['weight'];
-          }
-          if ($a_weight < $b_weight) {
-            return -1;
-          }
-          if ($a_weight > $b_weight) {
-            return 1;
-          }
-          return 0;
-        });
-      }
-      $this->tree = $tree;
-      $this->cacheBackend->set(self::CACHE_ID, $tree, Cache::PERMANENT, array_unique($tags));
+      $entityStorage->resetCache([$id]);
     }
+    foreach (array_keys($tree) as $parent) {
+      uasort($tree[$parent], function (array $a, array $b) {
+        $a_weight = $a['weight'] ?: 0;
+        $b_weight = $b['weight'] ?: 0;
+        return $a_weight <=> $b_weight;
+      });
+    }
+    $this->tree = $tree;
+    $this->cacheBackend->set(self::CACHE_ID, $tree, Cache::PERMANENT, array_unique($tags));
     return $this->tree;
   }
 
@@ -233,29 +189,8 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    * {@inheritdoc}
    */
   public function getEntityValues(EntityInterface $entity) {
-    // We start with our own ID.
-    $values = [$entity->id()];
-    $nodeKey = $this->keyFactory->fromEntity($entity);
-    // A top level parent can be part of the tree without having the field.
-    if ($entity->hasField($this->pluginDefinition['field_name'])) {
-      foreach ($entity->get($this->pluginDefinition['field_name']) as $item) {
-        if ($item->isEmpty()) {
-          continue;
-        }
-        $property_name = $item->mainPropertyName();
-        $values[] = $item->{$property_name};
-        if ($item instanceof EntityReferenceItem && $item->entity) {
-          $nodeKey = $this->keyFactory->fromEntity($item->entity);
-        }
-      }
-    }
-    $storage = $this->nestedSetStorageFactory->get($this->pluginDefinition['field_name'], $this->pluginDefinition['entity']);
-    $ancestors = $storage->findAncestors($nodeKey);
-    foreach ($ancestors as $ancestor) {
-      $values[] = $ancestor->getId();
-    }
-
-    return $values;
+    $queryBuilder = $this->queryBuilderFactory->get($this->pluginDefinition['field_name'], $this->pluginDefinition['entity']);
+    return $queryBuilder->findAncestors($entity)->map(fn ($record) => $record->getId());
   }
 
   /**
