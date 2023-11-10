@@ -23,7 +23,7 @@ class Record {
 
   protected ?array $children = NULL;
 
-  static public function create(string $type, int $id, int $weight, int $depth, int $target_id = NULL) {
+  public static function create(string $type, int $id, int $weight, int $depth, int $target_id = NULL) {
     $record = new Record();
     $record->type = $type;
     $record->id = $id;

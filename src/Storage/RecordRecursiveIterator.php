@@ -8,14 +8,14 @@ namespace Drupal\entity_hierarchy\Storage;
 class RecordRecursiveIterator extends \RecursiveArrayIterator {
 
   /**
-   * {@inheritDoc}
+   * {@inheritdoc}
    */
   public function hasChildren(): bool {
     return !empty($this->current()->getChildren());
   }
 
   /**
-   * {@inheritDoc}
+   * {@inheritdoc}
    */
   public function getChildren(): ?RecordRecursiveIterator {
     return new RecordRecursiveIterator($this->current()->getChildren());

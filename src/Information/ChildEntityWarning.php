@@ -17,11 +17,11 @@ class ChildEntityWarning {
   /**
    * Constructs a new ChildEntityWarning object.
    *
-   * @param \SplObjectStorage $relatedEntities
-   *   Related entities (children or parents).
+   * @param \Drupal\entity_hierarchy\Storage\RecordCollection $records
+   *   Related entity hierarchy records.
    * @param \Drupal\Core\Cache\RefinableCacheableDependencyInterface $cache
    *   Cache metadata.
-   * @param \PNX\NestedSet\Node|null $parent
+   * @param \Drupal\Core\Entity\ContentEntityInterface|null $parent
    *   (optional) Parent if exists.
    */
   public function __construct(

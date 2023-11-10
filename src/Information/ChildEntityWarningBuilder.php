@@ -7,7 +7,6 @@ use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\entity_hierarchy\Storage\Record;
 
 /**
  * Defines a class for building a list of child entity warnings.

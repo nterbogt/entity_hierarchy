@@ -2,13 +2,11 @@
 
 namespace Drupal\entity_hierarchy\Storage;
 
-use Drupal\Core\Controller\ControllerResolverInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Psr\Log\LoggerInterface;
-use PDO;
 
 class QueryBuilder {
 
@@ -21,7 +19,6 @@ class QueryBuilder {
     protected EntityTypeManagerInterface $entityTypeManager,
     protected Connection $database,
     protected LoggerInterface $logger,
-    protected ControllerResolverInterface $controllerResolver
   ) {
     $tableMapping = $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->getTableMapping();
 
@@ -74,7 +71,7 @@ CTESQL;
       ':id' => $entity->id(),
       ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
     ]);
-    $records = $result->fetchAll(PDO::FETCH_CLASS, '\Drupal\entity_hierarchy\Storage\Record');
+    $records = $result->fetchAll(\PDO::FETCH_CLASS, '\Drupal\entity_hierarchy\Storage\Record');
     $type = $this->fieldStorageDefinition->getTargetEntityTypeId();
     array_walk($records, function (Record $record) use ($type) {
       $record->setType($type);
@@ -154,7 +151,7 @@ CTESQL;
     }
     $sql .= " ORDER by weight, id";
     $result = $this->database->query($sql, $params);
-    $records = $result->fetchAll(PDO::FETCH_CLASS, '\Drupal\entity_hierarchy\Storage\Record');
+    $records = $result->fetchAll(\PDO::FETCH_CLASS, '\Drupal\entity_hierarchy\Storage\Record');
     $type = $this->fieldStorageDefinition->getTargetEntityTypeId();
     array_walk($records, function (Record $record) use ($type) {
       $record->setType($type);

@@ -370,6 +370,8 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
    * @param \Drupal\Core\Entity\ContentEntityInterface $parent
    *   Parent node.
    *
+   * @return \Drupal\entity_hierarchy\Storage\RecordCollection
+   *   The children records from this hierarchy lookup.
    */
   protected function getChildren(ContentEntityInterface $parent): RecordCollection {
     return $this->queryBuilder->findChildren($parent);
@@ -383,15 +385,12 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * Asserts children in given order.
    *
-   * @param \PNX\NestedSet\Node $parent_node
+   * @param \Drupal\Core\Entity\ContentEntityInterface $parent
    *   Parent node.
    * @param \Drupal\Core\Entity\EntityInterface[] $entities
    *   Array of entities keyed by label.
    * @param string[] $order
    *   Array of titles in order.
-   *
-   * @return \PNX\NestedSet\Node[]
-   *   Children.
    */
   protected function assertChildOrder(ContentEntityInterface $parent, array $entities, array $order) {
     $children = $this->getChildren($parent);

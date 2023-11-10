@@ -67,7 +67,7 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
   protected function doCreateTestEntity(array $values) {
     if (!isset($values['moderation_state'])) {
       $values['moderation_state'] = 'published';
-    };
+    }
     $entity = EntityTestRev::create($values);
     return $entity;
   }

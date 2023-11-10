@@ -16,8 +16,8 @@ trait AncestryLabelTrait {
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
    *   Entity to generate label for.
-   * @param \PNX\NestedSet\NestedSetInterface|\Drupal\entity_hierarchy\Storage\NestedSetStorage $storage
-   *   Tree storage.
+   * @param \Drupal\entity_hierarchy\Storage\QueryBuilder $queryBuilder
+   *   Query builder instance.
    * @param array $tags
    *   Cache tags.
    *

@@ -2,11 +2,8 @@
 
 namespace Drupal\entity_hierarchy\Storage;
 
-use RecursiveIteratorIterator;
-use Traversable;
-
 /**
- *
+ * A collection of record objects with useful functions.
  */
 class RecordCollection implements \IteratorAggregate, \Countable {
 
@@ -18,10 +15,10 @@ class RecordCollection implements \IteratorAggregate, \Countable {
     return $this->records;
   }
 
-  public function getIterator(): Traversable {
-    return new RecursiveIteratorIterator(
+  public function getIterator(): \Traversable {
+    return new \RecursiveIteratorIterator(
       new RecordRecursiveIterator($this->records),
-      RecursiveIteratorIterator::SELF_FIRST
+      \RecursiveIteratorIterator::SELF_FIRST
     );
   }
 

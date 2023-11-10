@@ -10,9 +10,6 @@ use Drupal\Core\Link;
 use Drupal\Core\Routing\AdminContext;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
-use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
-use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
 use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
 use Drupal\entity_hierarchy\Storage\Record;
 use Symfony\Component\Routing\Route;
@@ -29,6 +26,8 @@ class HierarchyBasedBreadcrumbBuilder implements BreadcrumbBuilderInterface {
    *   The entity field manager service.
    * @param \Drupal\Core\Routing\AdminContext $adminContext
    *   The admin context service.
+   * @param \Drupal\entity_hierarchy\Storage\QueryBuilderFactory $queryBuilderFactory
+   *   Query builder factory.
    */
   public function __construct(
     protected EntityFieldManagerInterface $entityFieldManager,
@@ -69,7 +68,7 @@ class HierarchyBasedBreadcrumbBuilder implements BreadcrumbBuilderInterface {
           return $entity->access('view label');
         }
         return FALSE;
-    });
+      });
 
     $links = [];
     foreach ($ancestors as $ancestor) {
