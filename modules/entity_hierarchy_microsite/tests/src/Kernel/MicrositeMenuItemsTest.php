@@ -212,7 +212,7 @@ class MicrositeMenuItemsTest extends EntityHierarchyMicrositeKernelTestBase {
 
     // Microsite should still have descendants beyond the maximum supported
     // depth.
-    $descendants = $this->treeStorage->findDescendants($this->parentStub);
+    $descendants = $this->queryBuilder->findDescendants($this->parent)->getRecords();
     $this->assertEquals($entity_max_depth, end($descendants)->getDepth());
   }
 

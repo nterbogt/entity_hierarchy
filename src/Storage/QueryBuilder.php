@@ -164,7 +164,6 @@ CTESQL;
 
   /**
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
-   *
    */
   public function findChildren(ContentEntityInterface $entity): RecordCollection {
     return $this->findDescendants($entity, 1);

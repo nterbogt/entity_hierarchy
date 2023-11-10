@@ -66,7 +66,8 @@ class RecordCollection implements \IteratorAggregate, \Countable {
 
     $new_records = [];
     foreach ($this->records as $record) {
-      if ($target_id = $record->getTargetId()) {
+      $target_id = $record->getTargetId();
+      if (!empty($indexed_records[$target_id])) {
         $children = $indexed_records[$target_id]->getChildren() ?: [];
         $children[] = $record;
         $indexed_records[$target_id]->setChildren($children);
