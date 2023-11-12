@@ -121,7 +121,8 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
         return $node->getId();
       }, $descendant_nested_set_nodes);
       $has_revisions = $this_entity->getEntityType()->hasKey('revision');
-      $descendant_entities = \Drupal::entityQuery($this_entity->getEntityTypeId())
+      $storage = $this->entityTypeManager->getStorage($this_entity->getEntityTypeId());
+      $descendant_entities = $storage->getQuery()
         ->condition($this_entity->getEntityType()->getKey('id'), $descendant_nested_set_node_ids, 'IN')
         ->accessCheck(FALSE)
         ->execute();

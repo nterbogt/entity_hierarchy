@@ -22,7 +22,7 @@ class UpdatePathTest extends UpdatePathTestBase {
   }
 
   /**
-   * Tests entity_hierarchy_workbench_access_workbench_access_scheme_update_alter.
+   * Test hook_workbench_access_scheme_update_alter.
    */
   public function testUpdatePath(): void {
     if (Semver::satisfies(\Drupal::VERSION, '>9')) {

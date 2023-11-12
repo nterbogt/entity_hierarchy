@@ -40,15 +40,16 @@ function entity_hierarchy_views_data() {
       $base_table = $views_handler->getViewsTableForEntityType($entity_type);
 
       // Relationship to the entity base table.
+      $field_key = $entity_type->getKey('id');
       $data[$table_name]['table']['join'] = [
         $base_table => [
-          'left_field' => $entity_type->getKey('id'),
+          'left_field' => $field_key,
           'field' => 'id',
         ],
       ];
       if ($has_revisions = $entity_type->hasKey('revision')) {
-        $revision_key = $entity_type->getKey('revision');
-        $data[$table_name]['table']['join'][$base_table]['left_field'] = $revision_key;
+        $field_key = $entity_type->getKey('revision');
+        $data[$table_name]['table']['join'][$base_table]['left_field'] = $field_key;
         $data[$table_name]['table']['join'][$base_table]['field'] = 'revision_id';
       }
 
@@ -117,7 +118,7 @@ function entity_hierarchy_views_data() {
       $data[$base_table]['tree'] = [
         'title' => t('Entity hierarchy'),
         'help' => t('The hierarchy information'),
-        'real field' => $has_revisions ? $revision_key : $entity_type->getKey('id'),
+        'real field' => $field_key,
         'group' => t('Entity hierarchy'),
         'relationship' => [
           'title' => 'Entity Hierarchy',
@@ -125,7 +126,7 @@ function entity_hierarchy_views_data() {
           'id' => 'standard',
           'base' => $table_name,
           'base field' => $has_revisions ? 'revision_id' : 'id',
-          'field' => $has_revisions ? $revision_key : $entity_type->getKey('id'),
+          'field' => $field_key,
         ],
       ];
     }

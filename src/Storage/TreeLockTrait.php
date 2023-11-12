@@ -62,7 +62,7 @@ trait TreeLockTrait {
       if ($count === 30) {
         throw new \Exception('Unable to acquire lock to update tree.');
       }
-    };
+    }
   }
 
   /**

@@ -5,6 +5,7 @@ namespace Drupal\entity_hierarchy\Plugin\Field\FieldFormatter;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\Plugin\Field\FieldFormatter\EntityReferenceLabelFormatter;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
  * Plugin implementation of the 'entity_hierarchy' formatter.
@@ -19,6 +20,8 @@ use Drupal\Core\Form\FormStateInterface;
  * )
  */
 class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatter {
+
+  use StringTranslationTrait;
 
   /**
    * {@inheritdoc}
@@ -37,10 +40,10 @@ class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatt
     $elements['weight_output'] = [
       '#type' => 'radios',
       '#options' => [
-        'suffix' => t('After title'),
-        'attribute' => t('In a data attribute'),
+        'suffix' => $this->t('After title'),
+        'attribute' => $this->t('In a data attribute'),
       ],
-      '#title' => t('Output weight'),
+      '#title' => $this->t('Output weight'),
       '#default_value' => $this->getSetting('weight_output'),
       '#required' => TRUE,
     ];
@@ -55,12 +58,13 @@ class EntityReferenceHierarchyLabelFormatter extends EntityReferenceLabelFormatt
     $summary = parent::settingsSummary();
 
     switch ($this->getSetting('weight_output')) {
-      case 'attribute':
-        $position = $this->t('custom data-* attribute');
-        break;
-
       case 'suffix':
         $position = $this->t('suffix after title');
+        break;
+
+      case 'attribute':
+      default:
+        $position = $this->t('custom data-* attribute');
         break;
     }
     $summary[] = $this->t('Show weight as @position', ['@position' => $position]);

@@ -89,6 +89,8 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
    *   Config factory.
    * @param \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface $entityTreeNodeMapper
    *   Tree node mapper.
+   * @param \Drupal\Core\Cache\CacheBackendInterface $cacheBackend
+   *   Cache backend service.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, UserSectionStorageInterface $userSectionStorage, EntityFieldManagerInterface $entityFieldManager, NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory, EntityTreeNodeMapperInterface $entityTreeNodeMapper, CacheBackendInterface $cacheBackend) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $userSectionStorage, $configFactory, $entityTypeManager);

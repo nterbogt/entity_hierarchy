@@ -20,6 +20,7 @@ class EntityHierarchyCommands extends DrushCommands {
    * EntityHierarchyCommands constructor.
    *
    * @param \Drupal\entity_hierarchy\Storage\TreeRebuilder $treeRebuilder
+   *   Entity hierarchy tree rebuild service.
    */
   public function __construct($treeRebuilder) {
     parent::__construct();

@@ -5,12 +5,15 @@ namespace Drupal\entity_hierarchy\Plugin\Derivative;
 use Drupal\Component\Plugin\Derivative\DeriverBase;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Plugin\Discovery\ContainerDeriverInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Derives an entity reference selection handler for each entity type.
  */
 class EntityHierarchySelectionDeriver extends DeriverBase implements ContainerDeriverInterface {
+
+  use StringTranslationTrait;
 
   /**
    * Entity field manager.
@@ -54,7 +57,7 @@ class EntityHierarchySelectionDeriver extends DeriverBase implements ContainerDe
         $this->derivatives[$key] = $base_plugin_definition;
         $this->derivatives[$key]['entity_types'] = [$entity_type_id];
         $this->derivatives[$key]['field_name'] = $field_name;
-        $this->derivatives[$key]['label'] = t('Selection with hierarchy (@field_name)', ['@field_name' => $sample_field_name]);
+        $this->derivatives[$key]['label'] = $this->t('Selection with hierarchy (@field_name)', ['@field_name' => $sample_field_name]);
         $this->derivatives[$key]['base_plugin_label'] = (string) $base_plugin_definition['label'];
       }
     }

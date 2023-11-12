@@ -22,6 +22,41 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class HierarchyTreeSummary extends FieldPluginBase {
 
   /**
+   * Storage factory.
+   *
+   * @var \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
+   */
+  protected $nestedSetStorageFactory;
+
+  /**
+   * Entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * Node key factory.
+   *
+   * @var \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
+   */
+  protected $nodeKeyFactory;
+
+  /**
+   * Tree node mapper.
+   *
+   * @var \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface
+   */
+  protected $treeMapper;
+
+  /**
+   * Table prefix for database.
+   *
+   * @var string
+   */
+  protected $nestedSetPrefix;
+
+  /**
    * Constructs a new HierarchyTreeSummary object.
    *
    * @param array $configuration
@@ -45,7 +80,6 @@ class HierarchyTreeSummary extends FieldPluginBase {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->nestedSetStorageFactory = $nestedSetStorageFactory;
     $this->entityTypeManager = $entityTypeManager;
-    $this->nodeKeyFactory = $nodeKeyFactory;
     $this->nodeKeyFactory = $nodeKeyFactory;
     $this->treeMapper = $tree_mapper;
     $this->nestedSetPrefix = $database->tablePrefix();
@@ -121,6 +155,8 @@ class HierarchyTreeSummary extends FieldPluginBase {
       }
       return implode(' / ', $output);
     }
+
+    return '';
   }
 
   /**
