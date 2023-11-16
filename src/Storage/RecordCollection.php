@@ -10,7 +10,7 @@ class RecordCollection implements \IteratorAggregate, \Countable {
   /**
    * Constructor for a record collection.
    *
-   * @param array $records
+   * @param \Drupal\entity_hierarchy\Storage\Record[] $records
    *   The records to put in a collection.
    */
   public function __construct(
@@ -30,7 +30,7 @@ class RecordCollection implements \IteratorAggregate, \Countable {
   /**
    * An iterator that knows how to handle the collection tree structure.
    *
-   * @return \Traversable
+   * @return \Traversable<\Drupal\entity_hierarchy\Storage\Record>
    *   The iterator so that a collection can be passed directly into foreach.
    */
   public function getIterator(): \Traversable {

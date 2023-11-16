@@ -58,24 +58,14 @@ class QueryBuilder {
   }
 
   /**
-   * The table prefix.
-   *
-   * @return string
-   *   The table prefix.
-   */
-  private function getTablePrefix() {
-    return $this->database->getPrefix();
-  }
-
-  /**
    * Build the CTE query that can traverse ancestors.
    *
    * @return string
    *   SQL to prefix ancestor queries and define the 'ancestors' table.
    */
   protected function getAncestorSql(): string {
-    $table_name = $this->getTablePrefix() . $this->tables['entity'];
-    $revision_table_name = $this->getTablePrefix() . $this->tables['entity_revision'];
+    $table_name = $this->tables['entity'];
+    $revision_table_name = $this->tables['entity_revision'];
     $column_id = $this->columns['id'];
     $column_revision_id = $this->columns['revision_id'];
     $column_target_id = $this->columns['target_id'];
@@ -83,10 +73,13 @@ class QueryBuilder {
     $sql = <<<CTESQL
 WITH RECURSIVE ancestors AS
 (
-  SELECT $column_id AS id, $column_revision_id as revisionId, $column_target_id AS targetId, $column_weight AS weight, 0 AS depth FROM $revision_table_name WHERE $column_id = :id AND $column_revision_id = :revisionId
+  SELECT $column_id AS id, $column_revision_id as revisionId, $column_target_id AS targetId, $column_weight AS weight, 0 AS depth
+    FROM {{$revision_table_name}}
+    WHERE $column_id = :id AND $column_revision_id = :revisionId
   UNION ALL
-  SELECT c.$column_id, c.$column_revision_id, c.$column_target_id, c.$column_weight, ancestors.depth-1 FROM $table_name c
-  JOIN ancestors ON c.$column_id=ancestors.targetId
+  SELECT c.$column_id, c.$column_revision_id, c.$column_target_id, c.$column_weight, ancestors.depth-1
+    FROM {{$table_name}} c
+    JOIN ancestors ON c.$column_id=ancestors.targetId
 )
 CTESQL;
     return $sql;
@@ -189,7 +182,7 @@ CTESQL;
    *   SQL to prefix descendants queries and define the 'descendants' table.
    */
   protected function getDescendantSql(): string {
-    $table_name = $this->getTablePrefix() . $this->tables['entity'];
+    $table_name = $this->tables['entity'];
     $column_id = $this->columns['id'];
     $column_revision_id = $this->columns['revision_id'];
     $column_target_id = $this->columns['target_id'];
@@ -198,12 +191,12 @@ CTESQL;
 WITH RECURSIVE descendants AS
 (
   SELECT $column_id as id, $column_revision_id as revisionId, $column_target_id as targetId, $column_weight as weight, 1 AS depth
-  FROM $table_name
-  WHERE $column_target_id = :targetId
+    FROM {{$table_name}}
+    WHERE $column_target_id = :targetId
   UNION ALL
   SELECT c.$column_id, c.$column_revision_id, c.$column_target_id, c.$column_weight, descendants.depth+1
-  FROM $table_name c
-  JOIN descendants ON descendants.id=c.$column_target_id
+    FROM {{$table_name}} c
+    JOIN descendants ON descendants.id=c.$column_target_id
 )
 CTESQL;
     return $sql;
