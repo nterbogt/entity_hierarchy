@@ -83,10 +83,10 @@ class QueryBuilder {
     $sql = <<<CTESQL
 WITH RECURSIVE ancestors AS
 (
-  SELECT $column_id AS id, $column_revision_id as revision_id, $column_target_id AS target_id, $column_weight AS weight, 0 AS depth FROM $revision_table_name WHERE $column_id = :id AND $column_revision_id = :revision_id
+  SELECT $column_id AS id, $column_revision_id as revisionId, $column_target_id AS targetId, $column_weight AS weight, 0 AS depth FROM $revision_table_name WHERE $column_id = :id AND $column_revision_id = :revisionId
   UNION ALL
   SELECT c.$column_id, c.$column_revision_id, c.$column_target_id, c.$column_weight, ancestors.depth-1 FROM $table_name c
-  JOIN ancestors ON c.$column_id=ancestors.target_id
+  JOIN ancestors ON c.$column_id=ancestors.targetId
 )
 CTESQL;
     return $sql;
@@ -105,7 +105,7 @@ CTESQL;
     $sql = $this->getAncestorSql() . " SELECT * FROM ancestors ORDER BY depth";
     $result = $this->database->query($sql, [
       ':id' => $entity->id(),
-      ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
+      ':revisionId' => $entity->getRevisionId() ?: $entity->id(),
     ]);
     $records = $result->fetchAll(\PDO::FETCH_CLASS, '\Drupal\entity_hierarchy\Storage\Record');
     $type = $this->fieldStorageDefinition->getTargetEntityTypeId();
@@ -169,7 +169,7 @@ CTESQL;
     $sql = $this->getAncestorSql() . " SELECT depth FROM ancestors ORDER BY depth LIMIT 1";
     $result = $this->database->query($sql, [
       ':id' => $entity->id(),
-      ':revision_id' => $entity->getRevisionId() ?: $entity->id(),
+      ':revisionId' => $entity->getRevisionId() ?: $entity->id(),
     ]);
     if ($object = $result->fetchObject()) {
       $depth = $object->depth * -1;
@@ -197,9 +197,9 @@ CTESQL;
     $sql = <<<CTESQL
 WITH RECURSIVE descendants AS
 (
-  SELECT $column_id as id, $column_revision_id as revision_id, $column_target_id as target_id, $column_weight as weight, 1 AS depth
+  SELECT $column_id as id, $column_revision_id as revisionId, $column_target_id as targetId, $column_weight as weight, 1 AS depth
   FROM $table_name
-  WHERE $column_target_id = :target_id
+  WHERE $column_target_id = :targetId
   UNION ALL
   SELECT c.$column_id, c.$column_revision_id, c.$column_target_id, c.$column_weight, descendants.depth+1
   FROM $table_name c
@@ -223,9 +223,9 @@ CTESQL;
    *   A collection of records reflecting the descendants of the entity.
    */
   public function findDescendants(ContentEntityInterface $entity, int $depth = 0, int $start = 1): RecordCollection {
-    $sql = $this->getDescendantSql() . " SELECT id, revision_id, target_id, weight, depth FROM descendants WHERE depth >= :start";
+    $sql = $this->getDescendantSql() . " SELECT id, revisionId, targetId, weight, depth FROM descendants WHERE depth >= :start";
     $params = [
-      ':target_id' => $entity->id(),
+      ':targetId' => $entity->id(),
       ':start' => $start,
     ];
     if ($depth > 0) {
