@@ -121,12 +121,13 @@ class MicrositeMenuItemForm extends ContentEntityForm {
    */
   public function save(array $form, FormStateInterface $form_state) {
     // The entity is rebuilt in parent::submit().
-    $override = $this->entity;
-    $override->save();
+    $status = $this->entity->save();
 
     $this->messenger()->addStatus($this->t('The override has been saved.'));
 
     $form_state->setRedirectUrl(new Url('entity.menu.edit_form', ['menu' => 'entity-hierarchy-microsite']));
+
+    return $status;
   }
 
 }

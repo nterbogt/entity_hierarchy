@@ -3,6 +3,7 @@
 namespace Drupal\entity_hierarchy_microsite;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Drupal\Core\Menu\Form\MenuLinkDefaultForm;
 use Drupal\Core\Menu\MenuLinkManagerInterface;
 use Drupal\Core\Menu\MenuLinkTreeInterface;
 use Drupal\entity_hierarchy\Information\ParentCandidateInterface;
@@ -60,6 +61,8 @@ class EntityHooks implements ContainerInjectionInterface {
   protected $menuLinkDiscovery;
 
   /**
+   * Menu rebuild service.
+   *
    * @var \Drupal\entity_hierarchy_microsite\MenuRebuildProcessor
    */
   private MenuRebuildProcessor $menuRebuildProcessor;

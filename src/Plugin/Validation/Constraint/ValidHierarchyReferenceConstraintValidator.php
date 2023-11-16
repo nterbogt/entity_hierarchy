@@ -93,7 +93,8 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
     $children = [$this_entity->id()];
     if (!empty($descendant_record_ids)) {
       $has_revisions = $this_entity->getEntityType()->hasKey('revision');
-      $descendant_entities = $this->entityTypeManager->getStorage($this_entity->getEntityTypeId())->getQuery()
+      $storage = $this->entityTypeManager->getStorage($this_entity->getEntityTypeId());
+      $descendant_entities = $storage->getQuery()
         ->condition($this_entity->getEntityType()->getKey('id'), $descendant_record_ids, 'IN')
         ->accessCheck(FALSE)
         ->execute();

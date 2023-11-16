@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="drupal-project">
+  <!-- Copied from https://git.drupalcode.org/project/gitlab_templates/-/blob/1.0.x/scripts/phpcs.xml.dist?ref_type=heads -->
+  <description>Default PHP CodeSniffer configuration for Drupal project.</description>
+  <rule ref="vendor/drupal/coder/coder_sniffer/Drupal/ruleset.xml"/>
+  <rule ref="vendor/drupal/coder/coder_sniffer/DrupalPractice/ruleset.xml"/>
+  <exclude-pattern>/.ddev</exclude-pattern>
+  <exclude-pattern>/.lando</exclude-pattern>
+  <!-- https://www.drupal.org/drupalorg/docs/drupal-ci/using-coderphpcs-in-drupalci -->
+  <arg name="extensions" value="php,inc,module,install,info,test,profile,theme"/>
+
+  <!-- Do not require @var for properties since PHP has property typing -->
+  <rule ref="Drupal.Commenting.VariableComment.Missing"><severity>0</severity></rule>
+  <!-- File comments are useless -->
+  <rule ref="Drupal.Commenting.FileComment.Missing"><severity>0</severity></rule>
+</ruleset>
+

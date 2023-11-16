@@ -15,6 +15,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * Defines a form for re-ordering children.
  */
 class HierarchyChildrenForm extends ContentEntityForm {
+
   const CHILD_ENTITIES_STORAGE = 'child_entities';
 
   /**
@@ -101,7 +102,12 @@ class HierarchyChildrenForm extends ContentEntityForm {
     $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
     $form['children'] = [
       '#type' => 'table',
-      '#header' => [t('Child'), t('Type'), t('Weight'), t('Operations')],
+      '#header' => [
+        $this->t('Child'),
+        $this->t('Type'),
+        $this->t('Weight'),
+        $this->t('Operations'),
+      ],
       '#tabledrag' => [
         [
           'action' => 'order',
@@ -128,7 +134,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
       $form['children'][$child]['weight'] = [
         '#type' => 'weight',
         '#delta' => 50,
-        '#title' => t('Weight for @title', ['@title' => $childEntity->label()]),
+        '#title' => $this->t('Weight for @title', ['@title' => $childEntity->label()]),
         '#title_display' => 'invisible',
         '#default_value' => $record->getWeight(),
         // Classify the weight element for #tabledrag.
@@ -141,7 +147,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
       ];
       if ($childEntity->access('update') && $childEntity->hasLinkTemplate('edit-form')) {
         $form['children'][$child]['operations']['#links']['edit'] = [
-          'title' => t('Edit'),
+          'title' => $this->t('Edit'),
           'url' => $childEntity->toUrl('edit-form'),
         ];
       }

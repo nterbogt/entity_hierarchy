@@ -31,6 +31,8 @@ class MicrositeForm extends ContentEntityForm {
         ]));
     }
     $form_state->setRedirect('entity.entity_hierarchy_microsite.collection');
+
+    return $status;
   }
 
 }

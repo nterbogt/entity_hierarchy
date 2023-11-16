@@ -5,6 +5,7 @@ namespace Drupal\entity_hierarchy\Plugin\Field\FieldType;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\TypedData\DataDefinition;
 
 /**
@@ -22,6 +23,8 @@ use Drupal\Core\TypedData\DataDefinition;
  * )
  */
 class EntityReferenceHierarchy extends EntityReferenceItem {
+
+  use StringTranslationTrait;
 
   /**
    * Defines the minimum weight of a child (but has the highest priority).
@@ -81,19 +84,19 @@ class EntityReferenceHierarchy extends EntityReferenceItem {
 
     $elements['weight_min'] = [
       '#type' => 'number',
-      '#title' => t('Minimum'),
+      '#title' => $this->t('Minimum'),
       '#default_value' => $this->getSetting('weight_min'),
     ];
     $elements['weight_max'] = [
       '#type' => 'number',
-      '#title' => t('Maximum'),
+      '#title' => $this->t('Maximum'),
       '#default_value' => $this->getSetting('weight_max'),
     ];
     $elements['weight_label'] = [
       '#type' => 'textfield',
-      '#title' => t('Weight Label'),
+      '#title' => $this->t('Weight Label'),
       '#default_value' => $this->getSetting('weight_label'),
-      '#description' => t('The weight of this child with respect to other children.'),
+      '#description' => $this->t('The weight of this child with respect to other children.'),
     ];
 
     return $elements;
