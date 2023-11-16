@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Drupal\entity_hierarchy_microsite_test\Entity;
 
+use Drupal\entity_hierarchy\Storage\Record;
 use Drupal\entity_hierarchy_microsite\Entity\Microsite;
 use Drupal\node\Entity\Node;
-use Drupal\entity_hierarchy\Storage\Record;
 
 /**
  * Defines a class for a custom microsite entity.

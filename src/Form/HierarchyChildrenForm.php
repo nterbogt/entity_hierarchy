@@ -33,9 +33,11 @@ class HierarchyChildrenForm extends ContentEntityForm {
   protected $parentCandidate;
 
   /**
-   * @var \Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
+   * Query builder factory service.
+   *
+   * @var \Drupal\entity_hierarchy\Storage\QueryBuilderFactory
    */
-  protected $hierarchyQueryBuliderFactory;
+  protected $queryBuliderFactory;
 
   /**
    * {@inheritdoc}
@@ -44,7 +46,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
     /** @var self $instance */
     $instance = parent::create($container);
     $instance->parentCandidate = $container->get('entity_hierarchy.information.parent_candidate');
-    $instance->hierarchyQueryBuliderFactory = $container->get('entity_hierarchy.query_builder_factory');
+    $instance->queryBuliderFactory = $container->get('entity_hierarchy.query_builder_factory');
     return $instance;
   }
 
@@ -96,7 +98,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
         '#submit' => ['::updateField'],
       ];
     }
-    $queryBuilder = $this->hierarchyQueryBuliderFactory->get($fieldName, $this->entity->getEntityTypeId());
+    $queryBuilder = $this->queryBuliderFactory->get($fieldName, $this->entity->getEntityTypeId());
     $childEntities = $queryBuilder->findChildren($this->entity);
     $form_state->setTemporaryValue(self::CHILD_ENTITIES_STORAGE, $childEntities);
     $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';

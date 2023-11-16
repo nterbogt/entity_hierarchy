@@ -21,6 +21,8 @@ trait EntityHierarchyTestTrait {
   protected $parent;
 
   /**
+   * The query builder instance for the parent field.
+   *
    * @var \Drupal\entity_hierarchy\Storage\QueryBuilder
    */
   protected $queryBuilder;

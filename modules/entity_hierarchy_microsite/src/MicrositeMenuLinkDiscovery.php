@@ -57,7 +57,7 @@ class MicrositeMenuLinkDiscovery implements MicrositeMenuLinkDiscoveryInterface 
       $parentUuids = [];
       foreach ($this->candidate->getCandidateFields($home) as $field_name) {
         $queryBuilder = $this->queryBuilderFactory->get($field_name, 'node');
-        // Code relies on order of children. So buildTree to iterate in parent order.
+        // Relies on order of children. So buildTree to iterate in parent order.
         $children = $queryBuilder->findDescendants($home)
           ->buildTree();
         if (empty($children)) {

@@ -377,7 +377,20 @@ class HierarchyNestedSetIntegrationTest extends EntityHierarchyKernelTestBase {
     return $this->queryBuilder->findChildren($parent);
   }
 
-  protected function getDescendants(ContentEntityInterface $parent, $depth = 0, $start = 1): array {
+  /**
+   * Gets the descendants of a given node.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $parent
+   *   Parent node.
+   * @param int $depth
+   *   Depth which to get descendants.
+   * @param int $start
+   *   Starting depth for the query.
+   *
+   * @return \Drupal\Core\Entity\ContentEntityInterface[]
+   *   The entities of all the descendants.
+   */
+  protected function getDescendants(ContentEntityInterface $parent, int $depth = 0, int $start = 1): array {
     $descendants = $this->queryBuilder->findDescendants($parent, $depth, $start);
     return $descendants->map(fn (Record $record) => $record->getEntity());
   }

@@ -1,10 +1,6 @@
 {
     "name": "drupal/entity_hierarchy",
     "type": "drupal-module",
-    "require": {
-        "drupal/dbal": "~1.0",
-        "previousnext/nested-set": "^0.1.1"
-    },
     "require-dev": {
         "drupal/workbench_access": "*"
     },

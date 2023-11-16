@@ -5,8 +5,8 @@ namespace Drupal\Tests\entity_hierarchy\Kernel;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\entity_hierarchy\Storage\Record;
-use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\entity_hierarchy\Storage\RecordCollection;
+use Drupal\entity_test\Entity\EntityTestRev;
 
 /**
  * Tests integration with entity_hierarchy and a revisionable entity.

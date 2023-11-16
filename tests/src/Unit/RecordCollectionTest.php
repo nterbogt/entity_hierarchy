@@ -7,6 +7,8 @@ use Drupal\entity_hierarchy\Storage\RecordCollection;
 use Drupal\Tests\UnitTestCase;
 
 /**
+ * Test an un-altered record collection.
+ *
  * @group entity_hierarchy
  *
  * @coversDefaultClass \Drupal\entity_hierarchy\Storage\RecordCollection
@@ -15,6 +17,9 @@ class RecordCollectionTest extends UnitTestCase {
 
   protected RecordCollection $collection;
 
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp(): void {
     parent::setUp();
 
@@ -31,24 +36,33 @@ class RecordCollectionTest extends UnitTestCase {
       ['test', 8, 0, 1, 7],
     ];
     foreach ($record_data as $data) {
-      list($type, $id, $weight, $depth, $target_id) = $data;
+      [$type, $id, $weight, $depth, $target_id] = $data;
       $records[] = Record::create($type, $id, $weight, $depth, $target_id);
     }
 
     $this->collection = new RecordCollection($records);
   }
 
-  public function testCount() {
+  /**
+   * Test the number of records in the collection.
+   */
+  public function testCount(): void {
     $this->assertCount(8, $this->collection);
   }
 
-  public function testMap() {
+  /**
+   * Test running a map over all the records.
+   */
+  public function testMap(): void {
     $ids = $this->collection->map(fn (Record $record) => $record->getId());
     $expected = range(1, 8);
     $this->assertEqualsCanonicalizing($expected, $ids);
   }
 
-  public function testFilter() {
+  /**
+   * Test running a filter over all records.
+   */
+  public function testFilter(): void {
     $this->collection->filter(fn(Record $record) => $record->getDepth() !== 2);
     $this->assertCount(5, $this->collection);
   }
