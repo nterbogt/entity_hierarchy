@@ -18,6 +18,13 @@ class RecordCollectionTest extends UnitTestCase {
   protected RecordCollection $collection;
 
   /**
+   * Expected weight order. Overridable by subclasses.
+   *
+   * @var array|int[]
+   */
+  protected array $expectedWeightOrder = [1, 2, 3, 6, 8, 7, 5, 4];
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -65,6 +72,27 @@ class RecordCollectionTest extends UnitTestCase {
   public function testFilter(): void {
     $this->collection->filter(fn(Record $record) => $record->getDepth() !== 2);
     $this->assertCount(5, $this->collection);
+  }
+
+  /**
+   * Test running a sort over all records.
+   */
+  public function testSortId(): void {
+    $ids = $this->collection
+      ->sort(fn (Record $a, Record $b) => $a->getId() <=> $b->getId())
+      ->map(fn (Record $record) => $record->getId());
+    $expected = range(1, 8);
+    $this->assertEquals($expected, $ids);
+  }
+
+  /**
+   * Test running a sort over all records.
+   */
+  public function testSortWeight(): void {
+    $ids = $this->collection
+      ->sort()
+      ->map(fn (Record $record) => $record->getId());
+    $this->assertEquals($this->expectedWeightOrder, $ids);
   }
 
 }

@@ -20,6 +20,11 @@ class RecordCollectionFlattenTest extends RecordCollectionTest {
     $this->collection
       ->buildTree()
       ->flatten();
+
+    /**
+     * When flattened, the order will be traversal of the tree from top down.
+     */
+    $this->expectedWeightOrder = [1, 2, 3, 6, 8, 4, 5, 7];
   }
 
 }

@@ -20,6 +20,11 @@ class RecordCollectionTreeTest extends RecordCollectionTest {
     parent::setUp();
 
     $this->collection->buildTree();
+
+    /**
+     * Tree order, weighted within children.
+     */
+    $this->expectedWeightOrder = [1, 2, 3, 4, 5, 6, 7, 8];
   }
 
   /**

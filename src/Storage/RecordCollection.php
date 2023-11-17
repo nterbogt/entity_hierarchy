@@ -109,6 +109,44 @@ class RecordCollection implements \IteratorAggregate, \Countable {
   }
 
   /**
+   * Synonymous with usort but can traverse the hierarchy tree.
+   *
+   * @param callable|null $callable
+   *   Callable to sort records. If null, sort by weight.
+   *
+   * @return $this
+   *   Make this chainable.
+   */
+  public function sort(callable $callable = NULL): RecordCollection {
+    if (!isset($callable)) {
+      $callable = fn (Record $a, Record $b) => $a->getWeight() <=> $b->getWeight();
+    }
+    usort($this->records, $callable);
+    foreach ($this->records as $record) {
+      $this->doSort($callable, $record);
+    }
+    return $this;
+  }
+
+  /**
+   * Underlying worker function to sort records..
+   *
+   * @param callable $callable
+   *   Callable to sort records.
+   * @param \Drupal\entity_hierarchy\Storage\Record $record
+   *   The current record being sorted.
+   */
+  protected function doSort(callable $callable, Record &$record) {
+    $children = $record->getChildren();
+    if (!empty($children)) {
+      usort($children, $callable);
+      foreach ($children as $childRecord) {
+        $this->doSort($callable, $childRecord);
+      }
+    }
+  }
+
+  /**
    * Iterate the records and turn them into a tree.
    *
    * @return $this
