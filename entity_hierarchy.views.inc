@@ -37,40 +37,10 @@ function entity_hierarchy_views_data() {
         '@entity_type' => $entity_type->getLabel(),
         '@field_name' => $sample_field->getLabel(),
       ]);
-      $base_table = $views_handler->getViewsTableForEntityType($entity_type);
 
       // Relationship to the entity base table.
-      $field_key = $entity_type->getKey('id');
-      $data[$table_name]['table']['join'] = [
-        $base_table => [
-          'left_field' => $field_key,
-          'field' => 'id',
-        ],
-      ];
-      if ($has_revisions = $entity_type->hasKey('revision')) {
-        $field_key = $entity_type->getKey('revision');
-        $data[$table_name]['table']['join'][$base_table]['left_field'] = $field_key;
-        $data[$table_name]['table']['join'][$base_table]['field'] = 'revision_id';
-      }
+      $has_revisions = $entity_type->hasKey('revision');
 
-      // @see \PNX\NestedSet\Storage\DbalNestedSetSchema::create()
-      // Sort for left position in tree.
-      $data[$table_name]['left_pos'] = [
-        'title' => t('Hierarchy order'),
-        'help' => t('Sort in hierarchy order'),
-        'sort' => [
-          'id' => 'standard',
-        ],
-      ];
-      // Contextual filter for filtering to children of a given parent.
-      $data[$table_name]['is_child'] = [
-        'title' => t('Hierarchy: Is child of'),
-        'help' => t('Limit to children of given entity'),
-        'real field' => 'left_pos',
-        'argument' => [
-          'id' => $has_revisions ? 'entity_hierarchy_argument_is_child_of_entity_revision' : 'entity_hierarchy_argument_is_child_of_entity',
-        ],
-      ];
       // Contextual filter for filtering to parent of a given child.
       $data[$table_name]['is_parent'] = [
         'title' => t('Hierarchy: Is Parent of'),
@@ -87,46 +57,6 @@ function entity_hierarchy_views_data() {
         'real field' => 'left_pos',
         'argument' => [
           'id' => $has_revisions ? 'entity_hierarchy_argument_is_sibling_of_entity_revision' : 'entity_hierarchy_argument_is_sibling_of_entity',
-        ],
-      ];
-      // Sorting and filtering on depth.
-      $data[$table_name]['depth'] = [
-        'title' => t('Hierarchy depth'),
-        'help' => t('Depth in hierarchy'),
-        'sort' => [
-          'id' => 'standard',
-        ],
-        'filter' => [
-          'id' => 'numeric',
-        ],
-        'argument' => [
-          'id' => 'standard',
-        ],
-        'field' => [
-          'id' => 'numeric',
-        ],
-      ];
-      // Summarises the children for admin usage.
-      $data[$table_name]['tree_summary'] = [
-        'title' => t('Child summary'),
-        'help' => t('Administrative field to show information about the children.'),
-        'field' => [
-          'id' => 'entity_hierarchy_tree_summary',
-        ],
-      ];
-      // Additional relationship from base table to field.
-      $data[$base_table]['tree'] = [
-        'title' => t('Entity hierarchy'),
-        'help' => t('The hierarchy information'),
-        'real field' => $field_key,
-        'group' => t('Entity hierarchy'),
-        'relationship' => [
-          'title' => 'Entity Hierarchy',
-          'help' => 'Relate to hierarchy information',
-          'id' => 'standard',
-          'base' => $table_name,
-          'base field' => $has_revisions ? 'revision_id' : 'id',
-          'field' => $field_key,
         ],
       ];
     }
@@ -161,11 +91,46 @@ function entity_hierarchy_field_views_data(FieldStorageConfigInterface $field_st
       '@field_name' => $field_name,
     ];
 
+    // Summarises the children for admin usage.
+    $data[$table_name]["{$field_name}__entity_hierarchy_summary"] = [
+      'title' => t('@field_name - Child summary', $args),
+      'label' => t('Child summary'),
+      'group' => t('Entity hierarchy'),
+      'help' => t('Administrative field to show information about the children.'),
+      'field' => [
+        'id' => 'entity_hierarchy_tree_summary',
+        'entity_hierarchy_field' => $field_name,
+      ],
+    ];
+    // Get the depth for an entity.
+    $data[$table_name]["{$field_name}__entity_hierarchy_depth"] = [
+      'title' => t('@field_name - Depth', $args),
+      'label' => t('Depth'),
+      'group' => t('Entity hierarchy'),
+      'help' => t('The depth of the entity in the hierarchy.'),
+      'field' => [
+        'id' => 'entity_hierarchy_depth',
+        'entity_hierarchy_field' => $field_name,
+      ],
+    ];
+
+    $data[$table_name]["{$field_name}__is_parent"] = [
+      'title' => t('Hierarchy: Is Parent of'),
+      'group' => t('Entity hierarchy'),
+      'help' => t('Limit to parent of given entity'),
+      'real field' => $field_name . '_target_id',
+      'field table' => $table_mapping->getDedicatedDataTableName($field_storage),
+      'field field' => $field_name . '_target_id',
+      'argument' => [
+        'id' => 'entity_hierarchy_argument_is_parent_of_entity_two',
+      ],
+    ];
+
     // Normal entity reference to parent.
     $data[$table_name]["{$entity_type_id}__{$field_name}"]['relationship'] = [
-      'title' => t('Parent via @field_name', $args),
+      'title' => t('@field_name - Parent', $args),
       'label' => t('Parent', $args),
-      'group' => t('Entity hierarchy: @label - @field_name', $args),
+      'group' => t('Entity hierarchy'),
       'help' => t('The parent of this content via @field_name.', $args),
       'id' => 'standard',
       'base' => $target_base_table,
@@ -176,9 +141,9 @@ function entity_hierarchy_field_views_data(FieldStorageConfigInterface $field_st
 
     // Reverse entity reference to children.
     $data[$target_base_table]["reverse__{$entity_type_id}__{$field_name}"]['relationship'] = [
-      'title' => t('Children via @field_name', $args),
+      'title' => t('@field_name - Children', $args),
       'label' => t('Children'),
-      'group' => t('Entity hierarchy: @label - @field_name', $args),
+      'group' => t('Entity hierarchy'),
       'help' => t('Children that refer to this content via @field_name.', $args),
       'id' => 'entity_reverse',
       'base' => $entityTypeManager->getHandler($entity_type_id, 'views_data')
@@ -189,27 +154,6 @@ function entity_hierarchy_field_views_data(FieldStorageConfigInterface $field_st
       'field table' => $table_mapping->getDedicatedDataTableName($field_storage),
       'field field' => $field_name . '_target_id',
     ];
-
-    // Relationship to root.
-    $data[$target_base_table]["top__{$entity_type_id}__{$field_name}"]['relationship'] = [
-      'title' => t('Root of hierarchy via @field_name', $args),
-      'label' => t('Top', $args),
-      'group' => t('Entity hierarchy: @label - @field_name', $args),
-      'help' => t('The root of this hierarchy via @field_name.', $args),
-      'id' => 'entity_hierarchy_root',
-      'table' => $target_base_table,
-      'base' => $target_base_table,
-      'left_field' => $entity_type->getKey('id'),
-      'nested_set_table' => "nested_set_{$field_name}_{$entity_type_id}",
-    ];
-
-    if ($revision_key = $entity_type->getKey('revision')) {
-      $data[$target_base_table]["top__{$entity_type_id}__{$field_name}"]['relationship']['extra'] = [
-        'revision' => [
-          'left_field' => $revision_key,
-        ],
-      ];
-    }
   }
 
   return $data;
