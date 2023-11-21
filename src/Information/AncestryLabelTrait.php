@@ -32,9 +32,9 @@ trait AncestryLabelTrait {
       });
     $ancestors_labels = [];
     foreach ($ancestors as $record) {
-      $node = $record->getEntity();
-      $ancestors_labels[] = $node->label();
-      foreach ($node->getCacheTags() as $tag) {
+      $recordEntity = $record->getEntity();
+      $ancestors_labels[] = $recordEntity->label();
+      foreach ($recordEntity->getCacheTags() as $tag) {
         $tags[] = $tag;
       }
     }

@@ -5,7 +5,7 @@ namespace Drupal\entity_hierarchy\Storage;
 use Drupal\Core\Entity\ContentEntityInterface;
 
 /**
- * Defines a factory for creating a nested set storage handler for hierarchies.
+ * Defines a database record for a hierarchical query result.
  */
 class Record {
 
@@ -19,9 +19,17 @@ class Record {
 
   protected int $depth;
 
-  protected string $type;
-
   protected ?array $children = NULL;
+
+  /**
+   * Constructor for a new Record.
+   *
+   * @param string $type
+   *   The entity type for this record.
+   */
+  public function __construct(
+    protected string $type
+  ) {}
 
   /**
    * Ability to create a manual record for one required edge case.
@@ -43,8 +51,7 @@ class Record {
    *   A record that can be used in RecordCollection.
    */
   public static function create(string $type, int $id, int $weight, int $depth, int $targetId = NULL) {
-    $record = new Record();
-    $record->type = $type;
+    $record = new Record($type);
     $record->id = $id;
     $record->weight = $weight;
     $record->depth = $depth;

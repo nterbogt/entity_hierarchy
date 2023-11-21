@@ -13,8 +13,28 @@ use Psr\Log\LoggerInterface;
  */
 class QueryBuilder {
 
+  /**
+   * Values in here are the table mappings for specific field.
+   *
+   * 'entity' - Main entity table.
+   * 'entity_revision' - Revisions table if set, main entity table otherwise.
+   *
+   * @var array
+   *   Table names.
+   */
   protected $tables = [];
 
+  /**
+   * Mapping for the entity hierarchy schema to table column names for field.
+   *
+   * 'id' - the entity id column name.
+   * 'revision_id' - the entity revision_id column name.
+   * 'target_id' - the target_id column name from the entity hierarchy field.
+   * 'weight' - the weight column name from the entity hierarchy field.
+   *
+   * @var array
+   *   Column names.
+   */
   protected $columns = [];
 
   /**
@@ -45,7 +65,7 @@ class QueryBuilder {
     $this->tables = [
       'entity' => $table_names[0],
     ];
-    $this->tables['entity_revision'] = !empty($table_names[1]) ? $table_names[1] : $table_names[0];
+    $this->tables['entity_revision'] = $table_names[1] ?? $table_names[0];
 
     // Get column definitions.
     $base_field_id = $this->fieldStorageDefinition->isBaseField() ? 'id' : 'entity_id';
@@ -100,11 +120,8 @@ CTESQL;
       ':id' => $entity->id(),
       ':revisionId' => $entity->getRevisionId() ?: $entity->id(),
     ]);
-    $records = $result->fetchAll(\PDO::FETCH_CLASS, '\Drupal\entity_hierarchy\Storage\Record');
     $type = $this->fieldStorageDefinition->getTargetEntityTypeId();
-    array_walk($records, function (Record $record) use ($type) {
-      $record->setType($type);
-    });
+    $records = $result->fetchAll(\PDO::FETCH_CLASS, Record::class, [$type]);
     if (!$this->fieldStorageDefinition->isBaseField()) {
       // Drupal doesn't store an empty row for a NULL parent. Add it back in.
       if ($first_record = reset($records)) {
@@ -227,11 +244,8 @@ CTESQL;
     }
     $sql .= " ORDER by weight, id";
     $result = $this->database->query($sql, $params);
-    $records = $result->fetchAll(\PDO::FETCH_CLASS, '\Drupal\entity_hierarchy\Storage\Record');
     $type = $this->fieldStorageDefinition->getTargetEntityTypeId();
-    array_walk($records, function (Record $record) use ($type) {
-      $record->setType($type);
-    });
+    $records = $result->fetchAll(\PDO::FETCH_CLASS, Record::class, [$type]);
     return new RecordCollection($records);
   }
 

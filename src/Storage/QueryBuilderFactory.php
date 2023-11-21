@@ -49,7 +49,7 @@ class QueryBuilderFactory {
    * @return \Drupal\entity_hierarchy\Storage\QueryBuilder
    *   Handler for making requests to the database based on hierarchy.
    */
-  public function get($field_name, $entity_type_id) {
+  public function get(string $field_name, string $entity_type_id): QueryBuilder {
     $cache_key = "$field_name:$entity_type_id";
     if (!isset($this->cache[$cache_key])) {
       $field_definitions = $this->entityFieldManager->getFieldStorageDefinitions($entity_type_id);
