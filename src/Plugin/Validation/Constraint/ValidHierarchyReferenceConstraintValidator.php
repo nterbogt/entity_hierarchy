@@ -23,8 +23,8 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
    *   The query builder factory.
    */
   public function __construct(
-    protected EntityTypeManagerInterface $entityTypeManager,
-    protected QueryBuilderFactory $queryBuilderFactory
+    protected readonly EntityTypeManagerInterface $entityTypeManager,
+    protected readonly QueryBuilderFactory $queryBuilderFactory
   ) {}
 
   /**

@@ -53,10 +53,10 @@ class QueryBuilder {
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function __construct(
-    protected FieldStorageDefinitionInterface $fieldStorageDefinition,
-    protected EntityTypeManagerInterface $entityTypeManager,
-    protected Connection $database,
-    protected LoggerInterface $logger,
+    protected readonly FieldStorageDefinitionInterface $fieldStorageDefinition,
+    protected readonly EntityTypeManagerInterface $entityTypeManager,
+    protected readonly Connection $database,
+    protected readonly LoggerInterface $logger,
   ) {
     $tableMapping = $this->entityTypeManager->getStorage($this->fieldStorageDefinition->getTargetEntityTypeId())->getTableMapping();
 

@@ -22,8 +22,8 @@ class ChildEntityWarningBuilder implements ContainerInjectionInterface {
    *   Query builder factory.
    */
   public function __construct(
-    protected ParentCandidateInterface $parentCandidate,
-    protected QueryBuilderFactory $queryBuilderFactory
+    protected readonly ParentCandidateInterface $parentCandidate,
+    protected readonly QueryBuilderFactory $queryBuilderFactory
   ) {}
 
   /**

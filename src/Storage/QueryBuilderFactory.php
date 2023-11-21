@@ -32,10 +32,10 @@ class QueryBuilderFactory {
    *   The entity field manager service.
    */
   public function __construct(
-    protected Connection $database,
-    protected EntityTypeManagerInterface $entityTypeManager,
-    protected LoggerInterface $logger,
-    protected EntityFieldManagerInterface $entityFieldManager,
+    protected readonly Connection $database,
+    protected readonly EntityTypeManagerInterface $entityTypeManager,
+    protected readonly LoggerInterface $logger,
+    protected readonly EntityFieldManagerInterface $entityFieldManager,
   ) {}
 
   /**

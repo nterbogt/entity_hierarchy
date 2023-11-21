@@ -27,7 +27,7 @@ class HierarchyDepth extends FieldPluginBase {
    * @param mixed $plugin_definition
    *   Definition.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, protected QueryBuilderFactory $queryBuilderFactory) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, protected readonly QueryBuilderFactory $queryBuilderFactory) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }
 

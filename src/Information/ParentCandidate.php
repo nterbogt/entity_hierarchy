@@ -20,8 +20,8 @@ class ParentCandidate implements ParentCandidateInterface {
    *   Bundle Info.
    */
   public function __construct(
-    protected EntityFieldManagerInterface $entityFieldManager,
-    protected EntityTypeBundleInfoInterface $bundleInfo
+    protected readonly EntityFieldManagerInterface $entityFieldManager,
+    protected readonly EntityTypeBundleInfoInterface $bundleInfo
   ) {}
 
   /**

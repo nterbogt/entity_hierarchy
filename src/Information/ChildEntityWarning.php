@@ -25,9 +25,9 @@ class ChildEntityWarning {
    *   (optional) Parent if exists.
    */
   public function __construct(
-    protected RecordCollection $records,
-    protected RefinableCacheableDependencyInterface $cache,
-    protected ?ContentEntityInterface $parent = NULL
+    protected readonly RecordCollection $records,
+    protected readonly RefinableCacheableDependencyInterface $cache,
+    protected readonly ?ContentEntityInterface $parent = NULL
   ) {}
 
   /**
