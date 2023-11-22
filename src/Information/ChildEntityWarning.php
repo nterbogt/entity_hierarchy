@@ -81,16 +81,16 @@ class ChildEntityWarning {
       return new PluralTranslatableMarkup(
         // Related entities includes the parent, so we remove that.
         $this->relatedEntities->count() - 1,
-        'This Test entity has 1 child, deleting this item will change its parent to be @parent.',
-        'This Test entity has @count children, deleting this item will change their parent to be @parent.',
+        'This entity has 1 child, deleting this item will change its parent to be @parent.',
+        'This entity has @count children, deleting this item will change their parent to be @parent.',
         [
           '@parent' => $this->relatedEntities->offsetGet($this->parent)->label(),
         ]);
     }
     return new PluralTranslatableMarkup(
       $this->relatedEntities->count(),
-      'This Test entity has 1 child, deleting this item will move that item to the root of the hierarchy.',
-      'This Test entity has @count children, deleting this item will move those items to the root of the hierarchy.');
+      'This entity has 1 child, deleting this item will move that item to the root of the hierarchy.',
+      'This entity has @count children, deleting this item will move those items to the root of the hierarchy.');
   }
 
 }
