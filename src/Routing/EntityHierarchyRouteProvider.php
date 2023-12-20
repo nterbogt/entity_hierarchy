@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Routing;
 
 use Drupal\Core\Entity\EntityFieldManagerInterface;
@@ -55,9 +57,8 @@ class EntityHierarchyRouteProvider implements EntityRouteProviderInterface, Enti
     $collection = new RouteCollection();
     if ($entity_type->hasLinkTemplate('entity_hierarchy_reorder')) {
       $entity_type_id = $entity_type->id();
-      $route = new Route($entity_type->getLinkTemplate('latest-version'));
+      $route = new Route($entity_type->getLinkTemplate('entity_hierarchy_reorder'));
       $route
-        ->setPath($entity_type->getLinkTemplate('canonical') . '/children')
         ->addDefaults([
           '_title' => 'Reorder children',
           '_entity_form' => "$entity_type_id.entity_hierarchy_reorder",
