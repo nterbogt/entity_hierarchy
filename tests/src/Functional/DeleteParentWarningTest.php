@@ -53,14 +53,14 @@ class DeleteParentWarningTest extends BrowserTestBase {
     $this->drupalLogin($this->drupalCreateUser([], NULL, TRUE));
     $this->drupalGet($this->parent->toUrl('delete-form'));
     $assert = $this->assertSession();
-    $assert->pageTextContains('This Test entity has 5 children, deleting this item will move those items to the root of the hierarchy.');
+    $assert->pageTextContains('This entity has 5 children, deleting this item will move those items to the root of the hierarchy.');
     foreach ($entities as $entity) {
       $assert->pageTextContains($entity->label());
     }
     // Now test one with a grandparent.
     $this->drupalGet($first_child->toUrl('delete-form'));
     $assert = $this->assertSession();
-    $assert->pageTextContains(sprintf('This Test entity has 3 children, deleting this item will change their parent to be %s.', $this->parent->label()));
+    $assert->pageTextContains(sprintf('This entity has 3 children, deleting this item will change their parent to be %s.', $this->parent->label()));
     foreach ($grandchildren as $entity) {
       $assert->pageTextContains($entity->label());
     }

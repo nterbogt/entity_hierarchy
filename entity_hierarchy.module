@@ -81,7 +81,7 @@ function entity_hierarchy_form_alter(&$form, FormStateInterface $form_state, $fo
     if ($children = \Drupal::service('class_resolver')->getInstanceFromDefinition(ChildEntityWarningBuilder::class)->buildChildEntityWarnings($formObject->getEntity())) {
       foreach ($children as $ix => $child) {
         $form['children'][$ix] = [
-          'title' => ['#markup' => $child->getWarning()],
+          'title' => ['#markup' => '<p>' . $child->getWarning() . '</p>'],
           'items' => $child->getList(),
         ];
       }
