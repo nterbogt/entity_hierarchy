@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Information;
 
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
+use Drupal\entity_hierarchy\Storage\RecordCollectionCallable;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -51,7 +54,8 @@ class ChildEntityWarningBuilder implements ContainerInjectionInterface {
       $cache = new CacheableMetadata();
       foreach ($fields as $field_name) {
         $queryBuilder = $this->queryBuilderFactory->get($field_name, $entity->getEntityTypeId());
-        $records = $queryBuilder->findChildren($entity);
+        $records = $queryBuilder->findChildren($entity)
+          ->filter(RecordCollectionCallable::viewLabelAccessFilter(...));
         if (empty($records)) {
           continue;
         }

@@ -11,7 +11,7 @@ use Drupal\Core\Routing\AdminContext;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
-use Drupal\entity_hierarchy\Storage\Record;
+use Drupal\entity_hierarchy\Storage\RecordCollectionCallable;
 use Symfony\Component\Routing\Route;
 
 /**
@@ -63,12 +63,7 @@ class HierarchyBasedBreadcrumbBuilder implements BreadcrumbBuilderInterface {
     $queryBuilder = $this->queryBuilderFactory->get($this->getHierarchyFieldFromEntity($route_entity), $entity_type);
     // Pass in the breadcrumb object for caching.
     $ancestors = $queryBuilder->findAncestors($route_entity)
-      ->filter(function (Record $record) {
-        if ($entity = $record->getEntity()) {
-          return $entity->access('view label');
-        }
-        return FALSE;
-      });
+      ->filter(RecordCollectionCallable::viewLabelAccessFilter(...));
 
     $links = [];
     foreach ($ancestors as $ancestor) {

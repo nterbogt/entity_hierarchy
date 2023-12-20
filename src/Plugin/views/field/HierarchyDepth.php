@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Plugin\views\field;
 
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
 use Drupal\views\Plugin\views\field\FieldPluginBase;
 use Drupal\views\ResultRow;
@@ -26,6 +27,8 @@ class HierarchyDepth extends FieldPluginBase {
    *   Plugin ID.
    * @param mixed $plugin_definition
    *   Definition.
+   * @param \Drupal\entity_hierarchy\Storage\QueryBuilderFactory $queryBuilderFactory
+   *   The query builder factory service.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, protected readonly QueryBuilderFactory $queryBuilderFactory) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);

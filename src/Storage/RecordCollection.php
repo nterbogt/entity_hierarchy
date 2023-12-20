@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Storage;
 
 /**
@@ -112,14 +114,14 @@ class RecordCollection implements \IteratorAggregate, \Countable {
    * Synonymous with usort but can traverse the hierarchy tree.
    *
    * @param callable|null $callable
-   *   Callable to sort records. If null, sort by weight.
+   *   Callable to sort records. If null, RecordCollectionCallable::weightSort(...).
    *
    * @return $this
    *   Make this chainable.
    */
   public function sort(callable $callable = NULL): RecordCollection {
     if (!isset($callable)) {
-      $callable = fn (Record $a, Record $b) => $a->getWeight() <=> $b->getWeight();
+      $callable = RecordCollectionCallable::weightSort(...);
     }
     usort($this->records, $callable);
     foreach ($this->records as $record) {

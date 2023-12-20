@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Storage;
 
 use Drupal\Core\Database\Connection;
@@ -128,7 +130,7 @@ CTESQL;
         $record = Record::create($type, $first_record->getTargetId(), 0, $first_record->getDepth() - 1);
       }
       else {
-        $record = Record::create($type, $entity->id(), 0, 0);
+        $record = Record::create($type, (int) $entity->id(), 0, 0);
       }
       array_unshift($records, $record);
     }

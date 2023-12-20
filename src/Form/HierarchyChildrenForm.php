@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Form;
 
 use Drupal\Core\Cache\CacheableMetadata;
@@ -8,6 +10,7 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\entity_hierarchy\Storage\RecordCollectionCallable;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -99,7 +102,8 @@ class HierarchyChildrenForm extends ContentEntityForm {
       ];
     }
     $queryBuilder = $this->queryBuliderFactory->get($fieldName, $this->entity->getEntityTypeId());
-    $childEntities = $queryBuilder->findChildren($this->entity);
+    $childEntities = $queryBuilder->findChildren($this->entity)
+      ->filter(RecordCollectionCallable::viewLabelAccessFilter(...));
     $form_state->setTemporaryValue(self::CHILD_ENTITIES_STORAGE, $childEntities);
     $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
     $form['children'] = [
