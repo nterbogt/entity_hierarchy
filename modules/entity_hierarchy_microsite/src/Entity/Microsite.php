@@ -6,9 +6,9 @@ use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\entity_hierarchy\Storage\Record;
 use Drupal\entity_hierarchy_microsite\EntityHooks;
-use Drupal\node\Entity\Node as DrupalNode;
-use PNX\NestedSet\Node;
+use Drupal\node\Entity\Node;
 
 /**
  * Defines a class for a microsite entity.
@@ -149,7 +149,7 @@ class Microsite extends ContentEntityBase implements MicrositeInterface {
   /**
    * {@inheritdoc}
    */
-  public function modifyMenuPluginDefinition(Node $treeNode, DrupalNode $node, array $definition, Node $homeNode): array {
+  public function modifyMenuPluginDefinition(Record $record, Node $node, array $definition, Node $home): array {
     return $definition;
   }
 

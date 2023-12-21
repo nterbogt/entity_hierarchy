@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Form;
 
 use Drupal\Core\Cache\CacheableMetadata;
@@ -8,6 +10,7 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\entity_hierarchy\Storage\RecordCollectionCallable;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -26,20 +29,6 @@ class HierarchyChildrenForm extends ContentEntityForm {
   protected $entity;
 
   /**
-   * Nested set storage factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
-   */
-  protected $nestedSetStorageFactory;
-
-  /**
-   * Nested set node key factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
-   */
-  protected $nodeKeyFactory;
-
-  /**
    * Parent candidate.
    *
    * @var \Drupal\entity_hierarchy\Information\ParentCandidateInterface
@@ -47,11 +36,11 @@ class HierarchyChildrenForm extends ContentEntityForm {
   protected $parentCandidate;
 
   /**
-   * Tree node mapper.
+   * Query builder factory service.
    *
-   * @var \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface
+   * @var \Drupal\entity_hierarchy\Storage\QueryBuilderFactory
    */
-  protected $entityTreeNodeMapper;
+  protected $queryBuliderFactory;
 
   /**
    * {@inheritdoc}
@@ -59,10 +48,8 @@ class HierarchyChildrenForm extends ContentEntityForm {
   public static function create(ContainerInterface $container) {
     /** @var self $instance */
     $instance = parent::create($container);
-    $instance->nestedSetStorageFactory = $container->get('entity_hierarchy.nested_set_storage_factory');
-    $instance->nodeKeyFactory = $container->get('entity_hierarchy.nested_set_node_factory');
     $instance->parentCandidate = $container->get('entity_hierarchy.information.parent_candidate');
-    $instance->entityTreeNodeMapper = $container->get('entity_hierarchy.entity_tree_node_mapper');
+    $instance->queryBuliderFactory = $container->get('entity_hierarchy.query_builder_factory');
     return $instance;
   }
 
@@ -114,11 +101,9 @@ class HierarchyChildrenForm extends ContentEntityForm {
         '#submit' => ['::updateField'],
       ];
     }
-    /** @var \PNX\NestedSet\Node[] $children */
-    /** @var \PNX\NestedSet\NestedSetInterface $storage */
-    $storage = $this->nestedSetStorageFactory->get($fieldName, $this->entity->getEntityTypeId());
-    $children = $storage->findChildren($this->nodeKeyFactory->fromEntity($this->entity));
-    $childEntities = $this->entityTreeNodeMapper->loadAndAccessCheckEntitysForTreeNodes($this->entity->getEntityTypeId(), $children, $cache);
+    $queryBuilder = $this->queryBuliderFactory->get($fieldName, $this->entity->getEntityTypeId());
+    $childEntities = $queryBuilder->findChildren($this->entity)
+      ->filter(RecordCollectionCallable::viewLabelAccessFilter(...));
     $form_state->setTemporaryValue(self::CHILD_ENTITIES_STORAGE, $childEntities);
     $form['#attached']['library'][] = 'entity_hierarchy/entity_hierarchy.nodetypeform';
     $form['children'] = [
@@ -141,20 +126,11 @@ class HierarchyChildrenForm extends ContentEntityForm {
 
     $bundles = FALSE;
 
-    foreach ($children as $weight => $node) {
-      if (!$childEntities->contains($node)) {
-        // Doesn't exist or is access hidden.
-        continue;
-      }
-      /** @var \Drupal\Core\Entity\ContentEntityInterface $childEntity */
-      $childEntity = $childEntities->offsetGet($node);
-      if (!$childEntity->isDefaultRevision()) {
-        // We only update default revisions here.
-        continue;
-      }
-      $child = $node->getId();
+    foreach ($childEntities as $record) {
+      $childEntity = $record->getEntity();
+      $child = $childEntity->id();
       $form['children'][$child]['#attributes']['class'][] = 'draggable';
-      $form['children'][$child]['#weight'] = $weight;
+      $form['children'][$child]['#weight'] = $record->getWeight();
       $form['children'][$child]['title'] = $childEntity->toLink()
         ->toRenderable();
       if (!$bundles) {
@@ -166,7 +142,7 @@ class HierarchyChildrenForm extends ContentEntityForm {
         '#delta' => 50,
         '#title' => $this->t('Weight for @title', ['@title' => $childEntity->label()]),
         '#title_display' => 'invisible',
-        '#default_value' => $childEntity->{$fieldName}->weight,
+        '#default_value' => $record->getWeight(),
         // Classify the weight element for #tabledrag.
         '#attributes' => ['class' => ['children-order-weight']],
       ];
@@ -266,15 +242,10 @@ class HierarchyChildrenForm extends ContentEntityForm {
       'operations' => [],
       'finished' => [static::class, 'finished'],
     ];
-    foreach ($childEntities as $node) {
-      $childEntity = $childEntities->offsetGet($node);
-      if (!$childEntity->isDefaultRevision()) {
-        // We don't operate on other than the default revision.
-        continue;
-      }
+    foreach ($childEntities as $childEntity) {
       $batch['operations'][] = [
         [static::class, 'reorder'],
-        [$fieldName, $childEntity, $children[$node->getId()]['weight']],
+        [$fieldName, $childEntity->getEntity(), $children[$childEntity->getId()]['weight']],
       ];
 
     }

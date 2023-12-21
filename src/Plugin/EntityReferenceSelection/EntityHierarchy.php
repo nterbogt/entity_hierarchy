@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Plugin\EntityReferenceSelection;
 
 use Drupal\Component\Utility\Html;
@@ -22,12 +24,7 @@ class EntityHierarchy extends DefaultSelection {
 
   use AncestryLabelTrait;
 
-  /**
-   * Storage factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
-   */
-  protected $nestedSetStorageFactory;
+  protected $queryBuilderFactory;
 
   /**
    * {@inheritdoc}
@@ -35,9 +32,7 @@ class EntityHierarchy extends DefaultSelection {
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     /** @var self $instance */
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
-    $instance->entityTreeNodeMapper = $container->get('entity_hierarchy.entity_tree_node_mapper');
-    $instance->keyFactory = $container->get('entity_hierarchy.nested_set_node_factory');
-    $instance->nestedSetStorageFactory = $container->get('entity_hierarchy.nested_set_storage_factory');
+    $instance->queryBuilderFactory = $container->get('entity_hierarchy.query_builder_factory');
     return $instance;
   }
 
@@ -64,11 +59,10 @@ class EntityHierarchy extends DefaultSelection {
     // We assume target and definition are one and the same, as there is no
     // point in a hierarchy if you're referencing something else, you can't
     // go more than one level deep.
-    /** @var \PNX\NestedSet\NestedSetInterface $storage */
-    $storage = $this->nestedSetStorageFactory->get($this->pluginDefinition['field_name'], $target_type);
+    $queryBuilder = $this->queryBuilderFactory->get($this->pluginDefinition['field_name'], $target_type);
     foreach ($entities as $entity_id => $entity) {
       $bundle = $entity->bundle();
-      $label = $this->generateEntityLabelWithAncestry($entity, $storage, $target_type);
+      $label = $this->generateEntityLabelWithAncestry($entity, $queryBuilder);
       $options[$bundle][$entity_id] = Html::escape($label);
     }
 

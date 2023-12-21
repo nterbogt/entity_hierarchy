@@ -88,10 +88,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     ]);
     $this->scheme->save();
 
-    $this->treeStorage = $this->container->get('entity_hierarchy.nested_set_storage_factory')
-      ->get(static::FIELD_NAME, static::ENTITY_TYPE);
-
-    $this->nodeFactory = $this->container->get('entity_hierarchy.nested_set_node_factory');
+    $this->additionalSetup();
 
     // Setup a boolean field on both node types.
     $this->setupBooleanEditorialField(static::ENTITY_TYPE, $this->childNodeType->id(), self::BOOLEAN_FIELD);
@@ -169,8 +166,8 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     // Check the tree labels.
     $tree = $this->scheme->getAccessScheme()->getTree();
     $this->assertSame([
-      1 => 'Section',
-      6 => 'Child 5 (Section)',
+      2 => 'Section',
+      7 => 'Child 5 (Section)',
     ], array_map(function ($item) {
       return $item['label'];
     }, $tree[self::BOOLEAN_FIELD . '_value']));
@@ -186,7 +183,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     // With some children.
     $children_of_section2 = $this->createChildEntities($section2->id());
     // Create an editor.
-    $editor1 = $this->createUser([], [
+    $editor1 = $this->createUser([
       sprintf('create %s content', $this->childNodeType->id()),
       sprintf('delete any %s content', $this->childNodeType->id()),
       sprintf('edit any %s content', $this->childNodeType->id()),
@@ -204,7 +201,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     $disallowed = array_merge([$section2], $children_of_section2);
     $this->checkAccess($allowed, $disallowed, $editor1);
     // Now create a user with rights to a sub-section.
-    $editor2 = $this->createUser([], [
+    $editor2 = $this->createUser([
       sprintf('create %s content', $this->childNodeType->id()),
       sprintf('delete any %s content', $this->childNodeType->id()),
       sprintf('edit any %s content', $this->childNodeType->id()),

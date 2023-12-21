@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Plugin\Derivative;
 
 use Drupal\Component\Plugin\Derivative\DeriverBase;
@@ -16,21 +18,14 @@ class EntityHierarchySelectionDeriver extends DeriverBase implements ContainerDe
   use StringTranslationTrait;
 
   /**
-   * Entity field manager.
-   *
-   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
-   */
-  protected $entityFieldManager;
-
-  /**
    * Creates an EntityHierarchySelectionDeriverobject.
    *
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
    *   Entity field manager.
    */
-  public function __construct(EntityFieldManagerInterface $entityFieldManager) {
-    $this->entityFieldManager = $entityFieldManager;
-  }
+  public function __construct(
+    protected EntityFieldManagerInterface $entityFieldManager
+  ) {}
 
   /**
    * {@inheritdoc}

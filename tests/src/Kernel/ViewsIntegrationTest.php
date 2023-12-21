@@ -39,6 +39,13 @@ class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
   /**
    * {@inheritdoc}
    */
+  protected function setUp(): void {
+    $this->markTestSkipped('Views currently have limited support in 5.x');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   protected function additionalSetup() {
     parent::additionalSetup();
     $this->installConfig($this->testViewModule);

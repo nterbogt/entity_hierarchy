@@ -2,9 +2,11 @@
 
 namespace Drupal\Tests\entity_hierarchy\Kernel;
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\entity_hierarchy\Storage\Record;
+use Drupal\entity_hierarchy\Storage\RecordCollection;
 use Drupal\entity_test\Entity\EntityTestRev;
-use PNX\NestedSet\Node;
 
 /**
  * Tests integration with entity_hierarchy and a revisionable entity.
@@ -66,18 +68,17 @@ class HierarchyNestedSetRevisionIntegrationTest extends HierarchyNestedSetIntegr
   /**
    * {@inheritdoc}
    */
-  protected function getChildren(Node $parent_node) {
-    $children = parent::getChildren($parent_node);
+  protected function getChildren(ContentEntityInterface $parent): RecordCollection {
+    $children = parent::getChildren($parent);
     // Limit to latest revisions only.
     $entity_storage = $this->container->get('entity_type.manager')->getStorage(static::ENTITY_TYPE);
     $entities = $entity_storage->loadMultiple();
     $revisions = array_map(function (EntityInterface $entity) {
-      return $entity->getRevisionId();
+      return (int) $entity->getRevisionId();
     }, $entities);
-    $children = array_values(array_filter($children, function (Node $node) use ($revisions) {
-      return in_array($node->getRevisionId(), $revisions, TRUE);
-    }));
-    return $children;
+    return $children->filter(function (Record $record) use ($revisions) {
+      return in_array($record->getRevisionId(), $revisions, TRUE);
+    });
   }
 
   /**
@@ -86,7 +87,6 @@ class HierarchyNestedSetRevisionIntegrationTest extends HierarchyNestedSetIntegr
   protected function resaveParent() {
     $this->parent->setNewRevision(TRUE);
     $this->parent->save();
-    $this->parentStub = $this->nodeFactory->fromEntity($this->parent);
   }
 
 }

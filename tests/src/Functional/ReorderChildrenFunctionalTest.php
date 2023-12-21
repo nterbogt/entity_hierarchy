@@ -3,13 +3,13 @@
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
 use Drupal\Core\Url;
+use Drupal\entity_hierarchy\Storage\Record;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\Tests\block\Traits\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\entity_hierarchy\Traits\EntityHierarchyTestTrait;
-use PNX\NestedSet\Node;
 
 /**
  * Defines a class for testing the reorder children form.
@@ -57,8 +57,8 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
    */
   public function testReordering(): void {
     $entities = $this->createChildEntities($this->parent->id());
-    $root_node = $this->treeStorage->getNode($this->parentStub);
-    $children = $this->treeStorage->findChildren($root_node->getNodeKey());
+    $root_node = $this->parent;
+    $children = $this->queryBuilder->findChildren($root_node);
     $this->assertCount(5, $children);
     $this->assertEquals(array_map(function ($name) use ($entities) {
       return $entities[$name]->id();
@@ -68,13 +68,12 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 3',
       'Child 2',
       'Child 1',
-    ]), array_map(function (Node $node) {
-      return $node->getId();
-    }, $children));
+    ]), $children->map(fn (Record $node) => $node->getId()));
+
     // Now insert one in the middle.
     $name = 'Child 6';
     $entities[$name] = $this->createTestEntity($this->parent->id(), $name, -2);
-    $children = $this->treeStorage->findChildren($root_node->getNodeKey());
+    $children = $this->queryBuilder->findChildren($root_node);
     $this->assertCount(6, $children);
     $this->assertEquals(array_map(function ($name) use ($entities) {
       return $entities[$name]->id();
@@ -85,9 +84,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 2',
       'Child 6',
       'Child 1',
-    ]), array_map(function (Node $node) {
-      return $node->getId();
-    }, $children));
+    ]), $children->map(fn (Record $node) => $node->getId()));
     // Now we visit the form for reordering.
     $this->drupalGet($this->parent->toUrl('entity_hierarchy_reorder'));
     $assert = $this->assertSession();
@@ -110,7 +107,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
     $this->submitForm([
       'children[' . $entities[$name]->id() . '][weight]' => -10,
     ], 'Update child order');
-    $children = $this->treeStorage->findChildren($root_node->getNodeKey());
+    $children = $this->queryBuilder->findChildren($root_node);
     $this->assertCount(6, $children);
     $this->assertEquals(array_map(function ($name) use ($entities) {
       return $entities[$name]->id();
@@ -121,9 +118,7 @@ class ReorderChildrenFunctionalTest extends BrowserTestBase {
       'Child 3',
       'Child 2',
       'Child 1',
-    ]), array_map(function (Node $node) {
-      return $node->getId();
-    }, $children));
+    ]), $children->map(fn (Record $node) => $node->getId()));
     $this->drupalGet($this->parent->toUrl());
     $assert->linkExists('Children');
     $different_test_entity = EntityTestRev::create([

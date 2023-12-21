@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Information;
 
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\StringTranslation\PluralTranslatableMarkup;
-use PNX\NestedSet\Node;
+use Drupal\entity_hierarchy\Storage\RecordCollection;
 
 /**
  * Defines a value object for a child entity warning.
@@ -14,41 +17,20 @@ use PNX\NestedSet\Node;
 class ChildEntityWarning {
 
   /**
-   * Related entities.
-   *
-   * @var \SplObjectStorage
-   */
-  protected $relatedEntities;
-
-  /**
-   * Cache metadata.
-   *
-   * @var \Drupal\Core\Cache\RefinableCacheableDependencyInterface
-   */
-  protected $cache;
-
-  /**
-   * Node if parent exists.
-   *
-   * @var null|\PNX\NestedSet\Node
-   */
-  protected $parent;
-
-  /**
    * Constructs a new ChildEntityWarning object.
    *
-   * @param \SplObjectStorage $relatedEntities
-   *   Related entities (children or parents).
+   * @param \Drupal\entity_hierarchy\Storage\RecordCollection $records
+   *   Related entity hierarchy records.
    * @param \Drupal\Core\Cache\RefinableCacheableDependencyInterface $cache
    *   Cache metadata.
-   * @param \PNX\NestedSet\Node|null $parent
+   * @param \Drupal\Core\Entity\ContentEntityInterface|null $parent
    *   (optional) Parent if exists.
    */
-  public function __construct(\SplObjectStorage $relatedEntities, RefinableCacheableDependencyInterface $cache, Node $parent = NULL) {
-    $this->relatedEntities = $relatedEntities;
-    $this->cache = $cache;
-    $this->parent = $parent;
-  }
+  public function __construct(
+    protected readonly RecordCollection $records,
+    protected readonly RefinableCacheableDependencyInterface $cache,
+    protected readonly ?ContentEntityInterface $parent = NULL
+  ) {}
 
   /**
    * Gets render array for child entity list.
@@ -59,11 +41,8 @@ class ChildEntityWarning {
   public function getList() {
     $child_labels = [];
     $build = ['#theme' => 'item_list'];
-    foreach ($this->relatedEntities as $node) {
-      if (!$this->relatedEntities->contains($node) || $node == $this->parent) {
-        continue;
-      }
-      $child_labels[] = $this->relatedEntities->offsetGet($node)->label();
+    foreach ($this->records as $record) {
+      $child_labels[] = $record->getEntity()->label();
     }
     $build['#items'] = array_unique($child_labels);
     $this->cache->applyTo($build);
@@ -80,15 +59,15 @@ class ChildEntityWarning {
     if ($this->parent) {
       return new PluralTranslatableMarkup(
         // Related entities includes the parent, so we remove that.
-        $this->relatedEntities->count() - 1,
+        count($this->records),
         'This entity has 1 child, deleting this item will change its parent to be @parent.',
         'This entity has @count children, deleting this item will change their parent to be @parent.',
         [
-          '@parent' => $this->relatedEntities->offsetGet($this->parent)->label(),
+          '@parent' => $this->parent->label(),
         ]);
     }
     return new PluralTranslatableMarkup(
-      $this->relatedEntities->count(),
+      count($this->records),
       'This entity has 1 child, deleting this item will move that item to the root of the hierarchy.',
       'This entity has @count children, deleting this item will move those items to the root of the hierarchy.');
   }

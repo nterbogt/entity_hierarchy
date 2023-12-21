@@ -1,6 +1,6 @@
 services:
   entity_hierarchy.breadcrumb:
     class: Drupal\entity_hierarchy_breadcrumb\HierarchyBasedBreadcrumbBuilder
-    arguments: ['@entity_hierarchy.nested_set_storage_factory', '@entity_hierarchy.nested_set_node_factory', '@entity_hierarchy.entity_tree_node_mapper', '@entity_field.manager', '@router.admin_context']
+    arguments: ['@entity_field.manager', '@router.admin_context', '@entity_hierarchy.query_builder_factory']
     tags:
       - { name: breadcrumb_builder, priority: 10 }

@@ -2,12 +2,12 @@
 
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
+use Drupal\entity_hierarchy\Storage\Record;
 use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\Tests\block\Traits\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\content_moderation\Traits\ContentModerationTestTrait;
 use Drupal\Tests\entity_hierarchy\Traits\EntityHierarchyTestTrait;
-use PNX\NestedSet\Node;
 
 /**
  * Defines a class for testing the reorder children form.
@@ -57,6 +57,8 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
     // Force ContentModerationRouteSubscriber to fire, setting the latest
     // revision as the default for the edit route.
     \Drupal::service('router.builder')->rebuild();
+
+    $this->additionalSetup();
   }
 
   /**
@@ -75,9 +77,6 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
    */
   public function testReorderingForDraftParent(): void {
     $this->drupalLogin($this->rootUser);
-    $this->treeStorage = $this->container->get('entity_hierarchy.nested_set_storage_factory')
-      ->get(static::FIELD_NAME, static::ENTITY_TYPE);
-    $this->nodeFactory = $this->container->get('entity_hierarchy.nested_set_node_factory');
 
     $this->parent = $this->doCreateTestEntity([
       'type' => static::ENTITY_TYPE,
@@ -87,9 +86,8 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
     $this->parent->save();
 
     $entities = $this->createChildEntities($this->parent->id());
-    $this->parentStub = $this->nodeFactory->fromEntity($this->parent);
-    $root_node = $this->treeStorage->getNode($this->parentStub);
-    $children = $this->treeStorage->findChildren($root_node->getNodeKey());
+    $root_node = $this->parent;
+    $children = $this->queryBuilder->findChildren($root_node);
     $this->assertEquals(array_map(function ($name) use ($entities) {
       return $entities[$name]->id();
     }, [
@@ -98,9 +96,7 @@ class ReorderChildrenContentModerationFunctionalTest extends BrowserTestBase {
       'Child 3',
       'Child 2',
       'Child 1',
-    ]), array_map(function (Node $node) {
-      return $node->getId();
-    }, $children));
+    ]), $children->map(fn (Record $node) => $node->getId()));
 
     $this->drupalGet($this->parent->toUrl('edit-form'));
     $this->submitForm([

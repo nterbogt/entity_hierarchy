@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Routing;
 
 use Drupal\Core\Access\AccessCheckInterface;
@@ -17,20 +19,6 @@ use Symfony\Component\Routing\Route;
 class ReorderChildrenAccess implements AccessCheckInterface {
 
   /**
-   * Parent candidate service.
-   *
-   * @var \Drupal\entity_hierarchy\Information\ParentCandidateInterface
-   */
-  protected $parentCandidate;
-
-  /**
-   * Entity type manager.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
    * Constructs a new ReorderChildrenAccess object.
    *
    * @param \Drupal\entity_hierarchy\Information\ParentCandidateInterface $parentCandidate
@@ -38,10 +26,10 @@ class ReorderChildrenAccess implements AccessCheckInterface {
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   Entity type manager service.
    */
-  public function __construct(ParentCandidateInterface $parentCandidate, EntityTypeManagerInterface $entityTypeManager) {
-    $this->parentCandidate = $parentCandidate;
-    $this->entityTypeManager = $entityTypeManager;
-  }
+  public function __construct(
+    protected readonly ParentCandidateInterface $parentCandidate,
+    protected readonly EntityTypeManagerInterface $entityTypeManager
+  ) {}
 
   /**
    * {@inheritdoc}

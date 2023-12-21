@@ -1,12 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Plugin\Validation\Constraint;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
-use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
-use PNX\NestedSet\Node;
+use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -17,50 +17,25 @@ use Symfony\Component\Validator\ConstraintValidator;
 class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator implements ContainerInjectionInterface {
 
   /**
-   * The entity type manager.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
-   * Node storage factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
-   */
-  protected $nestedSetStorageFactory;
-
-  /**
-   * Node key factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
-   */
-  protected $keyFactory;
-
-  /**
    * Constructs a ValidReferenceConstraintValidator object.
    *
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory $nestedSetStorageFactory
-   *   Nested set factory.
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $keyFactory
-   *   Key factory.
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager.
+   * @param \Drupal\entity_hierarchy\Storage\QueryBuilderFactory $queryBuilderFactory
+   *   The query builder factory.
    */
-  public function __construct(NestedSetStorageFactory $nestedSetStorageFactory, NestedSetNodeKeyFactory $keyFactory, EntityTypeManagerInterface $entity_type_manager) {
-    $this->entityTypeManager = $entity_type_manager;
-    $this->nestedSetStorageFactory = $nestedSetStorageFactory;
-    $this->keyFactory = $keyFactory;
-  }
+  public function __construct(
+    protected readonly EntityTypeManagerInterface $entityTypeManager,
+    protected readonly QueryBuilderFactory $queryBuilderFactory
+  ) {}
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity_hierarchy.nested_set_storage_factory'),
-      $container->get('entity_hierarchy.nested_set_node_factory'),
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('entity_hierarchy.query_builder_factory')
     );
   }
 
@@ -108,31 +83,30 @@ class ValidHierarchyReferenceConstraintValidator extends ConstraintValidator imp
     }
 
     $this_entity = $value->getEntity();
-    $thisNode = $this->keyFactory->fromEntity($this_entity);
     $target_type = $this_entity->getEntityTypeId();
-    /** @var \PNX\NestedSet\Storage\DbalNestedSet $storage */
-    $storage = $this->nestedSetStorageFactory->get($value->getFieldDefinition()->getFieldStorageDefinition()->getName(), $target_type);
-    $descendant_nested_set_nodes = $storage->findDescendants($thisNode);
+    $queryBuilder = $this->queryBuilderFactory->get($value->getFieldDefinition()->getFieldStorageDefinition()->getName(), $target_type);
+    $descendant_records = $queryBuilder->findDescendants($this_entity);
+    $descendant_record_ids = [];
+    foreach ($descendant_records as $record) {
+      $descendant_record_ids[] = $record->getId();
+    }
 
     // Cannot reference self.
     $children = [$this_entity->id()];
-    if (!empty($descendant_nested_set_nodes)) {
-      $descendant_nested_set_node_ids = array_map(function (Node $node) {
-        return $node->getId();
-      }, $descendant_nested_set_nodes);
+    if (!empty($descendant_record_ids)) {
       $has_revisions = $this_entity->getEntityType()->hasKey('revision');
       $storage = $this->entityTypeManager->getStorage($this_entity->getEntityTypeId());
       $descendant_entities = $storage->getQuery()
-        ->condition($this_entity->getEntityType()->getKey('id'), $descendant_nested_set_node_ids, 'IN')
+        ->condition($this_entity->getEntityType()->getKey('id'), $descendant_record_ids, 'IN')
         ->accessCheck(FALSE)
         ->execute();
       $descendant_entities = array_flip($descendant_entities);
-      foreach ($descendant_nested_set_nodes as $descendant_nested_set_node) {
-        $node_id = $descendant_nested_set_node->getId();
+      foreach ($descendant_records as $record) {
+        $node_id = $record->getId();
         if (!isset($descendant_entities[$node_id])) {
           continue;
         }
-        if ($has_revisions && $descendant_nested_set_node->getRevisionId() != $descendant_entities[$node_id]) {
+        if ($has_revisions && $record->getRevisionId() != $descendant_entities[$node_id]) {
           continue;
         }
         $children[] = $node_id;

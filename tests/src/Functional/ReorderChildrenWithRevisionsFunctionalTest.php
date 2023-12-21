@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\entity_hierarchy\Functional;
 
+use Drupal\entity_hierarchy\Storage\Record;
 use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\Tests\block\Traits\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
@@ -90,11 +91,10 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
    */
   public function testReordering(): void {
     $entities = $this->createChildEntities($this->parent->id());
-    $root_node = $this->treeStorage->getNode($this->parentStub);
-    $children = $this->treeStorage->findChildren($root_node->getNodeKey());
-    $mapper = $this->container->get('entity_hierarchy.entity_tree_node_mapper');
-    $ancestors = $mapper->loadEntitiesForTreeNodesWithoutAccessChecks('entity_test_rev', $children);
-    $labels = $this->getLabels($ancestors);
+    $root_node = $this->parent;
+    $children = $this->queryBuilder->findChildren($root_node)
+      ->map(fn (Record $record) => $record->getEntity());
+    $labels = $this->getLabels($children);
     $this->assertEquals([
       'Child 5',
       'Child 4',
@@ -105,9 +105,9 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
     // Now insert one in the middle.
     $name = 'Child 6';
     $entities[$name] = $this->createTestEntity($this->parent->id(), $name, -2);
-    $children = $this->treeStorage->findChildren($root_node->getNodeKey());
-    $ancestors = $mapper->loadEntitiesForTreeNodesWithoutAccessChecks('entity_test_rev', $children);
-    $labels = $this->getLabels($ancestors);
+    $children = $this->queryBuilder->findChildren($root_node)
+      ->map(fn (Record $record) => $record->getEntity());
+    $labels = $this->getLabels($children);
     $this->assertEquals([
       'Child 5',
       'Child 4',
@@ -132,9 +132,9 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
     $this->submitForm([
       'children[' . $entities[$name]->id() . '][weight]' => -10,
     ], 'Update child order');
-    $children = $this->treeStorage->findChildren($root_node->getNodeKey());
-    $ancestors = $mapper->loadEntitiesForTreeNodesWithoutAccessChecks('entity_test_rev', $children);
-    $labels = $this->getLabels($ancestors);
+    $children = $this->queryBuilder->findChildren($root_node)
+      ->map(fn (Record $record) => $record->getEntity());
+    $labels = $this->getLabels($children);
     $this->assertEquals([
       'Child 6',
       'Child 5',
@@ -148,17 +148,16 @@ class ReorderChildrenWithRevisionsFunctionalTest extends BrowserTestBase {
   /**
    * Get labels.
    *
-   * @param \SplObjectStorage $ancestors
+   * @param array $ancestors
    *   Ancestors.
    *
    * @return array
    *   Labels.
    */
-  protected function getLabels(\SplObjectStorage $ancestors) {
+  protected function getLabels(array $ancestors) {
     $labels = [];
     foreach ($ancestors as $node) {
-      $entity = $ancestors->offsetGet($node);
-      $labels[] = $entity->label();
+      $labels[] = $node->label();
     }
     return $labels;
   }

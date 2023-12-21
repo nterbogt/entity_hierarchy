@@ -18,7 +18,6 @@ use Drupal\entity_hierarchy\Handler\NodeEntityHierarchyHandler;
 use Drupal\entity_hierarchy\Information\ChildEntityWarningBuilder;
 use Drupal\entity_hierarchy\Routing\EntityHierarchyRouteProvider;
 use Drupal\entity_hierarchy\Storage\ParentEntityDeleteUpdater;
-use Drupal\entity_hierarchy\Storage\ParentEntityRevisionUpdater;
 
 /**
  * Implements @see hook_help().
@@ -59,23 +58,6 @@ function entity_hierarchy_entity_type_build(array &$entity_types) {
   }
   if (isset($entity_types['node'])) {
     $entity_types['node']->setHandlerClass('entity_hierarchy', NodeEntityHierarchyHandler::class);
-  }
-}
-
-/**
- * Implements hook_entity_update().
- */
-function entity_hierarchy_entity_update(EntityInterface $entity) {
-  if (\Drupal::state()->get('entity_hierarchy_disable_writes', FALSE)) {
-    return;
-  }
-
-  if (!$entity instanceof ContentEntityInterface) {
-    return;
-  }
-  if (isset($entity->original)) {
-    \Drupal::service('class_resolver')->getInstanceFromDefinition(ParentEntityRevisionUpdater::class)
-      ->moveChildren($entity->original, $entity);
   }
 }
 

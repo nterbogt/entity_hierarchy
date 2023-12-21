@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Routing;
 
 use Drupal\Core\Entity\EntityFieldManagerInterface;
@@ -19,31 +21,17 @@ class EntityHierarchyRouteProvider implements EntityRouteProviderInterface, Enti
   const ENTITY_HIERARCHY_ENTITY_TYPE = '_entity_hierarchy_entity_type';
 
   /**
-   * The entity type manager.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
-   * The entity field manager.
-   *
-   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
-   */
-  protected $entityFieldManager;
-
-  /**
    * Constructs a new DefaultHtmlRouteProvider.
    *
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager.
-   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
+   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
    *   The entity field manager.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager, EntityFieldManagerInterface $entity_field_manager) {
-    $this->entityTypeManager = $entity_type_manager;
-    $this->entityFieldManager = $entity_field_manager;
-  }
+  public function __construct(
+    protected readonly EntityTypeManagerInterface $entityTypeManager,
+    protected readonly EntityFieldManagerInterface $entityFieldManager
+  ) {}
 
   /**
    * {@inheritdoc}
@@ -69,9 +57,8 @@ class EntityHierarchyRouteProvider implements EntityRouteProviderInterface, Enti
     $collection = new RouteCollection();
     if ($entity_type->hasLinkTemplate('entity_hierarchy_reorder')) {
       $entity_type_id = $entity_type->id();
-      $route = new Route($entity_type->getLinkTemplate('latest-version'));
+      $route = new Route($entity_type->getLinkTemplate('entity_hierarchy_reorder'));
       $route
-        ->setPath($entity_type->getLinkTemplate('canonical') . '/children')
         ->addDefaults([
           '_title' => 'Reorder children',
           '_entity_form' => "$entity_type_id.entity_hierarchy_reorder",

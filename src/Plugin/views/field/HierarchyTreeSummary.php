@@ -2,12 +2,8 @@
 
 namespace Drupal\entity_hierarchy\Plugin\views\field;
 
-use Drupal\Core\Database\Connection;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface;
-use Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory;
-use Drupal\entity_hierarchy\Storage\NestedSetStorageFactory;
+use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
 use Drupal\views\Plugin\views\field\FieldPluginBase;
 use Drupal\views\ResultRow;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -22,41 +18,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class HierarchyTreeSummary extends FieldPluginBase {
 
   /**
-   * Storage factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory
-   */
-  protected $nestedSetStorageFactory;
-
-  /**
-   * Entity type manager.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
-   * Node key factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
-   */
-  protected $nodeKeyFactory;
-
-  /**
-   * Tree node mapper.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface
-   */
-  protected $treeMapper;
-
-  /**
-   * Table prefix for database.
-   *
-   * @var string
-   */
-  protected $nestedSetPrefix;
-
-  /**
    * Constructs a new HierarchyTreeSummary object.
    *
    * @param array $configuration
@@ -65,24 +26,11 @@ class HierarchyTreeSummary extends FieldPluginBase {
    *   Plugin ID.
    * @param mixed $plugin_definition
    *   Definition.
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetStorageFactory $nestedSetStorageFactory
-   *   Nested set storage.
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
-   *   Entity type manager.
-   * @param \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory $nodeKeyFactory
-   *   Node key factory.
-   * @param \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface $tree_mapper
-   *   Nested set node to entity mapper.
-   * @param \Drupal\Core\Database\Connection $database
-   *   Database connection.
+   * @param \Drupal\entity_hierarchy\Storage\QueryBuilderFactory $queryBuilderFactory
+   *   The query builder factory service.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, NestedSetStorageFactory $nestedSetStorageFactory, EntityTypeManagerInterface $entityTypeManager, NestedSetNodeKeyFactory $nodeKeyFactory, EntityTreeNodeMapperInterface $tree_mapper, Connection $database) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, protected readonly QueryBuilderFactory $queryBuilderFactory) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->nestedSetStorageFactory = $nestedSetStorageFactory;
-    $this->entityTypeManager = $entityTypeManager;
-    $this->nodeKeyFactory = $nodeKeyFactory;
-    $this->treeMapper = $tree_mapper;
-    $this->nestedSetPrefix = $database->tablePrefix();
   }
 
   /**
@@ -93,11 +41,7 @@ class HierarchyTreeSummary extends FieldPluginBase {
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('entity_hierarchy.nested_set_storage_factory'),
-      $container->get('entity_type.manager'),
-      $container->get('entity_hierarchy.nested_set_node_factory'),
-      $container->get('entity_hierarchy.entity_tree_node_mapper'),
-      $container->get('database')
+      $container->get('entity_hierarchy.query_builder_factory')
     );
   }
 
@@ -141,32 +85,23 @@ class HierarchyTreeSummary extends FieldPluginBase {
    */
   public function render(ResultRow $values) {
     if ($this->options['summary_type'] == 'child_counts') {
-      $storage = $this->getTreeStorage();
       $output = [];
       if ($entity = $this->getEntity($values)) {
-        $stub = $this->nodeKeyFactory->fromEntity($entity);
-        $level = 1;
-        while ($entities = $storage->findDescendants($stub, 1, $level)) {
-          // This is inefficient and one reason why this is only an admin tool.
-          $entities = $this->treeMapper->loadEntitiesForTreeNodesWithoutAccessChecks($entity->getEntityTypeId(), $entities);
-          $output[] = count($entities);
-          $level++;
+        $queryBuilder = $this->queryBuilderFactory->get($this->configuration['entity_hierarchy_field'], $entity->getEntityTypeId());
+        $descendants = $queryBuilder->findDescendants($entity);
+        foreach ($descendants as $record) {
+          $depth = $record->getDepth();
+          if (empty($output[$depth])) {
+            $output[$depth] = 0;
+          }
+          $output[$depth] = $output[$depth] + 1;
         }
+        ksort($output);
       }
       return implode(' / ', $output);
     }
 
     return '';
-  }
-
-  /**
-   * Returns the tree storage.
-   *
-   * @return \Drupal\entity_hierarchy\Storage\NestedSetStorage
-   *   Tree storage.
-   */
-  protected function getTreeStorage() {
-    return $this->nestedSetStorageFactory->fromTableName($this->nestedSetPrefix . $this->table);
   }
 
 }

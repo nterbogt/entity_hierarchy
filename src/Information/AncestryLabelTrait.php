@@ -1,8 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\entity_hierarchy\Information;
 
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\entity_hierarchy\Storage\QueryBuilder;
+use Drupal\entity_hierarchy\Storage\Record;
+use Drupal\entity_hierarchy\Storage\RecordCollectionCallable;
 
 /**
  * Provides a trait for ancestry labels.
@@ -10,49 +15,32 @@ use Drupal\Core\Entity\ContentEntityInterface;
 trait AncestryLabelTrait {
 
   /**
-   * Tree node mapper.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\EntityTreeNodeMapperInterface
-   */
-  protected $entityTreeNodeMapper;
-
-  /**
-   * Key factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
-   */
-  protected $keyFactory;
-
-  /**
    * Generate labels including ancestry.
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
    *   Entity to generate label for.
-   * @param \PNX\NestedSet\NestedSetInterface|\Drupal\entity_hierarchy\Storage\NestedSetStorage $storage
-   *   Tree storage.
-   * @param string $entity_type_id
-   *   Entity type ID.
+   * @param \Drupal\entity_hierarchy\Storage\QueryBuilder $queryBuilder
+   *   Query builder instance.
    * @param array $tags
    *   Cache tags.
    *
    * @return string
    *   Label with ancestry if applicable.
    */
-  protected function generateEntityLabelWithAncestry(ContentEntityInterface $entity, $storage, $entity_type_id, &$tags = []) {
-    $key = $this->keyFactory->fromEntity($entity);
-    $ancestors = $storage->findAncestors($key);
-    // Remove ourself.
-    array_pop($ancestors);
-    $ancestor_entities = $this->entityTreeNodeMapper->loadAndAccessCheckEntitysForTreeNodes($entity_type_id, $ancestors);
+  protected function generateEntityLabelWithAncestry(ContentEntityInterface $entity, QueryBuilder $queryBuilder, &$tags = []) {
+    $ancestors = $queryBuilder->findAncestors($entity)
+      ->filter(function (Record $record) use ($entity) {
+        if (!RecordCollectionCallable::viewLabelAccessFilter($record)) {
+          return FALSE;
+        }
+        // Remove ourself.
+        return $record->getId() != $entity->id();
+      });
     $ancestors_labels = [];
-    foreach ($ancestor_entities as $ancestor_node) {
-      if (!$ancestor_entities->contains($ancestor_node)) {
-        // Doesn't exist or is access hidden.
-        continue;
-      }
-      $ancestor_entity = $ancestor_entities->offsetGet($ancestor_node);
-      $ancestors_labels[] = $ancestor_entity->label();
-      foreach ($ancestor_entity->getCacheTags() as $tag) {
+    foreach ($ancestors as $record) {
+      $recordEntity = $record->getEntity();
+      $ancestors_labels[] = $recordEntity->label();
+      foreach ($recordEntity->getCacheTags() as $tag) {
         $tags[] = $tag;
       }
     }

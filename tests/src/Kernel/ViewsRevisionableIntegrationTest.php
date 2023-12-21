@@ -34,6 +34,13 @@ class ViewsRevisionableIntegrationTest extends ViewsIntegrationTest {
   /**
    * {@inheritdoc}
    */
+  protected function setUp(): void {
+    $this->markTestSkipped('Views currently have limited support in 5.x');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   protected function additionalSetup() {
     // The entity_test_rev entity type uses the entity_test schema.
     $this->installEntitySchema('entity_test');

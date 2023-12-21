@@ -21,36 +21,20 @@ trait EntityHierarchyTestTrait {
   protected $parent;
 
   /**
-   * Node key for parent.
+   * The query builder instance for the parent field.
    *
-   * @var \PNX\NestedSet\NodeKey
+   * @var \Drupal\entity_hierarchy\Storage\QueryBuilder
    */
-  protected $parentStub;
-
-  /**
-   * Tree storage.
-   *
-   * @var \PNX\NestedSet\Storage\DbalNestedSet
-   */
-  protected $treeStorage;
-
-  /**
-   * Node key factory.
-   *
-   * @var \Drupal\entity_hierarchy\Storage\NestedSetNodeKeyFactory
-   */
-  protected $nodeFactory;
+  protected $queryBuilder;
 
   /**
    * Perform additional setup.
    */
   protected function additionalSetup() {
-    $this->treeStorage = $this->container->get('entity_hierarchy.nested_set_storage_factory')
-      ->get(static::FIELD_NAME, static::ENTITY_TYPE);
-
     $this->parent = $this->createTestEntity(NULL, 'Parent');
-    $this->nodeFactory = $this->container->get('entity_hierarchy.nested_set_node_factory');
-    $this->parentStub = $this->nodeFactory->fromEntity($this->parent);
+
+    $queryBuilderFactory = $this->container->get('entity_hierarchy.query_builder_factory');
+    $this->queryBuilder = $queryBuilderFactory->get(static::FIELD_NAME, static::ENTITY_TYPE);
   }
 
   /**
