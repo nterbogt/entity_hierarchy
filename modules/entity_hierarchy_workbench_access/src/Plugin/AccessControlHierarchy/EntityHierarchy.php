@@ -171,6 +171,7 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
         $this->cacheBackend->set($cid, $entry, Cache::PERMANENT, $entry_tags);
         $tags = array_merge($tags, $entry_tags);
       }
+      // OOM is a real risk. Garbage collect the entity storage as we go.
       $entityStorage->resetCache([$id]);
     }
     foreach (array_keys($tree) as $parent) {
