@@ -43,4 +43,16 @@ class RecordCollectionCallable {
     return $a->getWeight() <=> $b->getWeight();
   }
 
+  /**
+   * A map function for getting the entity IDs of all the records.
+   *
+   * @param \Drupal\entity_hierarchy\Storage\Record $record
+   *
+   * @return int
+   *   The entity ID from the record.
+   */
+  public static function entityIdMap(Record $record) {
+    return $record->getId();
+  }
+
 }

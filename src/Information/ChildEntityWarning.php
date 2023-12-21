@@ -59,7 +59,7 @@ class ChildEntityWarning {
     if ($this->parent) {
       return new PluralTranslatableMarkup(
         // Related entities includes the parent, so we remove that.
-        $this->relatedEntities->count() - 1,
+        count($this->records),
         'This entity has 1 child, deleting this item will change its parent to be @parent.',
         'This entity has @count children, deleting this item will change their parent to be @parent.',
         [
@@ -67,7 +67,7 @@ class ChildEntityWarning {
         ]);
     }
     return new PluralTranslatableMarkup(
-      $this->relatedEntities->count(),
+      count($this->records),
       'This entity has 1 child, deleting this item will move that item to the root of the hierarchy.',
       'This entity has @count children, deleting this item will move those items to the root of the hierarchy.');
   }

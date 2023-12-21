@@ -175,8 +175,8 @@ class EntityHierarchy extends AccessControlHierarchyBase implements ContainerFac
     }
     foreach (array_keys($tree) as $parent) {
       uasort($tree[$parent], function (array $a, array $b) {
-        $a_weight = $a['weight'] ?: 0;
-        $b_weight = $b['weight'] ?: 0;
+        $a_weight = $a['weight'] ?? 0;
+        $b_weight = $b['weight'] ?? 0;
         return $a_weight <=> $b_weight;
       });
     }

@@ -5,6 +5,7 @@ namespace Drupal\entity_hierarchy_microsite;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\entity_hierarchy\Storage\QueryBuilderFactory;
+use Drupal\entity_hierarchy\Storage\RecordCollectionCallable;
 use Drupal\node\NodeInterface;
 
 /**
@@ -38,7 +39,7 @@ class ChildOfMicrositeLookup implements ChildOfMicrositeLookupInterface {
     !$node->get($field_name)->isEmpty()) {
       $queryBuilder = $this->queryBuilderFactory->get($field_name, 'node');
       $ids = $queryBuilder->findAncestors($node)
-        ->map(fn ($record) => $record->getId());
+        ->map(RecordCollectionCallable::entityIdMap(...));
     }
     $ids[] = $node->id();
     $entityStorage = $this->entityTypeManager->getStorage('entity_hierarchy_microsite');

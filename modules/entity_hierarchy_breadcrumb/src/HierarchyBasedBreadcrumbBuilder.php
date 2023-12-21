@@ -68,6 +68,9 @@ class HierarchyBasedBreadcrumbBuilder implements BreadcrumbBuilderInterface {
     $links = [];
     foreach ($ancestors as $ancestor) {
       $entity = $ancestor->getEntity();
+      if (!isset($entity)) {
+        continue;
+      }
       $breadcrumb->addCacheableDependency($entity);
       // Show just the label for the entity from the route.
       if ($entity->id() == $route_entity->id()) {

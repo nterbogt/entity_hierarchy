@@ -17,9 +17,9 @@ class Record {
 
   protected ?int $targetId;
 
-  protected int $weight;
+  protected int $weight = 0;
 
-  protected int $depth;
+  protected int $depth = 0;
 
   protected ?array $children = NULL;
 
@@ -29,7 +29,7 @@ class Record {
    * @param string $type
    *   The entity type for this record.
    */
-  public function __construct(
+  protected function __construct(
     protected string $type
   ) {}
 

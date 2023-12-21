@@ -10,7 +10,7 @@ use Drupal\entity_test\Entity\EntityTestRev;
  *
  * @group entity_reference
  */
-abstract class ViewsRevisionableIntegrationTest extends ViewsIntegrationTest {
+class ViewsRevisionableIntegrationTest extends ViewsIntegrationTest {
 
   /**
    * {@inheritdoc}
@@ -30,6 +30,13 @@ abstract class ViewsRevisionableIntegrationTest extends ViewsIntegrationTest {
   protected static $modules = [
     'entity_hierarchy_test_views_revision',
   ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    $this->markTestSkipped('Views currently have limited support in 5.x');
+  }
 
   /**
    * {@inheritdoc}

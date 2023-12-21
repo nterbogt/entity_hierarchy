@@ -11,7 +11,7 @@ use Drupal\views\Views;
  *
  * @group entity_hierarchy
  */
-abstract class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
+class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
 
   use ViewResultAssertionTrait;
 
@@ -35,6 +35,13 @@ abstract class ViewsIntegrationTest extends EntityHierarchyKernelTestBase {
     'views',
     'entity_hierarchy_test_views',
   ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    $this->markTestSkipped('Views currently have limited support in 5.x');
+  }
 
   /**
    * {@inheritdoc}
