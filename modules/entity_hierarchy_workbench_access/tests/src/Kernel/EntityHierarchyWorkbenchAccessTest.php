@@ -183,7 +183,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     // With some children.
     $children_of_section2 = $this->createChildEntities($section2->id());
     // Create an editor.
-    $editor1 = $this->createUser([], [
+    $editor1 = $this->createUser([
       sprintf('create %s content', $this->childNodeType->id()),
       sprintf('delete any %s content', $this->childNodeType->id()),
       sprintf('edit any %s content', $this->childNodeType->id()),
@@ -201,7 +201,7 @@ class EntityHierarchyWorkbenchAccessTest extends EntityHierarchyKernelTestBase {
     $disallowed = array_merge([$section2], $children_of_section2);
     $this->checkAccess($allowed, $disallowed, $editor1);
     // Now create a user with rights to a sub-section.
-    $editor2 = $this->createUser([], [
+    $editor2 = $this->createUser([
       sprintf('create %s content', $this->childNodeType->id()),
       sprintf('delete any %s content', $this->childNodeType->id()),
       sprintf('edit any %s content', $this->childNodeType->id()),

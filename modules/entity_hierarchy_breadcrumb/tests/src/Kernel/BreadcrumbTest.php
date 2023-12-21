@@ -45,7 +45,7 @@ class BreadcrumbTest extends EntityHierarchyKernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-    $user = $this->createUser([], ['view test entity']);
+    $user = $this->createUser(['view test entity']);
     $this->container->get('account_switcher')->switchTo($user);
     $this->breadcrumbBuilder = $this->container->get('entity_hierarchy.breadcrumb');
 
